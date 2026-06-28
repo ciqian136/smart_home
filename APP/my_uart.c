@@ -3,15 +3,26 @@
 
 /* ========== 串口中断所需的全局变量 ========== */
 
+/* ---- 串口1（调试串口）相关变量 ---- */
+
+volatile uint8_t uart_rx_byte = 0;   /* 串口1逐字节接收缓存（当前未使用）*/
+char uart_rx_buf[256] = {0};         /* 串口1接收数据缓冲区 */
+volatile uint8_t uart_rx_len = 0;    /* 串口1已接收数据长度 */
+
 /* ---- 串口2（与 ESP32 通信）相关变量 ---- */
 volatile uint8_t uart2_rx_byte = 0;  /* 串口2逐字节接收缓存（当前未使用）*/
-char uart2_rx_buf[512] = {0};        /* 串口2接收数据缓冲区 */
+char uart2_rx_buf[256] = {0};        /* 串口2接收数据缓冲区 */
 volatile uint8_t uart2_rx_len = 0;   /* 串口2已接收数据长度 */
 
-/* ---- 串口1（调试串口）相关变量 ---- */
-volatile uint8_t uart_rx_byte = 0;   /* 串口1逐字节接收缓存（当前未使用）*/
-char uart_rx_buf[512] = {0};         /* 串口1接收数据缓冲区 */
-volatile uint8_t uart_rx_len = 0;    /* 串口1已接收数据长度 */
+/* ---- 串口3（语音）相关变量 ---- */
+volatile uint8_t uart3_rx_byte = 0;   /* 串口3逐字节接收缓存（当前未使用）*/
+char uart3_rx_buf[125] = {0};         /* 串口3接收数据缓冲区 */
+volatile uint8_t uart3_rx_len = 0;    /* 串口3已接收数据长度 */
+
+/* ---- 串口4（lcd）相关变量 ---- */
+volatile uint8_t uart4_rx_byte = 0;   /* 串口4逐字节接收缓存（当前未使用）*/
+char uart4_rx_buf[125] = {0};         /* 串口4接收数据缓冲区 */
+volatile uint8_t uart4_rx_len = 0;    /* 串口4已接收数据长度 */
 
 
 /**
@@ -44,6 +55,8 @@ void my_uart_init(void)
   /* 空闲中断方式接收（推荐）：收到空闲信号时一次性获取整帧数据 */
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, (uint8_t *)uart_rx_buf, sizeof(uart_rx_buf));
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, (uint8_t *)uart2_rx_buf, sizeof(uart2_rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart3,(uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart4,(uint8_t *)uart4_rx_buf, sizeof(uart4_rx_buf));
 }
 
 /**
@@ -69,7 +82,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         }
         /* 重新开启空闲中断 */
         HAL_UARTEx_ReceiveToIdle_IT(&huart2, (uint8_t *)uart2_rx_buf, sizeof(uart2_rx_buf));
+    } else if (huart == &huart3) {             /* 串口2（ESP32通信）*/
+        uart3_rx_len = Size;                   /* 记录接收长度 */
+        // if (Size < sizeof(uart3_rx_buf)) {
+        //     uart3_rx_buf[Size] = '\0';         /* 字符串结束符 */
+        // }
+        /* 重新开启空闲中断 */
+        HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
+    } else if (huart == &huart4) {
+        uart4_rx_len = Size;                   /* 记录接收长度 */
+        // if (Size < sizeof(uart4_rx_buf)) {
+        //     uart4_rx_buf[Size] = '\0';         /* 字符串结束符 */
+        // }
+        /* 重新开启空闲中断 */
+        HAL_UARTEx_ReceiveToIdle_IT(&huart4, (uint8_t *)uart4_rx_buf, sizeof(uart4_rx_buf));    
     }
+
+
 }
 
 /* 逐字节接收中断回调（旧方案，已注释保留参考）*/

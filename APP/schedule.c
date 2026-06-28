@@ -2,8 +2,10 @@
 #include "PM25.h"
 #include "esp32.h"
 #include "BH1750.h"
+#include "light_control.h"
 #include "my_uart.h"
 #include "smoke.h"
+#include "voice.h"
 
 /**
   * @brief  任务控制块结构体
@@ -30,11 +32,15 @@ void test_proc(void)
 /* 调度任务表：按顺序定义需要周期性执行的任务及其周期 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},       /* 测试任务（已注释）*/
-    {esp32_run_recv, 10, 0},    /* ESP32接收处理*/
-    {esp32_run_send, 2000, 0},  /* ESP32数据发送*/
-    {smoke_proc, 1000, 0},       /* 烟雾传感器处理，每1000ms执行一次 */
-    {PM25_proc, 1000, 0},        /* PM2.5传感器处理，每1000ms执行一次 */
-    {bh1750_proc,1000,0},        /* 光敏传感器处理，每1000ms执行一次 */
+    //{esp32_run_recv, 10, 0},    /* ESP32接收处理*/
+    //{esp32_run_send, 1000, 0},  /* ESP32数据发送*/
+    //{smoke_proc, 300, 0},       /* 烟雾传感器处理，每1000ms执行一次 */
+    //{PM25_proc, 300, 0},        /* PM2.5传感器处理，每1000ms执行一次 */
+    //{bh1750_proc,300,0},        /* 光敏传感器处理，每1000ms执行一次 */
+    //{light_control_update,300,0},
+			{voice_run_send,10,0},
+    //{lcd_recv,10,0},
+    //{dht11_proc,1000,0},
 };
 
 /**

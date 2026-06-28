@@ -26,6 +26,11 @@
 #include "PM25.h"
 #include "led.h"
 #include "BH1750.h"
+#include "light_control.h"
+#include "voice.h"
+#include "lcd.h"
+#include "dht11.h"
+
 #endif
 
 

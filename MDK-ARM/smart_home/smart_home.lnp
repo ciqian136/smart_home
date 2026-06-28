@@ -36,6 +36,10 @@
 "smart_home\pm25.o"
 "smart_home\led.o"
 "smart_home\bh1750.o"
+"smart_home\light_control.o"
+"smart_home\voice.o"
+"smart_home\lcd.o"
+"smart_home\dht11.o"
 --library_type=microlib --strict --scatter "smart_home\smart_home.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

@@ -53,3 +53,7 @@ smart_home\esp32.o: ..\APP\my_adc.h
 smart_home\esp32.o: ..\APP\PM25.h
 smart_home\esp32.o: ..\APP\led.h
 smart_home\esp32.o: ..\APP\BH1750.h
+smart_home\esp32.o: ..\APP\light_control.h
+smart_home\esp32.o: ..\APP\voice.h
+smart_home\esp32.o: ..\APP\lcd.h
+smart_home\esp32.o: ..\APP\dht11.h

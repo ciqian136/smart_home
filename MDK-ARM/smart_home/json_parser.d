@@ -53,3 +53,7 @@ smart_home\json_parser.o: ..\APP\my_adc.h
 smart_home\json_parser.o: ..\APP\PM25.h
 smart_home\json_parser.o: ..\APP\led.h
 smart_home\json_parser.o: ..\APP\BH1750.h
+smart_home\json_parser.o: ..\APP\light_control.h
+smart_home\json_parser.o: ..\APP\voice.h
+smart_home\json_parser.o: ..\APP\lcd.h
+smart_home\json_parser.o: ..\APP\dht11.h

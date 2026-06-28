@@ -98,15 +98,18 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM4_Init();
   MX_I2C1_Init();
+  MX_UART4_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 	schedule_init();
   my_uart_init();
-  my_adc_init();
-  led_init();
-	smoke_init();
-  PM25_init();
-	bh1750_init();
-  esp32_init();
+  //dht11_init();
+  // my_adc_init();
+  // led_init();
+	// smoke_init();
+  // PM25_init();
+	// bh1750_init();
+  // esp32_init();
   
   /* USER CODE END 2 */
 

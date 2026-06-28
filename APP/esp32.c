@@ -45,7 +45,7 @@ void esp32_run_send(void) {
     */
     build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 3,"test_int", 'i', test_int,"PM25",'i',PM25_get_adc(),"light_level",'f',bh1750_get_lux());
     uart_printf(&huart2, cmd_buf);
-    uart_printf(&huart1, cmd_buf);
+    //uart_printf(&huart1, cmd_buf);
 	  /* 数据发送完成提示（调试用，已注释）*/
 	  //uart_printf(&huart1,"\r\n[test]post success\r\n");
 		
@@ -136,9 +136,8 @@ void esp32_run_recv(void) {
 
     /* 逐一处理已下发的参数 */
     if (found[0]) { /* LED控制 */
-      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,
-                        led_on ? GPIO_PIN_SET : GPIO_PIN_RESET);
-      uart_printf(&huart1, "[CTRL] LED %s\r\n", led_on ? "ON" : "OFF");
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,led_on ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      uart_printf(&huart1, "[CTRL] LED %s\r\n", led_on ? "OFF" : "ON");
     }
 
     if (found[1]) { /* LED亮度调节 */

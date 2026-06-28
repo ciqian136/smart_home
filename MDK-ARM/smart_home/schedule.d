@@ -53,3 +53,7 @@ smart_home\schedule.o: ..\APP\my_adc.h
 smart_home\schedule.o: ..\APP\PM25.h
 smart_home\schedule.o: ..\APP\led.h
 smart_home\schedule.o: ..\APP\BH1750.h
+smart_home\schedule.o: ..\APP\light_control.h
+smart_home\schedule.o: ..\APP\voice.h
+smart_home\schedule.o: ..\APP\lcd.h
+smart_home\schedule.o: ..\APP\dht11.h
