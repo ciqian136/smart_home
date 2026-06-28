@@ -56,4 +56,5 @@ smart_home\smoke.o: ..\APP\BH1750.h
 smart_home\smoke.o: ..\APP\light_control.h
 smart_home\smoke.o: ..\APP\voice.h
 smart_home\smoke.o: ..\APP\lcd.h
+smart_home\smoke.o: ..\APP\DHT11.h
 smart_home\smoke.o: ..\APP\dht11.h

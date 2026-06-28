@@ -56,4 +56,5 @@ smart_home\main.o: ../APP/BH1750.h
 smart_home\main.o: ../APP/light_control.h
 smart_home\main.o: ../APP/voice.h
 smart_home\main.o: ../APP/lcd.h
+smart_home\main.o: ../APP/DHT11.h
 smart_home\main.o: ../APP/dht11.h

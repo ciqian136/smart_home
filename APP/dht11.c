@@ -1,145 +1,144 @@
-#include "dht11.h"
+#include "DHT11.h"
+#include "my_uart.h"
 #include <stdint.h>
-uint8_t cnt=0;
-#define ONE_PORT GPIOA
-#define ONE_GPIO GPIO_PIN_7
-#define ONE_HIGH HAL_GPIO_WritePin(ONE_PORT,ONE_GPIO,GPIO_PIN_SET)
-#define ONE_LOW HAL_GPIO_WritePin(ONE_PORT,ONE_GPIO,GPIO_PIN_RESET)
-void delay_us(uint32_t us)
-{
-   for(uint32_t i=0;i<us;i++)
-	{
-	   for(volatile uint32_t j=0;j<7;j++);
-	}
-}	
-void delay_ms(uint32_t ms)
-{
-  for(volatile uint32_t i=0;i<ms;i++)
-	{
-	 for(volatile uint32_t j=0;j<7200;j++);
-	}
-}
-void dht11_init(void)
-{
-    
-  GPIO_InitTypeDef GPIO_InitStruct;
-  GPIO_InitStruct.Pin = ONE_GPIO;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(ONE_PORT, &GPIO_InitStruct);
-}
-void dht11_Mode(uint8_t cmd)
-{
-  GPIO_InitTypeDef GPIO_InitStruct;	
-  if(cmd)
-	{
-		GPIO_InitStruct.Pin=ONE_GPIO;
-		GPIO_InitStruct.Mode=GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-		GPIO_InitStruct.Speed=GPIO_SPEED_FREQ_LOW;
-	}
-	else
-	{
-        GPIO_InitStruct.Pin = ONE_GPIO;
-        GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-	}
-     HAL_GPIO_Init(ONE_PORT, &GPIO_InitStruct);
-}
 
-uint8_t dht11_Start(void)
-{
-    cnt = 0;
-    dht11_Mode(1);
-    ONE_LOW;
-    delay_ms(18);
-    ONE_HIGH;
-    delay_us(40);
-    dht11_Mode(0);
-
-    // 等待 DHT11 拉低总线（应答）
-    cnt = 0;
-    while(!HAL_GPIO_ReadPin(ONE_PORT, ONE_GPIO))
-    {
-        delay_us(10);
-        cnt++;
-        if(cnt > 15) return 0;    // 150us 超时，放宽一些
+/* 用户定义的引脚宏，根据实际情况调整 */
+#define DHT11_PIN    GPIO_PIN_7
+#define DHT11_PORT   GPIOA
+/* 引脚操作宏 */
+#define DHT11_DQ_LOW()     HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, GPIO_PIN_RESET)
+#define DHT11_DQ_HIGH()    HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, GPIO_PIN_SET)
+#define DHT11_DQ_READ()    HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)
+/* 使用 DWT 的微秒延时，无需额外外设，适用于 Cortex-M3/M4/M7 */
+static void delay_us(uint32_t us) {
+    uint32_t start = DWT->CYCCNT;
+    uint32_t cycles = us * (SystemCoreClock / 1000000);  // SystemCoreClock 是 72M
+    while ((DWT->CYCCNT - start) < cycles) {
+        __NOP();
     }
-
-    // 等待 DHT11 释放总线（拉高）
-    cnt = 0;
-    while(HAL_GPIO_ReadPin(ONE_PORT, ONE_GPIO))
-    {
-        delay_us(10);
-        cnt++;
-        if(cnt > 15) return 0;
-    }
-    return 1;
+}
+/* GPIO模式切换函数 */
+static void DHT11_Mode_Out(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = DHT11_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(DHT11_PORT, &GPIO_InitStruct);
 }
 
-uint8_t dht11_Read(uint8_t *temp)
-{
-    uint8_t i, j, dat;
-    for(j = 0; j < 5; j++)
-    {
-        dat = 0;                 // ★ 每个字节必须清零
-        for(i = 0; i < 8; i++)
-        {
-            cnt = 0;
-            // 等待低电平结束
-            while(!HAL_GPIO_ReadPin(ONE_PORT, ONE_GPIO))
-            {
-                delay_us(10);
-                cnt++;
-                if(cnt > 10) return 0;    // 适当放宽
-            }
+static void DHT11_Mode_In(void) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    GPIO_InitStruct.Pin = DHT11_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(DHT11_PORT, &GPIO_InitStruct);
+}
 
-            // 延时 30us 后采样
-            delay_us(30);
-
-            if(HAL_GPIO_ReadPin(ONE_PORT, ONE_GPIO))
-            {
-                // 如果是高电平，等待其结束（“1” 的高电平约 70us）
-                cnt = 0;
-                while(HAL_GPIO_ReadPin(ONE_PORT, ONE_GPIO))
-                {
-                    delay_us(10);
-                    cnt++;
-                    if(cnt > 10) return 0;
-                }
-                dat = (dat << 1) | 0x01;
-            }
-            else
-            {
-                dat = (dat << 1) & 0xFE;
-            }
+/**
+  * @brief  读取一个字节（8位）
+  * @retval 读到的字节
+  */
+static uint8_t DHT11_ReadByte(void) {
+    uint8_t value = 0;
+    for (int i = 0; i < 8; i++) {
+        value <<= 1;
+        // 等待低电平结束（DHT11 会保持 50us 低电平）
+    uint32_t timeout = 1000;
+    timeout = 1000;
+    while (DHT11_DQ_READ() == GPIO_PIN_RESET) {
+        if (--timeout == 0) {
+            uart_printf(&huart1, "Error: Byte bit low timeout\r\n");
+            return 0;
         }
-        temp[j] = dat;
     }
-    // 简单校验
-    if(temp[4] != (temp[0] + temp[1] + temp[2] + temp[3]))
-        return 0;
-    return 1;
+    delay_us(40);
+    if (DHT11_DQ_READ() == GPIO_PIN_SET) {
+        value |= 0x01;
+    }
+    timeout = 1000;
+    while (DHT11_DQ_READ() == GPIO_PIN_SET) {
+        if (--timeout == 0) {
+            uart_printf(&huart1, "Error: Byte bit high timeout\r\n");
+            return 0;
+        }
+    }
+    }
+    return value;
 }
 
-void dht11_proc(void)
+/**
+  * @brief  读取 DHT11 温湿度
+  * @param  temp: 温度值存储指针
+  * @param  humi: 湿度值存储指针
+  * @retval 0: 成功，1: 失败
+  */
+uint8_t DHT11_ReadData(float *temp, float *humi) {
+    uint8_t buf[5] = {0};
+
+    DHT11_Mode_Out();
+    DHT11_DQ_LOW();
+    HAL_Delay(20);
+    DHT11_DQ_HIGH();
+    delay_us(30);
+    DHT11_Mode_In();
+
+    __disable_irq();
+
+    // 应答低电平
+    uint32_t timeout = 1000;
+    while (DHT11_DQ_READ() == GPIO_PIN_SET) {
+        if (--timeout == 0) { __enable_irq(); return 1; }
+    }
+    timeout = 1000;
+    while (DHT11_DQ_READ() == GPIO_PIN_RESET) {
+        if (--timeout == 0) { __enable_irq(); return 1; }
+    }
+    // 应答高电平结束
+    timeout = 1000;
+    while (DHT11_DQ_READ() == GPIO_PIN_SET) {
+        if (--timeout == 0) { __enable_irq(); return 1; }
+    }
+
+    // 只读一次 40 位
+    for (int i = 0; i < 5; i++) {
+        buf[i] = DHT11_ReadByte();
+    }
+    __enable_irq();
+
+    // // 调试打印
+    // for (int i = 0; i < 5; i++) {
+    //     uart_printf(&huart1, "buf[%d] = %d\r\n", i, buf[i]);
+    // }
+
+    if ((buf[0] + buf[1] + buf[2] + buf[3]) != buf[4]) {
+        uart_printf(&huart1, "Error: Checksum fail\r\n");
+        return 1;
+    }
+
+    *humi = buf[0] + (buf[1] & 0x7F) * 0.1f;
+    float temp_val = buf[2] + (buf[3] & 0x7F) * 0.1f;
+    if (buf[3] & 0x80) temp_val = -temp_val;
+    *temp = temp_val;
+
+    return 0;
+}
+
+void DHT11_proc(void)
 {
-    uint8_t val[5] = {0};
-
-    if(dht11_Start() == 0) {
-        uart_printf(&huart1, "DHT11 start failed\r\n");
-        return;
+    static float temp=0,humi=0;
+    if (DHT11_ReadData(&temp, &humi) == 0) {
+        uart_printf(&huart1, "temp = %.2f humi = %.2f\r\n", temp, humi);
+    } else {
+        uart_printf(&huart1, "DHT11 Error!\r\n");
     }
-
-    if(dht11_Read(val) == 0) {
-        uart_printf(&huart1, "DHT11 read error\r\n");
-        return;
-    }
-
-    uart_printf(&huart1, "humity = %u.%u  temp = %u.%u",
-                val[0], val[1], val[2], val[3]);
 }
+
+
+
+
+
+
 
 
 

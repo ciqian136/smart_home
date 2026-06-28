@@ -24,17 +24,14 @@ static uint16_t *buf = NULL;       /* 滑动窗口缓冲区 */
 static uint8_t  *buf_index = NULL; /* 当前窗口索引 */
 static uint16_t *g_adc = NULL;     /* 滤波后的ADC值 */
 
-/**
-  * @brief  微秒级延时函数（仅适用于72MHz主频）
-  * @param us 延时微秒数
-  */
+/* 使用 DWT 的微秒延时，无需额外外设，适用于 Cortex-M3/M4/M7 */
 static void delay_us(uint32_t us) {
-  uint32_t delay = (HAL_RCC_GetHCLKFreq() / 4000000 * us);
-  while (delay--) {
-    ;
-  }
+    uint32_t start = DWT->CYCCNT;
+    uint32_t cycles = us * (SystemCoreClock / 1000000);  // SystemCoreClock 是 72M
+    while ((DWT->CYCCNT - start) < cycles) {
+        __NOP();
+    }
 }
-
 /**
   * @brief  PM2.5传感器初始化 - 动态分配内存并初始化变量
   *         点亮LED准备开始测量

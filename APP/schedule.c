@@ -1,5 +1,6 @@
 #include "schedule.h"
 #include "PM25.h"
+#include "dht11.h"
 #include "esp32.h"
 #include "BH1750.h"
 #include "light_control.h"
@@ -39,6 +40,7 @@ static task_t schedule_task_t[] = {
     //{bh1750_proc,300,0},        /* 光敏传感器处理，每1000ms执行一次 */
     //{light_control_update,300,0},
 			{voice_run_send,10,0},
+      {DHT11_proc,300,0},
     //{lcd_recv,10,0},
     //{dht11_proc,1000,0},
 };

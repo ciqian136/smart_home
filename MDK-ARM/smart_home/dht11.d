@@ -1,4 +1,5 @@
-smart_home\dht11.o: ..\APP\dht11.c
+smart_home\dht11.o: ..\APP\DHT11.c
+smart_home\dht11.o: ..\APP\DHT11.h
 smart_home\dht11.o: ..\APP\dht11.h
 smart_home\dht11.o: ..\APP\headfile.h
 smart_home\dht11.o: E:\keil\ARM\ARMCC\Bin\..\include\stdio.h
@@ -56,4 +57,3 @@ smart_home\dht11.o: ..\APP\BH1750.h
 smart_home\dht11.o: ..\APP\light_control.h
 smart_home\dht11.o: ..\APP\voice.h
 smart_home\dht11.o: ..\APP\lcd.h
-smart_home\dht11.o: ..\APP\dht11.h

@@ -29,7 +29,7 @@
 #include "light_control.h"
 #include "voice.h"
 #include "lcd.h"
-#include "dht11.h"
+#include "DHT11.h"
 
 #endif
 

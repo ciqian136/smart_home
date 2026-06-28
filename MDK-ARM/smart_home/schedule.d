@@ -56,4 +56,5 @@ smart_home\schedule.o: ..\APP\BH1750.h
 smart_home\schedule.o: ..\APP\light_control.h
 smart_home\schedule.o: ..\APP\voice.h
 smart_home\schedule.o: ..\APP\lcd.h
+smart_home\schedule.o: ..\APP\DHT11.h
 smart_home\schedule.o: ..\APP\dht11.h

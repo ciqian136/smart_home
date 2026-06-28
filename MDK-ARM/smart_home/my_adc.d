@@ -56,4 +56,5 @@ smart_home\my_adc.o: ..\APP\BH1750.h
 smart_home\my_adc.o: ..\APP\light_control.h
 smart_home\my_adc.o: ..\APP\voice.h
 smart_home\my_adc.o: ..\APP\lcd.h
+smart_home\my_adc.o: ..\APP\DHT11.h
 smart_home\my_adc.o: ..\APP\dht11.h
