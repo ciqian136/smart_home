@@ -22,21 +22,21 @@ void led_init(void)
     HAL_TIM_PWM_Start(&LED_TIM, LED2_CHANNEL);
 }
 
-void led1_set(uint8_t val)
+void led1_set(uint16_t val)
 {
-    if(val>100) val=100;
+    if(val>1000) val=1000;
     __HAL_TIM_SET_COMPARE(&LED_TIM,LED1_CHANNEL,val);
 }
 
-void led2_set(uint8_t val)
+void led2_set(uint16_t val)
 {
-    if(val>100) val=100;
+    if(val>1000) val=1000;
     __HAL_TIM_SET_COMPARE(&LED_TIM,LED2_CHANNEL,val);
 }
-void led_set(uint8_t val1, uint8_t val2)
+void led_set(uint16_t val1, uint16_t val2)
 {
-    if(val1>100) val1=100;
-    if(val2>100) val2=100;
+    if(val1>1000) val1=1000;
+    if(val2>1000) val2=1000;
     __HAL_TIM_SET_COMPARE(&LED_TIM,LED1_CHANNEL,val1); 
     __HAL_TIM_SET_COMPARE(&LED_TIM,LED2_CHANNEL,val2);
 }

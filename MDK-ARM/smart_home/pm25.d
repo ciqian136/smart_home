@@ -58,3 +58,4 @@ smart_home\pm25.o: ..\APP\voice.h
 smart_home\pm25.o: ..\APP\lcd.h
 smart_home\pm25.o: ..\APP\DHT11.h
 smart_home\pm25.o: ..\APP\dht11.h
+smart_home\pm25.o: ..\APP\fan.h

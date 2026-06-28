@@ -1,4 +1,5 @@
 #include "esp32.h"
+#include "fan.h"
 #include "led.h"
 
 /*
@@ -122,29 +123,34 @@ void esp32_run_recv(void) {
   case MSG_PROPERTY_SET: {
     int led_on = 0;        /* LED开关 */
     int brightness = 0;    /* LED亮度 */
-
+    int fan =0;            /* 风扇控制*/
 
     /* 标记每个参数是否被下发 */
-    uint8_t found[2] = {0};
+    uint8_t found[3] = {0};
 
     /* 批量解析云台下发的参数 */
     uint8_t n = parse_onenet_params(
-        json_buf, 2, found, "LED", 'b', &led_on,
-        "led_brightness", 'i', &brightness);
+        json_buf, 3, found, "LED", 'b', &led_on,
+        "led_brightness", 'i', &brightness,"fan",'i',&fan);
 
     uart_printf(&huart1, "[PARSE] parse %d param\r\n", n);
 
     /* 逐一处理已下发的参数 */
-    if (found[0]) { /* LED控制 */
+    if (found[0]) { /* LED控制(测试用) */
       HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,led_on ? GPIO_PIN_RESET : GPIO_PIN_SET);
       uart_printf(&huart1, "[CTRL] LED %s\r\n", led_on ? "OFF" : "ON");
     }
 
-    if (found[1]) { /* LED亮度调节 */
+    if (found[1]) { /* LED灯带亮度调节 */
       led_set(brightness,brightness);
       uart_printf(&huart1, "[CTRL] light_level=%d\r\n", brightness);
     }
     
+    if(found[2]){
+      fan_set(fan);
+       uart_printf(&huart1, "[CTRL] fan_level=%d\r\n", fan);     
+    }
+
     /* 向云端回复设置成功响应 */
     char msg_id[16] = {0};
     if (json_get_msg_id(json_buf, msg_id, sizeof(msg_id))) {

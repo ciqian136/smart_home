@@ -58,3 +58,4 @@ smart_home\voice.o: ..\APP\voice.h
 smart_home\voice.o: ..\APP\lcd.h
 smart_home\voice.o: ..\APP\DHT11.h
 smart_home\voice.o: ..\APP\dht11.h
+smart_home\voice.o: ..\APP\fan.h

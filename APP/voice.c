@@ -12,7 +12,7 @@ void voice_run_send(void)
 
 void voice_parse(void)
 {
-	    if(uart3_rx_len==0) return;
+	if(uart3_rx_len==0) return;
 				
 
 

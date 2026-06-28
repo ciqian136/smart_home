@@ -58,3 +58,4 @@ smart_home\smoke.o: ..\APP\voice.h
 smart_home\smoke.o: ..\APP\lcd.h
 smart_home\smoke.o: ..\APP\DHT11.h
 smart_home\smoke.o: ..\APP\dht11.h
+smart_home\smoke.o: ..\APP\fan.h

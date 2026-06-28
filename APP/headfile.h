@@ -30,6 +30,8 @@
 #include "voice.h"
 #include "lcd.h"
 #include "DHT11.h"
+#include "fan.h"
+
 
 #endif
 

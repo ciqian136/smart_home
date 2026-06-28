@@ -58,3 +58,4 @@ smart_home\json_parser.o: ..\APP\voice.h
 smart_home\json_parser.o: ..\APP\lcd.h
 smart_home\json_parser.o: ..\APP\DHT11.h
 smart_home\json_parser.o: ..\APP\dht11.h
+smart_home\json_parser.o: ..\APP\fan.h

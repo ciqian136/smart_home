@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 void led_init(void);
-void led1_set(uint8_t val);
-void led2_set(uint8_t val);
-void led_set(uint8_t val1,uint8_t val2);
+void led1_set(uint16_t val);
+void led2_set(uint16_t val);
+void led_set(uint16_t val1,uint16_t val2);
 
 
 

@@ -58,3 +58,4 @@ smart_home\esp32.o: ..\APP\voice.h
 smart_home\esp32.o: ..\APP\lcd.h
 smart_home\esp32.o: ..\APP\DHT11.h
 smart_home\esp32.o: ..\APP\dht11.h
+smart_home\esp32.o: ..\APP\fan.h

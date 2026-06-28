@@ -1137,6 +1137,16 @@
               <FileType>5</FileType>
               <FilePath>..\APP\DHT11.h</FilePath>
             </File>
+            <File>
+              <FileName>fan.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\fan.c</FilePath>
+            </File>
+            <File>
+              <FileName>fan.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\fan.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

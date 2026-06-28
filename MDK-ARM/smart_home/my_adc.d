@@ -58,3 +58,4 @@ smart_home\my_adc.o: ..\APP\voice.h
 smart_home\my_adc.o: ..\APP\lcd.h
 smart_home\my_adc.o: ..\APP\DHT11.h
 smart_home\my_adc.o: ..\APP\dht11.h
+smart_home\my_adc.o: ..\APP\fan.h
