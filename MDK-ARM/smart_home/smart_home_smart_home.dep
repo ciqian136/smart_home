@@ -1,7 +1,7 @@
 Dependencies for Project 'smart_home', Target 'smart_home': (DO NOT MODIFY !)
 CompilerVersion: 5060960::V5.06 update 7 (build 960)::.\ARMCC
-F (startup_stm32f103xe.s)(0x6A40CBD6)(--cpu Cortex-M3 -g --apcs=interwork --pd "__MICROLIB SETA 1"-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include--pd "__UVISION_VERSION SETA 536" --pd "STM32F10X_HD SETA 1"--list startup_stm32f103xe.lst --xref -o smart_home\startup_stm32f103xe.o --depend smart_home\startup_stm32f103xe.d)
-F (../Core/Src/main.c)(0x6A40CE38)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\main.o --omf_browse smart_home\main.crf --depend smart_home\main.d)
+F (startup_stm32f103xe.s)(0x6A4A5E5A)(--cpu Cortex-M3 -g --apcs=interwork --pd "__MICROLIB SETA 1"-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include--pd "__UVISION_VERSION SETA 536" --pd "STM32F10X_HD SETA 1"--list startup_stm32f103xe.lst --xref -o smart_home\startup_stm32f103xe.o --depend smart_home\startup_stm32f103xe.d)
+F (../Core/Src/main.c)(0x6A4B696C)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\main.o --omf_browse smart_home\main.crf --depend smart_home\main.d)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
 I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
@@ -33,13 +33,13 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (../Core/Inc/dma.h)(0x6A3CD556)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (../Core/Inc/tim.h)(0x6A3CF739)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
-I (../APP/headfile.h)(0x6A40D651)
+I (../APP/headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -47,18 +47,17 @@ I (E:\keil\ARM\ARMCC\include\stdarg.h)(0x60252376)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../APP/schedule.h)(0x6A3CE2D3)
 I (../APP/json_parser.h)(0x6A3CE2D3)
-I (../APP/esp32.h)(0x6A3CE7EA)
-I (../APP/my_uart.h)(0x6A40B926)
+I (../APP/esp32.h)(0x6A43CCE9)
+I (../APP/my_uart.h)(0x6A40DE17)
 I (../APP/smoke.h)(0x6A3CDEA6)
 I (../APP/my_adc.h)(0x6A3CE2D4)
 I (../APP/PM25.h)(0x6A3CE2D3)
-I (../APP/led.h)(0x6A40D75B)
 I (../APP/BH1750.h)(0x6A3E2AEA)
-I (../APP/light_control.h)(0x6A3E4657)
-I (../APP/voice.h)(0x6A40C01C)
-I (../APP/lcd.h)(0x6A3F7F6A)
-I (../APP/DHT11.h)(0x6A40CA26)
-I (../APP/fan.h)(0x6A40D7B4)
+I (../APP/voice.h)(0x6A4A48E8)
+I (../APP/lcd.h)(0x6A486E77)
+I (../APP/DHT11.h)(0x6A43C708)
+I (../APP/fan.h)(0x6A4A4A7A)
+I (../APP/ws2812.h)(0x6A4A48A5)
 F (../Core/Src/gpio.c)(0x6A40CBD1)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\gpio.o --omf_browse smart_home\gpio.crf --depend smart_home\gpio.d)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/main.h)(0x6A2A55D9)
@@ -92,8 +91,8 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (../Core/Src/adc.c)(0x6A40BE33)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\adc.o --omf_browse smart_home\adc.crf --depend smart_home\adc.d)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+F (../Core/Src/adc.c)(0x6A489FB9)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\adc.o --omf_browse smart_home\adc.crf --depend smart_home\adc.d)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
 I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
@@ -125,7 +124,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (../Core/Src/dma.c)(0x6A3CD556)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\dma.o --omf_browse smart_home\dma.crf --depend smart_home\dma.d)
+F (../Core/Src/dma.c)(0x6A48D1AB)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\dma.o --omf_browse smart_home\dma.crf --depend smart_home\dma.d)
 I (../Core/Inc/dma.h)(0x6A3CD556)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
@@ -191,7 +190,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (../Core/Src/tim.c)(0x6A40BD33)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\tim.o --omf_browse smart_home\tim.crf --depend smart_home\tim.d)
+F (../Core/Src/tim.c)(0x6A4A56DB)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\tim.o --omf_browse smart_home\tim.crf --depend smart_home\tim.d)
 I (../Core/Inc/tim.h)(0x6A3CF739)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
@@ -224,7 +223,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (../Core/Src/usart.c)(0x6A3F6581)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\usart.o --omf_browse smart_home\usart.crf --depend smart_home\usart.d)
+F (../Core/Src/usart.c)(0x6A4A5E58)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\usart.o --omf_browse smart_home\usart.crf --depend smart_home\usart.d)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
@@ -257,7 +256,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (../Core/Src/stm32f1xx_it.c)(0x6A3F6581)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\stm32f1xx_it.o --omf_browse smart_home\stm32f1xx_it.crf --depend smart_home\stm32f1xx_it.d)
+F (../Core/Src/stm32f1xx_it.c)(0x6A48D1AD)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\stm32f1xx_it.o --omf_browse smart_home\stm32f1xx_it.crf --depend smart_home\stm32f1xx_it.d)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
 I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
@@ -289,7 +288,7 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-I (../Core/Inc/stm32f1xx_it.h)(0x6A3F6581)
+I (../Core/Inc/stm32f1xx_it.h)(0x6A48D1AD)
 F (../Core/Src/stm32f1xx_hal_msp.c)(0x6A2A55D8)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\stm32f1xx_hal_msp.o --omf_browse smart_home\stm32f1xx_hal_msp.crf --depend smart_home\stm32f1xx_hal_msp.d)
 I (../Core/Inc/main.h)(0x6A2A55D9)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
@@ -880,9 +879,9 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
 I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-F (..\APP\esp32.c)(0x6A40D7E5)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\esp32.o --omf_browse smart_home\esp32.crf --depend smart_home\esp32.d)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\headfile.h)(0x6A40D651)
+F (..\APP\esp32.c)(0x6A48DA1E)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\esp32.o --omf_browse smart_home\esp32.crf --depend smart_home\esp32.d)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -921,27 +920,27 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\esp32.h)(0x6A3CE7EA)()
-F (..\APP\headfile.h)(0x6A40D651)()
-F (..\APP\schedule.c)(0x6A40CA12)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\schedule.o --omf_browse smart_home\schedule.crf --depend smart_home\schedule.d)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\esp32.h)(0x6A43CCE9)()
+F (..\APP\headfile.h)(0x6A48D647)()
+F (..\APP\schedule.c)(0x6A4A57B2)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\schedule.o --omf_browse smart_home\schedule.crf --depend smart_home\schedule.d)
 I (..\APP\schedule.h)(0x6A3CE2D3)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -980,26 +979,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\schedule.h)(0x6A3CE2D3)()
-F (..\APP\my_uart.c)(0x6A40B925)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\my_uart.o --omf_browse smart_home\my_uart.crf --depend smart_home\my_uart.d)
-I (..\APP\my_uart.h)(0x6A40B926)
-I (..\APP\headfile.h)(0x6A40D651)
+F (..\APP\my_uart.c)(0x6A43CEF9)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\my_uart.o --omf_browse smart_home\my_uart.crf --depend smart_home\my_uart.d)
+I (..\APP\my_uart.h)(0x6A40DE17)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1038,26 +1037,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
+I (..\APP\esp32.h)(0x6A43CCE9)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\my_uart.h)(0x6A40B926)()
-F (..\APP\smoke.c)(0x6A40BD8B)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\smoke.o --omf_browse smart_home\smoke.crf --depend smart_home\smoke.d)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\my_uart.h)(0x6A40DE17)()
+F (..\APP\smoke.c)(0x6A43D1AF)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\smoke.o --omf_browse smart_home\smoke.crf --depend smart_home\smoke.d)
 I (..\APP\smoke.h)(0x6A3CDEA6)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1096,26 +1095,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\smoke.h)(0x6A3CDEA6)()
 F (..\APP\json_parser.c)(0x6A3CE2D3)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\json_parser.o --omf_browse smart_home\json_parser.crf --depend smart_home\json_parser.d)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1154,26 +1153,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\json_parser.h)(0x6A3CE2D3)()
-F (..\APP\my_adc.c)(0x6A3CE4DD)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\my_adc.o --omf_browse smart_home\my_adc.crf --depend smart_home\my_adc.d)
+F (..\APP\my_adc.c)(0x6A48A208)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\my_adc.o --omf_browse smart_home\my_adc.crf --depend smart_home\my_adc.d)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1212,26 +1211,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\my_adc.h)(0x6A3CE2D4)()
-F (..\APP\PM25.c)(0x6A40CE4C)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\pm25.o --omf_browse smart_home\pm25.crf --depend smart_home\pm25.d)
+F (..\APP\PM25.c)(0x6A4A5320)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\pm25.o --omf_browse smart_home\pm25.crf --depend smart_home\pm25.d)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1270,26 +1269,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\PM25.h)(0x6A3CE2D3)()
-F (..\APP\led.c)(0x6A40D74E)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\led.o --omf_browse smart_home\led.crf --depend smart_home\led.d)
-I (..\APP\led.h)(0x6A40D75B)
-I (..\APP\headfile.h)(0x6A40D651)
+F (..\APP\BH1750.c)(0x6A43D1AF)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\bh1750.o --omf_browse smart_home\bh1750.crf --depend smart_home\bh1750.d)
+I (..\APP\BH1750.h)(0x6A3E2AEA)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1328,142 +1327,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\led.h)(0x6A40D75B)()
-F (..\APP\BH1750.c)(0x6A3E3083)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\bh1750.o --omf_browse smart_home\bh1750.crf --depend smart_home\bh1750.d)
-I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\headfile.h)(0x6A40D651)
-I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
-I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
-I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-I (E:\keil\ARM\ARMCC\include\stdarg.h)(0x60252376)
-I (E:\keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
-I (../Core/Inc/main.h)(0x6A2A55D9)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
-I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h)(0x6A269BED)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x6A269BED)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h)(0x6A269BED)
-I (../Drivers/CMSIS/Include/core_cm3.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_version.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x6A269BED)
-I (E:\keil\ARM\ARMCC\include\stddef.h)(0x6025237E)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_exti.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-I (../Core/Inc/gpio.h)(0x6A2A55D7)
-I (../Core/Inc/usart.h)(0x6A3F6581)
-I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
-I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
-I (../Core/Inc/i2c.h)(0x6A3E1FFC)
-I (..\APP\schedule.h)(0x6A3CE2D3)
-I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
-I (..\APP\smoke.h)(0x6A3CDEA6)
-I (..\APP\my_adc.h)(0x6A3CE2D4)
-I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
 F (..\APP\BH1750.h)(0x6A3E2AEA)()
-F (..\APP\light_control.c)(0x6A3E4520)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\light_control.o --omf_browse smart_home\light_control.crf --depend smart_home\light_control.d)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (E:\keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
-I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\headfile.h)(0x6A40D651)
-I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
-I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
-I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-I (E:\keil\ARM\ARMCC\include\stdarg.h)(0x60252376)
-I (../Core/Inc/main.h)(0x6A2A55D9)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
-I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h)(0x6A269BED)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x6A269BED)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h)(0x6A269BED)
-I (../Drivers/CMSIS/Include/core_cm3.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_version.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x6A269BE3)
-I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x6A269BED)
-I (E:\keil\ARM\ARMCC\include\stddef.h)(0x6025237E)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_exti.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
-I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
-I (../Core/Inc/gpio.h)(0x6A2A55D7)
-I (../Core/Inc/usart.h)(0x6A3F6581)
-I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
-I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
-I (../Core/Inc/i2c.h)(0x6A3E1FFC)
-I (..\APP\schedule.h)(0x6A3CE2D3)
-I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
-I (..\APP\smoke.h)(0x6A3CDEA6)
-I (..\APP\my_adc.h)(0x6A3CE2D4)
-I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\light_control.h)(0x6A3E4657)()
-F (..\APP\voice.c)(0x6A40D272)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\voice.o --omf_browse smart_home\voice.crf --depend smart_home\voice.d)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\headfile.h)(0x6A40D651)
+F (..\APP\voice.c)(0x6A4A4A91)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\voice.o --omf_browse smart_home\voice.crf --depend smart_home\voice.d)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1502,27 +1385,27 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\voice.h)(0x6A40C01C)()
-F (..\APP\lcd.h)(0x6A3F7F6A)()
-F (..\APP\lcd.c)(0x6A3F9A14)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\lcd.o --omf_browse smart_home\lcd.crf --depend smart_home\lcd.d)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\voice.h)(0x6A4A48E8)()
+F (..\APP\lcd.h)(0x6A486E77)()
+F (..\APP\lcd.c)(0x6A4B7BF4)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\lcd.o --omf_browse smart_home\lcd.crf --depend smart_home\lcd.d)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1561,25 +1444,25 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\DHT11.c)(0x6A40D204)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\dht11.o --omf_browse smart_home\dht11.crf --depend smart_home\dht11.d)
-I (..\APP\DHT11.h)(0x6A40CA26)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\DHT11.c)(0x6A43D1AF)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\dht11.o --omf_browse smart_home\dht11.crf --depend smart_home\dht11.d)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1618,26 +1501,26 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\fan.h)(0x6A40D7B4)
-F (..\APP\DHT11.h)(0x6A40CA26)()
-F (..\APP\fan.c)(0x6A40D7B4)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\fan.o --omf_browse smart_home\fan.crf --depend smart_home\fan.d)
-I (..\APP\fan.h)(0x6A40D7B4)
-I (..\APP\headfile.h)(0x6A40D651)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\DHT11.h)(0x6A43C708)()
+F (..\APP\fan.c)(0x6A4B7669)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\fan.o --omf_browse smart_home\fan.crf --depend smart_home\fan.d)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (..\APP\headfile.h)(0x6A48D647)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
 I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
@@ -1676,20 +1559,78 @@ I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
 I (../Core/Inc/gpio.h)(0x6A2A55D7)
 I (../Core/Inc/usart.h)(0x6A3F6581)
 I (../Core/Inc/dma.h)(0x6A3CD556)
-I (../Core/Inc/adc.h)(0x6A2D1DEB)
+I (../Core/Inc/adc.h)(0x6A489FB9)
 I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
 I (../Core/Inc/i2c.h)(0x6A3E1FFC)
 I (..\APP\schedule.h)(0x6A3CE2D3)
 I (..\APP\json_parser.h)(0x6A3CE2D3)
-I (..\APP\esp32.h)(0x6A3CE7EA)
-I (..\APP\my_uart.h)(0x6A40B926)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
 I (..\APP\smoke.h)(0x6A3CDEA6)
 I (..\APP\my_adc.h)(0x6A3CE2D4)
 I (..\APP\PM25.h)(0x6A3CE2D3)
-I (..\APP\led.h)(0x6A40D75B)
 I (..\APP\BH1750.h)(0x6A3E2AEA)
-I (..\APP\light_control.h)(0x6A3E4657)
-I (..\APP\voice.h)(0x6A40C01C)
-I (..\APP\lcd.h)(0x6A3F7F6A)
-I (..\APP\DHT11.h)(0x6A40CA26)
-F (..\APP\fan.h)(0x6A40D7B4)()
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\fan.h)(0x6A4A4A7A)()
+F (..\APP\ws2812.c)(0x6A4A5198)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\ws2812.o --omf_browse smart_home\ws2812.crf --depend smart_home\ws2812.d)
+I (..\APP\ws2812.h)(0x6A4A48A5)
+I (..\APP\headfile.h)(0x6A48D647)
+I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)
+I (E:\keil\ARM\ARMCC\include\string.h)(0x6025237E)
+I (E:\keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
+I (E:\keil\ARM\ARMCC\include\stdarg.h)(0x60252376)
+I (E:\keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
+I (../Core/Inc/main.h)(0x6A2A55D9)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h)(0x6A269BED)
+I (../Core/Inc/stm32f1xx_hal_conf.h)(0x6A3E1FFD)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h)(0x6A269BED)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h)(0x6A269BED)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h)(0x6A269BED)
+I (../Drivers/CMSIS/Include/core_cm3.h)(0x6A269BE3)
+I (../Drivers/CMSIS/Include/cmsis_version.h)(0x6A269BE3)
+I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A269BE3)
+I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x6A269BE3)
+I (../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x6A269BED)
+I (E:\keil\ARM\ARMCC\include\stddef.h)(0x6025237E)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_exti.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_dma_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_cortex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_adc_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_flash_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_pwr.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h)(0x6A269BED)
+I (../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h)(0x6A269BED)
+I (../Core/Inc/gpio.h)(0x6A2A55D7)
+I (../Core/Inc/usart.h)(0x6A3F6581)
+I (../Core/Inc/dma.h)(0x6A3CD556)
+I (../Core/Inc/adc.h)(0x6A489FB9)
+I (E:\keil\ARM\ARMCC\include\time.h)(0x60252378)
+I (../Core/Inc/i2c.h)(0x6A3E1FFC)
+I (..\APP\schedule.h)(0x6A3CE2D3)
+I (..\APP\json_parser.h)(0x6A3CE2D3)
+I (..\APP\esp32.h)(0x6A43CCE9)
+I (..\APP\my_uart.h)(0x6A40DE17)
+I (..\APP\smoke.h)(0x6A3CDEA6)
+I (..\APP\my_adc.h)(0x6A3CE2D4)
+I (..\APP\PM25.h)(0x6A3CE2D3)
+I (..\APP\BH1750.h)(0x6A3E2AEA)
+I (..\APP\voice.h)(0x6A4A48E8)
+I (..\APP\lcd.h)(0x6A486E77)
+I (..\APP\DHT11.h)(0x6A43C708)
+I (..\APP\fan.h)(0x6A4A4A7A)
+I (../Core/Inc/tim.h)(0x6A3CF739)
+F (..\APP\ws2812.h)(0x6A4A48A5)()

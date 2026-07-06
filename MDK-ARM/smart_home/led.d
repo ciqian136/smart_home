@@ -57,5 +57,4 @@ smart_home\led.o: ..\APP\light_control.h
 smart_home\led.o: ..\APP\voice.h
 smart_home\led.o: ..\APP\lcd.h
 smart_home\led.o: ..\APP\DHT11.h
-smart_home\led.o: ..\APP\dht11.h
 smart_home\led.o: ..\APP\fan.h

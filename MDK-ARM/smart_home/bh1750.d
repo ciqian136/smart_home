@@ -51,11 +51,10 @@ smart_home\bh1750.o: ..\APP\my_uart.h
 smart_home\bh1750.o: ..\APP\smoke.h
 smart_home\bh1750.o: ..\APP\my_adc.h
 smart_home\bh1750.o: ..\APP\PM25.h
-smart_home\bh1750.o: ..\APP\led.h
 smart_home\bh1750.o: ..\APP\BH1750.h
-smart_home\bh1750.o: ..\APP\light_control.h
 smart_home\bh1750.o: ..\APP\voice.h
 smart_home\bh1750.o: ..\APP\lcd.h
 smart_home\bh1750.o: ..\APP\DHT11.h
-smart_home\bh1750.o: ..\APP\dht11.h
 smart_home\bh1750.o: ..\APP\fan.h
+smart_home\bh1750.o: ..\APP\ws2812.h
+smart_home\bh1750.o: ../Core/Inc/tim.h

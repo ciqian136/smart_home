@@ -1078,16 +1078,6 @@
               <FilePath>..\APP\PM25.h</FilePath>
             </File>
             <File>
-              <FileName>led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\APP\led.c</FilePath>
-            </File>
-            <File>
-              <FileName>led.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\APP\led.h</FilePath>
-            </File>
-            <File>
               <FileName>BH1750.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\BH1750.c</FilePath>
@@ -1096,16 +1086,6 @@
               <FileName>BH1750.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\BH1750.h</FilePath>
-            </File>
-            <File>
-              <FileName>light_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\APP\light_control.c</FilePath>
-            </File>
-            <File>
-              <FileName>light_control.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\APP\light_control.h</FilePath>
             </File>
             <File>
               <FileName>voice.c</FileName>
@@ -1146,6 +1126,16 @@
               <FileName>fan.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\fan.h</FilePath>
+            </File>
+            <File>
+              <FileName>ws2812.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\ws2812.c</FilePath>
+            </File>
+            <File>
+              <FileName>ws2812.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\ws2812.h</FilePath>
             </File>
           </Files>
         </Group>

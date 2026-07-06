@@ -57,5 +57,4 @@ smart_home\light_control.o: ..\APP\BH1750.h
 smart_home\light_control.o: ..\APP\voice.h
 smart_home\light_control.o: ..\APP\lcd.h
 smart_home\light_control.o: ..\APP\DHT11.h
-smart_home\light_control.o: ..\APP\dht11.h
 smart_home\light_control.o: ..\APP\fan.h

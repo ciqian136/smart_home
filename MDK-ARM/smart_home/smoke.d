@@ -51,11 +51,10 @@ smart_home\smoke.o: ..\APP\my_uart.h
 smart_home\smoke.o: ..\APP\smoke.h
 smart_home\smoke.o: ..\APP\my_adc.h
 smart_home\smoke.o: ..\APP\PM25.h
-smart_home\smoke.o: ..\APP\led.h
 smart_home\smoke.o: ..\APP\BH1750.h
-smart_home\smoke.o: ..\APP\light_control.h
 smart_home\smoke.o: ..\APP\voice.h
 smart_home\smoke.o: ..\APP\lcd.h
 smart_home\smoke.o: ..\APP\DHT11.h
-smart_home\smoke.o: ..\APP\dht11.h
 smart_home\smoke.o: ..\APP\fan.h
+smart_home\smoke.o: ..\APP\ws2812.h
+smart_home\smoke.o: ../Core/Inc/tim.h

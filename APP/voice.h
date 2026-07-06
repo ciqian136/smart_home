@@ -4,6 +4,5 @@
 #include "headfile.h"
 void voice_run_send(void);
 void voice_parse(void);
+
 #endif
-
-

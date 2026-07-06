@@ -24,14 +24,12 @@
 #include "smoke.h"
 #include "my_adc.h"
 #include "PM25.h"
-#include "led.h"
 #include "BH1750.h"
-#include "light_control.h"
 #include "voice.h"
 #include "lcd.h"
 #include "DHT11.h"
 #include "fan.h"
-
+#include "ws2812.h"
 
 #endif
 

@@ -1,6 +1,9 @@
 #include "esp32.h"
+#include "DHT11.h"
 #include "fan.h"
-#include "led.h"
+
+#include "my_uart.h"
+#include <string.h>
 
 /*
 引脚定义
@@ -10,7 +13,7 @@ ESP32:串口1:TX:7
 						RX:6
 */
 /*个人配置*/
-#define WIFI_SSID "iQOO Neo5"
+#define WIFI_SSID "iQOO Neo"
 #define WIFI_PASSWORD "88888888"
 
 #define MQTT_SERVER "mqtts.heclouds.com"
@@ -26,40 +29,80 @@ ESP32:串口1:TX:7
 #define TOPIC_POST "$sys/" PRODUCT_ID "/" DEVICE_NAME "/thing/property/post"
 #define TOPIC_SET_RELAY "$sys/" PRODUCT_ID "/" DEVICE_NAME "/thing/property/set_reply"
 
+#define ESP32_REPLY_RETRY_MS 500U
+#define ESP32_REPLY_MAX_RETRY 3U
+
+volatile uint8_t esp32_rx_pending = 0;
+
+static char pending_reply_cmd[256] = {0};
+static uint8_t pending_reply_valid = 0;
+static uint8_t pending_reply_try_count = 0;
+static uint32_t pending_reply_last_send = 0;
+
+static void queue_set_reply(const char *msg_id)
+{
+  if (msg_id == NULL || msg_id[0] == '\0') {
+    return;
+  }
+
+  snprintf(pending_reply_cmd, sizeof(pending_reply_cmd),
+           "AT+MQTTPUB=0,\"%s\",\"{\\\"id\\\":\\\"%s\\\"\\,\\\"code\\\":200\\,\\\"msg\\\":\\\"success\\\"}\",0,0\r\n",
+           TOPIC_SET_RELAY, msg_id);
+  pending_reply_valid = 1;
+  pending_reply_try_count = 0;
+  pending_reply_last_send = 0;
+}
+
+static void send_pending_reply(void)
+{
+  if (!pending_reply_valid) {
+    return;
+  }
+
+  uint32_t now = HAL_GetTick();
+  if (now - pending_reply_last_send < ESP32_REPLY_RETRY_MS) {
+    return;
+  }
+
+  uart_printf(&huart2, "%s", pending_reply_cmd);
+  pending_reply_last_send = now;
+  pending_reply_try_count++;
+
+  if (pending_reply_try_count >= ESP32_REPLY_MAX_RETRY) {
+    pending_reply_valid = 0;
+  }
+}
+
 /**
   * @brief  ESP32 数据发送任务 - 向 OneNET 上报传感器数据
   *         通过 MQTT 协议将测试数据和烟雾传感器数据发布到云端
   */
 void esp32_run_send(void) {
 
-  /* 测试用递增计数器 */
+  send_pending_reply();
+
   static uint32_t test_int = 0;
-  /* 命令缓冲区 */
-  static char cmd_buf[512]={0};
+  static char cmd_buf[512] = {0};
 
-    /* 计数器自增，用于测试数据上传 */
-    test_int++;
+  test_int++;
+	
+  build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 3, "test_int", 'i', test_int,
+                   "PM25", 'i', PM25_get_adc(), "light_level", 'f',
+                   bh1750_get_lux(), "temp", 'f', DHT11_get_temp(), "humi",
+                   'f', DHT11_get_humi());
+  uart_printf(&huart2, cmd_buf);
+  memset(cmd_buf, 0, sizeof(cmd_buf));
 
-    /* 构建并发送测试数据（整型）到 OneNET 平台 */
-    /* 命令格式示例：
-    AT+MQTTPUB=0,"$sys/zs8Fz7juvp/one_test/thing/property/post","{\"id\":\"123\"\,\"version\":\"1.0\"\,\"params\":{\"test_int\":{\"value\":25}\,\"test_float\":{\"value\":2.50}\,\"test_str\":{\"value\":\"abc\"}}}",0,0
-    */
-    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 3,"test_int", 'i', test_int,"PM25",'i',PM25_get_adc(),"light_level",'f',bh1750_get_lux());
+  build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 2, "temp", 'f',
+                   DHT11_get_temp(), "humi", 'f', DHT11_get_humi());
+  uart_printf(&huart2, cmd_buf);
+  memset(cmd_buf, 0, sizeof(cmd_buf));
+
+  if (smoke_is_ready()) {
+    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 2, "smoke_adc", 'i',
+                     smoke_get_adc(), "smoke_alarm", 'i', smoke_is_alarmed());
     uart_printf(&huart2, cmd_buf);
-    //uart_printf(&huart1, cmd_buf);
-	  /* 数据发送完成提示（调试用，已注释）*/
-	  //uart_printf(&huart1,"\r\n[test]post success\r\n");
-		
-		memset(cmd_buf, 0, sizeof(cmd_buf));
-		HAL_Delay(50);
-    /* 上传烟雾传感器 ADC 值和报警状态到云端 */
-  if (smoke_is_ready())
-  {build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 2, "smoke_adc",'i', smoke_get_adc(), "smoke_alarm", 'i',smoke_is_alarmed());
-    uart_printf(&huart2, cmd_buf);
-
-    //uart_printf(&huart1, "\r\n[smoke] post success\r\n");
   }
-    
 }
 
 /**
@@ -67,119 +110,26 @@ void esp32_run_send(void) {
   *         解析 MQTT 订阅消息，支持属性上报响应和设备属性设置
   */
 void esp32_run_recv(void) {
-   /* 无数据则直接返回 */
-   if (uart2_rx_len == 0)
-     return;
+  if (uart2_rx_len == 0)
+    return;
 
-  /* 查找 +MQTTSUBRECV 订阅消息标识 */
   char *subrecv_start = strstr(uart2_rx_buf, "+MQTTSUBRECV:");
-  if (subrecv_start == NULL) {
-    /* 可能是 AT 指令的 OK 响应残留，清理缓冲区 */
-    if (strstr(uart2_rx_buf, "OK\r\n") != NULL) {
+  if (subrecv_start != NULL) {
+    if (strstr(subrecv_start, "}\r\n") != NULL) {
+      MQTT_Handle(subrecv_start);
       memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
       uart2_rx_len = 0;
     }
+    esp32_rx_pending = 0;
     return;
   }
 
-  /* 检查是否收到完整的 JSON 帧（以 "}\r\n" 结尾）*/
-  if (strstr(subrecv_start, "}\r\n") == NULL) {
-    return; /* 数据尚未收完，等待下次接收 */
+  if (strstr(uart2_rx_buf, "OK\r\n") != NULL || strstr(uart2_rx_buf, "ERROR\r\n") != NULL) {
+    memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
+    uart2_rx_len = 0;
   }
 
-  /* 提取主题（topic）和 JSON 负载 */
-  static char topic[128] = {0};
-  static char json_buf[512] = {0};
-
-  extract_topic(subrecv_start, topic, sizeof(topic));
-  extract_json(subrecv_start, json_buf, sizeof(json_buf));
-
-  /* 调试打印（已注释，需要时可启用）*/
- // uart_printf(&huart1, "[RECV] topic=%s\r\n", topic);
- // uart_printf(&huart1, "[RECV] json=%s\r\n", json_buf);
-
-  /* 根据主题判断消息类型 */
-  MqttMsgType_t msg_type = get_msg_type(topic);
-
-  switch (msg_type) {
-
-  /* ========== 属性上报响应（post/reply）========== */
-  case MSG_POST_REPLY: {
-    int code = 0;
-    uint8_t found[1] = {0};
-
-    /* 解析返回码 */
-    parse_onenet_params(json_buf, 1, found, "code", 'i', &code);
-
-    if (found[0] && code == 200) {
-      uart_printf(&huart1, "\r\n[MSG] up success(code=%d)\r\n", code);
-    } else {
-      uart_printf(&huart1, "\r\n[MSG] up false (code=%d)\r\n", code);
-    }
-    break;
-  }
-
-  /* ========== 云端下发的属性设置（property/set）========== */
-  case MSG_PROPERTY_SET: {
-    int led_on = 0;        /* LED开关 */
-    int brightness = 0;    /* LED亮度 */
-    int fan =0;            /* 风扇控制*/
-
-    /* 标记每个参数是否被下发 */
-    uint8_t found[3] = {0};
-
-    /* 批量解析云台下发的参数 */
-    uint8_t n = parse_onenet_params(
-        json_buf, 3, found, "LED", 'b', &led_on,
-        "led_brightness", 'i', &brightness,"fan",'i',&fan);
-
-    uart_printf(&huart1, "[PARSE] parse %d param\r\n", n);
-
-    /* 逐一处理已下发的参数 */
-    if (found[0]) { /* LED控制(测试用) */
-      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,led_on ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      uart_printf(&huart1, "[CTRL] LED %s\r\n", led_on ? "OFF" : "ON");
-    }
-
-    if (found[1]) { /* LED灯带亮度调节 */
-      led_set(brightness,brightness);
-      uart_printf(&huart1, "[CTRL] light_level=%d\r\n", brightness);
-    }
-    
-    if(found[2]){
-      fan_set(fan);
-       uart_printf(&huart1, "[CTRL] fan_level=%d\r\n", fan);     
-    }
-
-    /* 向云端回复设置成功响应 */
-    char msg_id[16] = {0};
-    if (json_get_msg_id(json_buf, msg_id, sizeof(msg_id))) {
-      uart_printf(&huart2,
-                  "AT+MQTTPUB=0,\"%s\","
-                  "\"{\\\"id\\\":\\\"%s\\\""
-                  "\\,\\\"code\\\":200"
-                  "\\,\\\"msg\\\":\\\"success\\\"}\",0,0\r\n",
-                  TOPIC_SET_RELAY, msg_id);
-    }
-    break;
-  }
-
-  /* ========== 属性设置响应（set_reply）========== */
-  case MSG_SET_REPLY: {
-    uart_printf(&huart1, "[MSG]cmd setted\r\n");
-    break;
-  }
-
-  /* ========== 未知消息类型 ========== */
-  default: {
-    uart_printf(&huart1, "[MSG] don't know\r\n");
-    break;
-  }
-  }
-
-  /* 处理完成后清理接收缓冲区 */
-  memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
-  uart2_rx_len = 0;
+  esp32_rx_pending = 0;
 }
 /**
   * @brief  ESP32 初始化 - 连接 WiFi 并完成 MQTT 服务器配置
@@ -188,30 +138,23 @@ void esp32_run_recv(void) {
   */
 void esp32_init(void) {
   static char cmd_buf[512];
-  /* 开启 AT 指令回显 */
+
   send_cmd_wait_resp_it(&huart2, "ATE1\r\n", "OK", 2000, 3);
-  // send_cmd_wait_resp_it(&huart2, "ATE0\r\n", "OK", 2000, 3); /* 关闭回显（备选）*/
-  /* 复位 ESP32 模块 */
   uart_printf(&huart2, "AT+RST\r\n");
   HAL_Delay(2000);
-  /* 设置 WiFi 模式为 STA（客户端模式）*/
   send_cmd_wait_resp_it(&huart2, "AT+CWMODE=1\r\n", "OK", 2000, 3);
-  /* 连接指定的 WiFi 热点 */
   sprintf(cmd_buf, "AT+CWJAP=\"%s\",\"%s\"\r\n", WIFI_SSID, WIFI_PASSWORD);
   send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 10000, 3);
-  /* 配置 MQTT 用户信息（设备名、产品ID、令牌）*/
   sprintf(cmd_buf, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
           DEVICE_NAME, PRODUCT_ID, MQTT_TOKEN);
   send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 8000, 3);
-  /* 连接到 OneNET MQTT 服务器 */
   sprintf(cmd_buf, "AT+MQTTCONN=0,\"%s\",%d,1\r\n", MQTT_SERVER, MQTT_PORT);
   send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 8000, 3);
-  /* 订阅属性上报响应主题（获取云端确认）*/
   sprintf(cmd_buf, "AT+MQTTSUB=0,\"%s\",0\r\n", TOPIC_POST_RELAY);
   send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 5000, 3);
-  /* 订阅属性设置主题（接收云端下发的控制指令）*/
   sprintf(cmd_buf, "AT+MQTTSUB=0,\"%s\",0\r\n", TOPIC_SET);
   send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 5000, 3);
+  send_cmd_wait_resp_it(&huart2, "AT+CIPSNTPCFG=1,8,\"ntp1.aliyun.com\"\r\n", "OK", 2000, 3);
 }
 /**
   * @brief  发送 AT 指令并等待期望响应（带超时和重试机制，阻塞式）
@@ -315,5 +258,130 @@ void build_onenet_cmd(char *outbuf, const char *topic, const char *msg_id,
 }
 
 
+void MQTT_Handle(char *subrecv_start)
+{
+  /* 检查是否收到完整的 JSON 帧（以 "}\r\n" 结尾）*/
+  if (strstr(subrecv_start, "}\r\n") == NULL) {
+    return; /* 数据尚未收完，等待下次接收 */
+  }
+
+  /* 提取主题（topic）和 JSON 负载 */
+  static char topic[128] = {0};
+  static char json_buf[512] = {0};
+
+  extract_topic(subrecv_start, topic, sizeof(topic));
+  extract_json(subrecv_start, json_buf, sizeof(json_buf));
+
+  /* 调试打印（已注释，需要时可启用）*/
+ // uart_printf(&huart1, "[RECV] topic=%s\r\n", topic);
+ // uart_printf(&huart1, "[RECV] json=%s\r\n", json_buf);
+
+  /* 根据主题判断消息类型 */
+  MqttMsgType_t msg_type = get_msg_type(topic);
+
+  switch (msg_type) {
+
+  /* ========== 属性上报响应（post/reply）========== */
+  case MSG_POST_REPLY: {
+    int code = 0;
+    uint8_t found[1] = {0};
+
+    /* 解析返回码 */
+    parse_onenet_params(json_buf, 1, found, "code", 'i', &code);
+
+    if (found[0] && code == 200) {
+      uart_printf(&huart1, "\r\n[MSG] up success(code=%d)\r\n", code);
+    } else {
+      uart_printf(&huart1, "\r\n[MSG] up false (code=%d)\r\n", code);
+    }
+    break;
+  }
+
+  /* ========== 云端下发的属性设置（property/set）========== */
+  case MSG_PROPERTY_SET: {
+    int led_on = 0;        /* LED开关 */
+    int brightness = 0;    /* LED亮度 */
+    int fan =0;            /* 风扇控制*/
+
+    /* 标记每个参数是否被下发 */
+    uint8_t found[3] = {0};
+
+    /* 批量解析云台下发的参数 */
+    uint8_t n = parse_onenet_params(
+        json_buf, 3, found, "LED", 'b', &led_on,
+        "led_brightness", 'i', &brightness,"fan",'i',&fan);
+
+    uart_printf(&huart1, "[PARSE] parse %d param\r\n", n);
+
+    /* 逐一处理已下发的参数 */
+    if (found[0]) { /* LED控制(测试用) */
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,led_on ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      uart_printf(&huart1, "[CTRL] LED %s\r\n", led_on ? "OFF" : "ON");
+    }
+    
+    if (found[1]) { /* LED灯带亮度调节 */
+      
+      uart_printf(&huart1, "[CTRL] light_level=%d\r\n", brightness);
+    }
+    
+    if(found[2]){
+      fan_set(fan);
+       uart_printf(&huart1, "[CTRL] fan_level=%d\r\n", fan);     
+    }
+
+    /* 向云端回复设置成功响应 */
+    char msg_id[16] = {0};
+    if (json_get_msg_id(json_buf, msg_id, sizeof(msg_id))) {
+      queue_set_reply(msg_id);
+    }
+    break;
+  }
+
+  /* ========== 属性设置响应（set_reply）========== */
+  case MSG_SET_REPLY: {
+    uart_printf(&huart1, "[MSG]cmd setted\r\n");
+    break;
+  }
+
+  /* ========== 未知消息类型 ========== */
+  default: {
+    uart_printf(&huart1, "[MSG] don't know\r\n");
+    break;
+  }
+  }
+
+}
+static char ntp_time_str[64] = {0};          // 存放时间字符串（64字节足够）
+volatile static uint8_t ntp_updated = 0;    // 时间更新标志
+void TIME_Handle(char *timerecv_start)
+{
+  // 跳过前缀 "+CIPSNTPTIME:"
+    char *p = timerecv_start + strlen("+CIPSNTPTIME:");
+
+    // 去除开头的空格（如果有）
+    while (*p == ' ') p++;
+
+    // 查找字符串结尾（遇到 \r 或 \n 停止）
+    char *end = strstr(p, "\r\n");
+    if (end == NULL) {
+        // 也可能是单独的 \r 或 \n
+        end = strchr(p, '\r');
+        if (end == NULL) end = strchr(p, '\n');
+    }
+    if (end) {
+        *end = '\0';  // 截断字符串
+    }
+
+    // 复制到全局变量
+    strncpy(ntp_time_str, p, sizeof(ntp_time_str) - 1);
+    ntp_time_str[sizeof(ntp_time_str) - 1] = '\0';
+
+    // 标记更新
+    ntp_updated = 1;
+
+    // 调试打印（可选）
+    uart_printf(&huart1, "[NTP] Time: %s\r\n", ntp_time_str);
+
+}
 
 

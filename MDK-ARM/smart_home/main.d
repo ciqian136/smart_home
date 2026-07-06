@@ -51,11 +51,9 @@ smart_home\main.o: ../APP/my_uart.h
 smart_home\main.o: ../APP/smoke.h
 smart_home\main.o: ../APP/my_adc.h
 smart_home\main.o: ../APP/PM25.h
-smart_home\main.o: ../APP/led.h
 smart_home\main.o: ../APP/BH1750.h
-smart_home\main.o: ../APP/light_control.h
 smart_home\main.o: ../APP/voice.h
 smart_home\main.o: ../APP/lcd.h
 smart_home\main.o: ../APP/DHT11.h
-smart_home\main.o: ../APP/dht11.h
 smart_home\main.o: ../APP/fan.h
+smart_home\main.o: ../APP/ws2812.h

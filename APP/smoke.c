@@ -1,10 +1,4 @@
-/* 注意引脚连接：
-   AO -- ADC1_CHANNEL_1 -- PA1  (烟雾传感器模拟输出)
-   D0 -- PC2                   (烟雾传感器数字报警输出)
-   ADC滑动平均窗口大小 = 5
-   软件报警阈值 = 1000
-   预热时间 = 20秒
-*/
+/* 烟雾传感器配置 */
 #include "smoke.h"
 #include "my_adc.h"
 #include "stm32f1xx_hal_adc.h"
@@ -12,30 +6,21 @@
 #include <stdint.h>
 #include <stdlib.h> 
 
-/* 引用外部变量 */
 extern ADC_HandleTypeDef hadc1;
-extern volatile uint16_t adc_val[2];  /* [0]=烟雾传感器, [1]=PM2.5 */
-
-/* 引脚和参数宏定义 */
+extern volatile uint16_t adc_val[2];
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
 #define DO_GPIO_PIN GPIO_PIN_2       /* 数字报警输出引脚号 */
 #define ALARM_THRESHOLD 1000         /* 软件报警阈值 */
 #define PREHEAT_TIME 20              /* 传感器预热时间（秒）*/
 #define WINDOW_SIZE 5                /* 滑动平均滤波窗口大小 */
 
-/* 所有数据均通过堆内存指针访问，避免栈空间占用 */
-static uint16_t *buf = NULL;        /* 滑动窗口缓冲区 */
+static uint16_t *buf = NULL;
 static uint8_t *buf_index = NULL;   /* 当前窗口索引 */
 static uint16_t *g_adc = NULL;      /* 滤波后的ADC平均值 */
 static uint8_t *g_alarm = NULL;     /* 报警状态（0=正常, 1=报警）*/
 static uint8_t *g_ready = NULL;     /* 传感器预热完成标志 */
 static uint32_t *g_start = NULL;    /* 初始化时刻时间戳（ms）*/
 
-/**
-  * @brief  烟雾传感器初始化
-  *         动态分配所有需要的内存，设置预热计时器
-  *         传感器需要预热 PREHEAT_TIME 秒后才能稳定工作
-  */
 void smoke_init(void) {
   /* 动态分配所有需要的内存 */
   buf = (uint16_t *)malloc(WINDOW_SIZE * sizeof(uint16_t));
@@ -65,10 +50,6 @@ void smoke_init(void) {
   uart_printf(&huart1, "[SMOKE] init (heap), wait %ds\r\n", PREHEAT_TIME);
 }
 
-/**
-  * @brief  烟雾传感器反初始化 - 释放所有动态分配的内存
-  *         每次 free 后立即将指针置 NULL 防止野指针
-  */
 void smoke_deinit(void) {
   if (buf) {
     free(buf);
@@ -98,11 +79,6 @@ void smoke_deinit(void) {
   uart_printf(&huart1, "[SMOKE] deinit, memory released\r\n");
 }
 
-/**
-  * @brief  烟雾传感器数据处理函数（周期性调用）
-  *         功能：预热等待 → 读取ADC值 → 滑动平均滤波 →
-  *         数字IO + 阈值双重报警判断 → 调试打印
-  */
 void smoke_proc(void) {
 
   /* 预热阶段：等待传感器稳定 */
@@ -139,8 +115,7 @@ void smoke_proc(void) {
   if (*g_adc > ALARM_THRESHOLD)
     *g_alarm = 1;
 
-  /* 调试输出：显示最近5次原始值和滤波后的平均值及报警状态 */
- //uart_printf(&huart1,"[SMOKE] buf[0]=%d [1]=%d [2]=%d [3]=%d [4]=%d avg=%d do=%s\r\n",buf[0], buf[1], buf[2],buf[3], bu[4], *g_adc,*g_alarm ? "ALARM" : "OK");
+ //uart_printf(&huart1,"[SMOKE] avg=%d alarm=%d\r\n", *g_adc, *g_alarm);
 }
 
 /**

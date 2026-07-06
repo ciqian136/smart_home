@@ -1,9 +1,4 @@
-/*
-BH1750 GY-302 光照传感器
-I2C1: SDA--PB7, SCL--PB6
-连续高分辨率模式，分辨率 1 lux，测量时间 120ms
-滑动平均窗口大小 = 5
-*/
+/* BH1750 相关配置 */
 
 #include "BH1750.h"
 #include "my_uart.h"
@@ -24,9 +19,6 @@ static uint8_t *buf_index = NULL;    /* 当前窗口索引 */
 static float *g_lux = NULL;          /* 滤波后的光照平均值 */
 static float *g_raw_lux = NULL;      /* 原始光照值 */
 
-/**
-  * @brief  I2C 软件复位
-  */
 static void I2C_Reset(I2C_HandleTypeDef *hi2c)
 {
     hi2c->Instance->CR1 |= I2C_CR1_SWRST;
@@ -37,9 +29,6 @@ static void I2C_Reset(I2C_HandleTypeDef *hi2c)
     HAL_I2C_Init(hi2c);
 }
 
-/**
-  * @brief  向 BH1750 发送命令
-  */
 static HAL_StatusTypeDef BH1750_SendCommand(I2C_HandleTypeDef *hi2c, uint8_t cmd)
 {
     HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(hi2c, BH1750_ADDR, &cmd, 1, 100);
@@ -49,10 +38,6 @@ static HAL_StatusTypeDef BH1750_SendCommand(I2C_HandleTypeDef *hi2c, uint8_t cmd
     return ret;
 }
 
-/**
-  * @brief  读取 BH1750 原始光照值（lux）
-  * @return 光照值（lux），读取失败返回 -1.0f
-  */
 static float bh1750_read_raw(void)
 {
     uint8_t buf[2] = {0};
@@ -69,10 +54,6 @@ static float bh1750_read_raw(void)
     return raw / 1.20f;
 }
 
-/**
-  * @brief  光照传感器初始化
-  *         动态分配内存、配置传感器为连续高分辨率模式
-  */
 void bh1750_init(void)
 {
     /* 动态分配所有需要的内存 */
@@ -105,9 +86,6 @@ void bh1750_init(void)
     uart_printf(&huart1, "[BH1750] init, wait 180ms\r\n");
 }
 
-/**
-  * @brief  光照传感器反初始化 - 释放所有动态分配的内存
-  */
 void bh1750_deinit(void)
 {
     if (buf)       { free(buf);       buf = NULL;       }
@@ -118,10 +96,6 @@ void bh1750_deinit(void)
     uart_printf(&huart1, "[BH1750] deinit, memory released\r\n");
 }
 
-/**
-  * @brief  光照传感器数据处理函数（周期性调用）
-  *         功能：读取原始光照值 → 滑动平均滤波 → 调试打印
-  */
 void bh1750_proc(void)
 {
     /* 读取原始光照值 */
@@ -147,8 +121,7 @@ void bh1750_proc(void)
     }
     *g_lux = sum / WINDOW_SIZE;
 
-    /* 调试输出：显示最近5次原始值和滤波后的平均值 */
-    //uart_printf(&huart1,"[BH1750] raw=%.2f buf[0]=%.2f [1]=%.2f [2]=%.2f [3]=%.2f [4]=%.2f avg=%.2f\r\n",val,buf[0], buf[1], buf[2], buf[3], buf[4], *g_lux);
+    //uart_printf(&huart1,"[BH1750] raw=%.2f avg=%.2f\r\n", val, *g_lux);
 }
 
 /**

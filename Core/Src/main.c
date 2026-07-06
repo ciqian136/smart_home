@@ -101,19 +101,24 @@ int main(void)
   MX_UART4_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	/*DWT初始化用于微秒延时*/
+  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+  DWT->CYCCNT = 0;
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	/*基本原件初始化*/
 	schedule_init();
   my_uart_init();
-  //dht11_init();
-  // my_adc_init();
-  // led_init();
-	// smoke_init();
-  // PM25_init();
-	// bh1750_init();
-  // esp32_init();
-  
+	my_adc_init();
+	uart_printf(&huart1,"[stm32]start");
+	/*各模块初始化*/
+	 ws2812_set_all(0, 0, 0);
+	 smoke_init();
+   DHT11_init();
+   PM25_init();
+   fan_init();
+	 bh1750_init();
+   //esp32_init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */

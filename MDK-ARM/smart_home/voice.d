@@ -51,11 +51,10 @@ smart_home\voice.o: ..\APP\my_uart.h
 smart_home\voice.o: ..\APP\smoke.h
 smart_home\voice.o: ..\APP\my_adc.h
 smart_home\voice.o: ..\APP\PM25.h
-smart_home\voice.o: ..\APP\led.h
 smart_home\voice.o: ..\APP\BH1750.h
-smart_home\voice.o: ..\APP\light_control.h
 smart_home\voice.o: ..\APP\voice.h
 smart_home\voice.o: ..\APP\lcd.h
 smart_home\voice.o: ..\APP\DHT11.h
-smart_home\voice.o: ..\APP\dht11.h
 smart_home\voice.o: ..\APP\fan.h
+smart_home\voice.o: ..\APP\ws2812.h
+smart_home\voice.o: ../Core/Inc/tim.h
