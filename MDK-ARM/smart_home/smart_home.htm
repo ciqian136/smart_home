@@ -3,9 +3,9 @@
 <title>Static Call Graph - [smart_home\smart_home.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image smart_home\smart_home.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Jul 12 15:13:33 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Jul 12 15:57:29 2026
 <BR><P>
-<H3>Maximum Stack Usage =       1040 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =       1104 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 voice_run_send &rArr; voice_parse &rArr; voice_plays_send &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 <P>
@@ -2069,6 +2069,7 @@ Global Symbols
 <LI><a href="#[13c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
+<LI><a href="#[142]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send
 </UL>
 
@@ -2126,12 +2127,13 @@ Global Symbols
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_proc
 </UL>
 
-<P><STRONG><a name="[142]"></a>voice_parse</STRONG> (Thumb, 2840 bytes, Stack size 384 bytes, voice.o(i.voice_parse))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1032<LI>Call Chain = voice_parse &rArr; voice_plays_send &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
+<P><STRONG><a name="[142]"></a>voice_parse</STRONG> (Thumb, 3126 bytes, Stack size 448 bytes, voice.o(i.voice_parse))
+<BR><BR>[Stack]<UL><LI>Max Depth = 1096<LI>Call Chain = voice_parse &rArr; voice_plays_send &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 <LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_set_all
 <LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
+<LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 <LI><a href="#[e5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_set
 <LI><a href="#[125]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_get_lux
 <LI><a href="#[122]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2d
@@ -2160,7 +2162,7 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[57]"></a>voice_run_send</STRONG> (Thumb, 18 bytes, Stack size 8 bytes, voice.o(i.voice_run_send))
-<BR><BR>[Stack]<UL><LI>Max Depth = 1040<LI>Call Chain = voice_run_send &rArr; voice_parse &rArr; voice_plays_send &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
+<BR><BR>[Stack]<UL><LI>Max Depth = 1104<LI>Call Chain = voice_run_send &rArr; voice_parse &rArr; voice_plays_send &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[142]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 </UL>

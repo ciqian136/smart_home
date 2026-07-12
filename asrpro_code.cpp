@@ -15,7 +15,7 @@ void ASR_CODE();
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
 //  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
 // ============================================================
-#define RX_BUF_SIZE  128   /* ALL 查询最长 ~71 字节，128 留足余量 */
+#define RX_BUF_SIZE  128   /* ALL 查询（含烟雾）最长 ~85 字节，128 留足余量 */
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
@@ -82,7 +82,7 @@ static void app_play(void *arg)
 
 
 void ASR_CODE(){
-  // 唤醒超时 30 秒（ALL 查询播报需 10~20 秒，留足余量）
+  // 唤醒超时 30 秒（ALL 查询播报含烟雾约 10~25 秒，留足余量）
   // 非 ALL 查询时恢复短超时
   if (snid == 28)
       set_state_enter_wakeup(30000);
@@ -90,7 +90,7 @@ void ASR_CODE(){
       set_state_enter_wakeup(10000);
 
   switch (snid) {
-    // ========== 灯带1控制（新统一格式: LIGHT:1:...）==========
+    // ========== 池塘灯控制（LIGHT:1）==========
     case 1:   Serial1.println("LIGHT:1:ON");       break;
     case 2:   Serial1.println("LIGHT:1:OFF");      break;
     case 6:   Serial1.println("LIGHT:1:COLOR:WARM");   break;
@@ -98,9 +98,6 @@ void ASR_CODE(){
     case 8:   Serial1.println("LIGHT:1:COLOR:RED");    break;
     case 9:   Serial1.println("LIGHT:1:COLOR:GREEN");  break;
     case 10:  Serial1.println("LIGHT:1:COLOR:BLUE");   break;
-    case 11:  Serial1.println("LIGHT:1:MODE:READ");    break;
-    case 12:  Serial1.println("LIGHT:1:MODE:SLEEP");   break;
-    case 13:  Serial1.println("LIGHT:1:MODE:NIGHT");   break;
 
     // ========== 风扇控制 ==========
     case 14:  Serial1.println("FAN:ON");         break;
@@ -116,7 +113,7 @@ void ASR_CODE(){
     case 22:  Serial1.println("LED:ON");         break;
     case 23:  Serial1.println("LED:OFF");        break;
 
-    // ========== 灯带2控制（新统一格式: LIGHT:2:...）==========
+    // ========== 入户灯控制（LIGHT:2）==========
     case 29:  Serial1.println("LIGHT:2:ON");          break;
     case 30:  Serial1.println("LIGHT:2:OFF");         break;
     case 31:  Serial1.println("LIGHT:2:COLOR:WARM");  break;
@@ -124,9 +121,18 @@ void ASR_CODE(){
     case 33:  Serial1.println("LIGHT:2:COLOR:RED");   break;
     case 34:  Serial1.println("LIGHT:2:COLOR:GREEN"); break;
     case 35:  Serial1.println("LIGHT:2:COLOR:BLUE");  break;
-    case 36:  Serial1.println("LIGHT:2:MODE:READ");   break;
-    case 37:  Serial1.println("LIGHT:2:MODE:SLEEP");  break;
-    case 38:  Serial1.println("LIGHT:2:MODE:NIGHT");  break;
+
+    // ========== 室内灯控制（LIGHT:3，含阅读/睡眠/夜灯模式）==========
+    case 39:  Serial1.println("LIGHT:3:ON");          break;
+    case 40:  Serial1.println("LIGHT:3:OFF");         break;
+    case 41:  Serial1.println("LIGHT:3:COLOR:WARM");  break;
+    case 42:  Serial1.println("LIGHT:3:COLOR:WHITE"); break;
+    case 43:  Serial1.println("LIGHT:3:COLOR:RED");   break;
+    case 44:  Serial1.println("LIGHT:3:COLOR:GREEN"); break;
+    case 45:  Serial1.println("LIGHT:3:COLOR:BLUE");  break;
+    case 46:  Serial1.println("LIGHT:3:MODE:READ");   break;
+    case 47:  Serial1.println("LIGHT:3:MODE:SLEEP");  break;
+    case 48:  Serial1.println("LIGHT:3:MODE:NIGHT");  break;
 
     // ========== 环境查询（发送指令后立即返回，播报由 app_play 任务异步完成）==========
     case 24:  Serial1.println("QUERY:TEMP");   break;
@@ -134,13 +140,14 @@ void ASR_CODE(){
     case 26:  Serial1.println("QUERY:PM25");   break;
     case 27:  Serial1.println("QUERY:LIGHT");  break;
     case 28:  Serial1.println("QUERY:ALL");    break;
+    case 49:  Serial1.println("QUERY:SMOKE");  break;
 
     default: break;
   }
 }
 
 void hardware_init(){
-  play_queue = xQueueCreate(32, 4);  /* 队列深度 32，ALL 查询最多 ~22 个片段 */
+  play_queue = xQueueCreate(32, 4);  /* 队列深度 32，ALL 查询（含烟雾）最多 ~25 个片段 */
 
   // Serial1: GPIO2=TX, GPIO3=RX
   setPinFun(2, FORTH_FUNCTION);
@@ -165,30 +172,35 @@ void setup()
   // ========== 唤醒词 ==========
   //{ID:0,keyword:"唤醒词",ASR:"天问五幺",ASRTO:"我在"}
 
-  // ========== 灯带控制 ==========
-  //{ID:1,keyword:"命令词",ASR:"打开灯光",ASRTO:"好的，马上打开灯光"}
-  //{ID:2,keyword:"命令词",ASR:"关闭灯光",ASRTO:"好的，马上关闭灯光"}
+  // ========== 池塘灯控制 ==========
+  //{ID:1,keyword:"命令词",ASR:"打开池塘灯",ASRTO:"好的，马上打开池塘灯"}
+  //{ID:2,keyword:"命令词",ASR:"关闭池塘灯",ASRTO:"好的，马上关闭池塘灯"}
+  //{ID:6,keyword:"命令词",ASR:"池塘灯切换暖光模式",ASRTO:"好的，池塘灯已切换暖光"}
+  //{ID:7,keyword:"命令词",ASR:"池塘灯切换白光模式",ASRTO:"好的，池塘灯已切换白光"}
+  //{ID:8,keyword:"命令词",ASR:"池塘灯切换红光模式",ASRTO:"好的，池塘灯已切换红光"}
+  //{ID:9,keyword:"命令词",ASR:"池塘灯切换绿光模式",ASRTO:"好的，池塘灯已切换绿光"}
+  //{ID:10,keyword:"命令词",ASR:"池塘灯切换蓝光模式",ASRTO:"好的，池塘灯已切换蓝光"}
 
-  //{ID:6,keyword:"命令词",ASR:"暖光模式",ASRTO:"好的，已切换暖光"}
-  //{ID:7,keyword:"命令词",ASR:"白光模式",ASRTO:"好的，已切换白光"}
-  //{ID:8,keyword:"命令词",ASR:"红色灯光",ASRTO:"好的，已切换红色"}
-  //{ID:9,keyword:"命令词",ASR:"绿色灯光",ASRTO:"好的，已切换绿色"}
-  //{ID:10,keyword:"命令词",ASR:"蓝色灯光",ASRTO:"好的，已切换蓝色"}
-  //{ID:11,keyword:"命令词",ASR:"阅读模式",ASRTO:"好的，已切换阅读模式"}
-  //{ID:12,keyword:"命令词",ASR:"睡眠模式",ASRTO:"好的，晚安"}
-  //{ID:13,keyword:"命令词",ASR:"夜灯模式",ASRTO:"好的，已切换夜灯模式"}
+  // ========== 入户灯控制（192灯珠）==========
+  //{ID:29,keyword:"命令词",ASR:"打开入户灯",ASRTO:"好的，马上打开入户灯"}
+  //{ID:30,keyword:"命令词",ASR:"关闭入户灯",ASRTO:"好的，马上关闭入户灯"}
+  //{ID:31,keyword:"命令词",ASR:"入户灯切换暖光模式",ASRTO:"好的，入户灯已切换暖光"}
+  //{ID:32,keyword:"命令词",ASR:"入户灯切换白光模式",ASRTO:"好的，入户灯已切换白光"}
+  //{ID:33,keyword:"命令词",ASR:"入户灯切换红光模式",ASRTO:"好的，入户灯已切换红光"}
+  //{ID:34,keyword:"命令词",ASR:"入户灯切换绿光模式",ASRTO:"好的，入户灯已切换绿光"}
+  //{ID:35,keyword:"命令词",ASR:"入户灯切换蓝光模式",ASRTO:"好的，入户灯已切换蓝光"}
 
-  // ========== 灯带2控制（192灯珠）==========
-  //{ID:29,keyword:"命令词",ASR:"打开灯带二",ASRTO:"好的，马上打开灯带二"}
-  //{ID:30,keyword:"命令词",ASR:"关闭灯带二",ASRTO:"好的，马上关闭灯带二"}
-  //{ID:31,keyword:"命令词",ASR:"灯带二暖光",ASRTO:"好的，已切换灯带二暖光"}
-  //{ID:32,keyword:"命令词",ASR:"灯带二白光",ASRTO:"好的，已切换灯带二白光"}
-  //{ID:33,keyword:"命令词",ASR:"灯带二红色",ASRTO:"好的，已切换灯带二红色"}
-  //{ID:34,keyword:"命令词",ASR:"灯带二绿色",ASRTO:"好的，已切换灯带二绿色"}
-  //{ID:35,keyword:"命令词",ASR:"灯带二蓝色",ASRTO:"好的，已切换灯带二蓝色"}
-  //{ID:36,keyword:"命令词",ASR:"灯带二阅读模式",ASRTO:"好的，已切换灯带二阅读模式"}
-  //{ID:37,keyword:"命令词",ASR:"灯带二睡眠模式",ASRTO:"好的，晚安灯带二"}
-  //{ID:38,keyword:"命令词",ASR:"灯带二夜灯模式",ASRTO:"好的，已切换灯带二夜灯模式"}
+  // ========== 室内灯控制（192灯珠，含阅读/睡眠/夜灯模式）==========
+  //{ID:39,keyword:"命令词",ASR:"打开室内灯",ASRTO:"好的，马上打开室内灯"}
+  //{ID:40,keyword:"命令词",ASR:"关闭室内灯",ASRTO:"好的，马上关闭室内灯"}
+  //{ID:41,keyword:"命令词",ASR:"室内灯切换暖光模式",ASRTO:"好的，室内灯已切换暖光"}
+  //{ID:42,keyword:"命令词",ASR:"室内灯切换白光模式",ASRTO:"好的，室内灯已切换白光"}
+  //{ID:43,keyword:"命令词",ASR:"室内灯切换红光模式",ASRTO:"好的，室内灯已切换红光"}
+  //{ID:44,keyword:"命令词",ASR:"室内灯切换绿光模式",ASRTO:"好的，室内灯已切换绿光"}
+  //{ID:45,keyword:"命令词",ASR:"室内灯切换蓝光模式",ASRTO:"好的，室内灯已切换蓝光"}
+  //{ID:46,keyword:"命令词",ASR:"室内灯切换阅读模式",ASRTO:"好的，室内灯已切换阅读模式"}
+  //{ID:47,keyword:"命令词",ASR:"室内灯切换睡眠模式",ASRTO:"好的，室内灯已切换睡眠模式"}
+  //{ID:48,keyword:"命令词",ASR:"室内灯切换夜灯模式",ASRTO:"好的，室内灯已切换夜灯模式"}
 
   // ========== 风扇控制 ==========
   //{ID:14,keyword:"命令词",ASR:"打开风扇",ASRTO:"好的，已打开风扇"}
@@ -210,6 +222,7 @@ void setup()
   //{ID:26,keyword:"命令词",ASR:"空气质量",ASRTO:"正在查询空气质量"}
   //{ID:27,keyword:"命令词",ASR:"光照强度",ASRTO:"正在查询光照"}
   //{ID:28,keyword:"命令词",ASR:"全部环境信息",ASRTO:"正在查询环境信息"}
+  //{ID:49,keyword:"命令词",ASR:"烟雾浓度",ASRTO:"正在查询烟雾浓度"}
 
   // ====== 语音片段库（ID 100~122，prompt_play_by_cmd_id 调用）======
 
@@ -251,6 +264,9 @@ void setup()
   // --- 温度告警 (ID 123~124) ---
   //{ID:123,keyword:"命令词",ASR:"警告高温",ASRTO:"温度偏高"}
   //{ID:124,keyword:"命令词",ASR:"温度正常",ASRTO:"温度正常"}
+
+  // --- 烟雾 (ID 125) ---
+  //{ID:125,keyword:"命令词",ASR:"前缀烟雾",ASRTO:"烟雾浓度"}
 
   // 板载 LED
   setPinFun(4, FIRST_FUNCTION);

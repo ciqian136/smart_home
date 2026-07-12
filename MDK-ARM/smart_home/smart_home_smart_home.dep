@@ -1363,7 +1363,7 @@ I (../Core/Inc/tim.h)(0x6A5231B5)
 I (..\APP\ws2812_2.h)(0x6A4E12D0)
 I (..\APP\ws2812_3.h)(0x6A524E10)
 F (..\APP\BH1750.h)(0x6A3E2AEA)()
-F (..\APP\voice.c)(0x6A533E90)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\voice.o --omf_browse smart_home\voice.crf --depend smart_home\voice.d)
+F (..\APP\voice.c)(0x6A534567)(--c99 -c --cpu Cortex-M3 -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc -I ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32F1xx/Include -I ../Drivers/CMSIS/Include -I ../APP-IC:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include-D__UVISION_VERSION="536" -DSTM32F10X_HD -DUSE_HAL_DRIVER -DSTM32F103xE-o smart_home\voice.o --omf_browse smart_home\voice.crf --depend smart_home\voice.d)
 I (..\APP\voice.h)(0x6A4B7E3A)
 I (..\APP\headfile.h)(0x6A524E2E)
 I (E:\keil\ARM\ARMCC\include\stdio.h)(0x60252374)

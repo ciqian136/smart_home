@@ -44,6 +44,7 @@
 #define VID_NEG      122   /* 零下 */
 #define VID_TEMP_HIGH   123   /* 温度偏高 */
 #define VID_TEMP_NORMAL 124   /* 温度正常 */
+#define VID_PRE_SMOKE  125   /* 烟雾浓度 */
 
 /* ── 温度告警阈值 ── */
 #define TEMP_HIGH_THRESHOLD  30   /* 超过此值播报"温度偏高" */
@@ -393,15 +394,29 @@ void voice_parse(void)
             uart_printf(&huart1, "[QUERY] lux=%.0f => 语音拼接\r\n", bh1750_get_lux());
             lcd_send();
         }
+        /* --- QUERY:SMOKE --- */
+        else if (act != NULL && strcmp(act, "SMOKE") == 0) {
+            int v = (int)(smoke_get_ppm() + 0.5f);
+            if (v < 0) v = 0;
+
+            char seg[80];
+            int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_SMOKE);
+            off += voice_append_number_buf(seg + off, sizeof(seg) - off, v);
+            voice_plays_send("%s", seg);
+
+            uart_printf(&huart1, "[QUERY] smoke=%.1f ppm => 语音拼接\r\n", smoke_get_ppm());
+            lcd_send();
+        }
         /* --- QUERY:ALL --- */
         else if (act != NULL && strcmp(act, "ALL") == 0) {
             int tv = (int)(DHT11_get_temp() + 0.5f);
             int hv = (int)(DHT11_get_humi() + 0.5f);
             int pv = (int)(PM25_get_ugm3() + 0.5f);
             int lv = (int)(bh1750_get_lux() + 0.5f);
+            int sv = (int)(smoke_get_ppm() + 0.5f);
 
             /* 把全部环境信息拼成一条 PLAYS 指令 */
-            char seg[200];
+            char seg[256];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_TEMP);
             off += voice_append_number_buf(seg + off, sizeof(seg) - off, tv);
             off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_DEGREE);
@@ -414,10 +429,12 @@ void voice_parse(void)
             off += snprintf(seg + off, sizeof(seg) - off, ",%d,%d", VID_UGPM3, VID_PRE_LUX);
             off += voice_append_number_buf(seg + off, sizeof(seg) - off, lv);
             off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_LUX);
+            off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_PRE_SMOKE);
+            off += voice_append_number_buf(seg + off, sizeof(seg) - off, sv);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] all t=%d h=%d pm25=%d lux=%d%s\r\n",
-                        tv, hv, pv, lv,
+            uart_printf(&huart1, "[QUERY] all t=%d h=%d pm25=%d lux=%d smoke=%d%s\r\n",
+                        tv, hv, pv, lv, sv,
                         tv > TEMP_HIGH_THRESHOLD ? " [偏高]" : "");
             lcd_send();
         }
