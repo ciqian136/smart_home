@@ -26,6 +26,8 @@ static uint8_t cur_strip_id = 0;                /* 最近一次收到的 strip_i
 static uint8_t lcd_buf[128];
 static uint16_t lcd_buf_len = 0;
 
+static void send_end(void);  /* 前向声明 */
+
 static void parse_lcd_buf(void)
 {
     uint8_t *buf = lcd_buf;
@@ -115,6 +117,26 @@ static void parse_lcd_buf(void)
             }
         }
 
+        /* ---- 查询风扇状态: 55 AA 08 0D 0A (5 字节) ---- */
+        if (cmd == 0x08) {
+            if (idx + 5 > lcd_buf_len) break;
+            if (buf[idx+3] != 0x0D || buf[idx+4] != 0x0A) { idx++; continue; }
+
+            uint16_t speed = fan_get_speed();
+            uint8_t  is_on = fan_is_open();
+
+            uart_printf(&huart4, "h0.val=%d", speed); send_end();
+            uart_printf(&huart4, "n0.val=%d", speed); send_end();
+            uart_printf(&huart4, "b7.txt=\"%s\"",
+                        is_on ? "\xE5\xBC\x80" : "\xE5\x85\xB3"); send_end();
+            uart_printf(&huart4, "sys1=0"); send_end();  /* 解除风扇同步锁 */
+
+            uart_printf(&huart1, "[LCD] 查询风扇状态 speed=%d %s\r\n",
+                        speed, is_on ? "ON" : "OFF");
+            idx += 5;
+            continue;
+        }
+
         /* 未知命令，跳过 */
         idx++;
     }
@@ -183,6 +205,9 @@ void lcd_send_strip_state(uint8_t strip_id)
     uart_printf(&huart4, "b13.txt=\"%s\"",
                 is_on ? "\xE5\xBC\x80" : "\xE5\x85\xB3");
     send_end();
+
+    /* 解除 HMI 同步锁，允许滑块事件恢复发送 */
+    uart_printf(&huart4, "sys0=0"); send_end();
 }
 
 void lcd_send(void)
