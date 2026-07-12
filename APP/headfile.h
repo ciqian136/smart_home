@@ -30,6 +30,8 @@
 #include "DHT11.h"
 #include "fan.h"
 #include "ws2812.h"
+#include "ws2812_2.h"
+#include "ws2812_3.h"
 
 #endif
 

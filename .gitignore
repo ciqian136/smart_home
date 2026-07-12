@@ -1,3 +1,18 @@
 build
 mx.scratch
 !.settings
+
+# MDK-ARM build artifacts
+MDK-ARM/**/*.o
+MDK-ARM/**/*.crf
+MDK-ARM/**/*.d
+MDK-ARM/**/*.axf
+MDK-ARM/**/*.hex
+MDK-ARM/**/*.htm
+MDK-ARM/**/*.lnp
+MDK-ARM/**/*.map
+MDK-ARM/**/*.build_log.htm
+MDK-ARM/**/*.dep
+
+# MDK user-specific
+MDK-ARM/**/*.uvguix.*

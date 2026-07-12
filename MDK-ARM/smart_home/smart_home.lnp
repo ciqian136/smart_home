@@ -40,6 +40,8 @@
 "smart_home\dht11.o"
 "smart_home\fan.o"
 "smart_home\ws2812.o"
+"smart_home\ws2812_2.o"
+"smart_home\ws2812_3.o"
 --library_type=microlib --strict --scatter "smart_home\smart_home.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

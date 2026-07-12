@@ -24,14 +24,16 @@ void test_proc(void)
 /* 调度任务表 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},       
-    //{esp32_run_send, 1000, 0},  
+    {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
+    {esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
     {smoke_proc, 300, 0},       
     {PM25_proc, 300, 0},        
     {bh1750_proc,300,0},        
-		{voice_run_send,10,0},
+	{voice_run_send,10,0},
     {DHT11_proc,300,0},
     {lcd_recv,10,0},
     {lcd_send,1000,0},
+    {esp32_check_online, 500, 0}, /* 每 500ms 检测在线状态（内部含 30s ping/10s WiFi）*/
 };
 
 void schedule_init(void)
@@ -45,6 +47,12 @@ void schedule_run(void)
         esp32_rx_pending = 0;
         esp32_run_recv();
     }
+
+    /* AT 指令超时检测：无条件每轮执行，防止 ESP32 死机导致 busy 永久卡死 */
+    esp32_check_cmd_timeout();
+
+    /* 发送 set_reply（每轮都尝试，不依赖 100ms 定时任务，确保 6s 内响应）*/
+    esp32_flush_reply();
 
     uint8_t i = 0;
     for (i = 0; i < task_num; i++)

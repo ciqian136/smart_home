@@ -86,4 +86,32 @@ void PM25_proc(void)
 
 uint16_t PM25_get_adc(void) { return g_adc ? *g_adc : 0; }
 
+/**
+  * @brief  获取 PM2.5 浓度（µg/m³）
+  * @note   基于 Sharp GP2Y1014AU0F 传感器特性曲线
+  *         V_out(volts) = adc * 3.3 / 4096  (12-bit ADC, 3.3V 参考电压)
+  *         灵敏度: 0.5V / 0.1mg/m³ → 5mV / µg/m³
+  *         清洁空气偏置电压: ~0.6V (600mV)
+  *         公式: µg/m³ = (V_mV - 600) / 5.0
+  * @return PM2.5 浓度（µg/m³），无效时返回 0
+  */
+float PM25_get_ugm3(void)
+{
+    if (!g_adc) return 0.0f;
+
+    uint16_t adc = *g_adc;
+    if (adc == 0) return 0.0f;
+
+    /* ADC → 电压(mV):  12-bit, Vref = 3.3V */
+    float v_mv = adc * 3300.0f / 4096.0f;
+
+    /* Sharp GP2Y1014AU0F: µg/m³ = (V_mV - 600mV) / 5.0mV_per_µg/m³ */
+    float ugm3 = (v_mv - 600.0f) / 5.0f;
+
+    /* 负值截断为 0 */
+    if (ugm3 < 0.0f) ugm3 = 0.0f;
+
+    return ugm3;
+}
+
 

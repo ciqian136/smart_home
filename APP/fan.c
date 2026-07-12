@@ -8,7 +8,7 @@
 
 #include "fan.h"
 
-#define FAN_CHANNEL    TIM_CHANNEL_3
+#define FAN_CHANNEL    TIM_CHANNEL_4
 #define FAN_TIM        htim4
 #define FAN_MAX        1000
 #define FAN_TIM_ARR    89          /* TIM4 ARR，与 WS2812 共享 */

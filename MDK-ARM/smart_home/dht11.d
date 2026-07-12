@@ -58,3 +58,5 @@ smart_home\dht11.o: ..\APP\DHT11.h
 smart_home\dht11.o: ..\APP\fan.h
 smart_home\dht11.o: ..\APP\ws2812.h
 smart_home\dht11.o: ../Core/Inc/tim.h
+smart_home\dht11.o: ..\APP\ws2812_2.h
+smart_home\dht11.o: ..\APP\ws2812_3.h

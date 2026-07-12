@@ -1,6 +1,8 @@
 #include "asr.h"
 extern "C"{ void * __dso_handle = 0 ;}
 #include "setup.h"
+#include "HardwareSerial.h"
+#include "myLib/asr_event.h"
 
 uint32_t snid;
 void ASR_CODE();
@@ -10,84 +12,150 @@ void ASR_CODE();
 //{playid:10002,voice:我退下了，用天问五幺唤醒我}
 
 // ============================================================
-//  软件串口（GPIO 模拟 UART，9600bps）
-//  TX: GPIO3 → 接 STM32 USART3 RX (PB11)
-//  每 bit = 104µs，时序精准
+//  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
+//  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
 // ============================================================
-#define UART_TX_PIN 3
-#define BIT_DELAY_US 104    // 9600 bps
+#define RX_BUF_SIZE  128   /* ALL 查询最长 ~71 字节，128 留足余量 */
 
-static void uart_send_byte(uint8_t data)
+static char rx_buf[RX_BUF_SIZE];
+static QueueHandle_t play_queue = NULL;
+
+/* ── 串口接收任务 ────────────────────────────────── */
+
+static void app_uart(void *arg)
 {
-    digitalWrite(UART_TX_PIN, 0);            // 起始位
-    delayMicroseconds(BIT_DELAY_US);
-    for (uint8_t i = 0; i < 8; i++) {        // 8 位数据 LSB first
-        digitalWrite(UART_TX_PIN, (data >> i) & 0x01);
-        delayMicroseconds(BIT_DELAY_US);
+    int idx = 0;
+    while (1) {
+        if (Serial1.available() > 0) {
+            char c = Serial1.read();
+
+            if (c == '\n') {
+                /* 去掉 \r */
+                if (idx > 0 && rx_buf[idx - 1] == '\r') idx--;
+                rx_buf[idx] = '\0';
+                idx = 0;
+
+                /* 回传确认 */
+                Serial1.print("[RX]");
+                Serial1.println(rx_buf);
+
+                /* 解析 PLAY:XXXXX */
+                if (strncmp(rx_buf, "PLAY:", 5) == 0) {
+                    uint32_t id = atoi(rx_buf + 5);
+                    if (id > 0) xQueueSend(play_queue, &id, 0);
+                }
+                /* 解析 PLAYS:X,Y,Z */
+                else if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
+                    const char *p = rx_buf + 6;
+                    while (*p) {
+                        uint32_t id = atoi(p);
+                        if (id > 0) xQueueSend(play_queue, &id, 0);
+                        while (*p && *p != ',') p++;
+                        if (*p == ',') p++;
+                    }
+                }
+            } else {
+                if (idx < RX_BUF_SIZE - 1) rx_buf[idx++] = c;
+            }
+        }
+        delay(2);
     }
-    digitalWrite(UART_TX_PIN, 1);            // 停止位
-    delayMicroseconds(BIT_DELAY_US);
+    vTaskDelete(NULL);
 }
 
-static void uart_println(const char *str)
+/* ── 语音播报任务 ────────────────────────────────── */
+
+static void app_play(void *arg)
 {
-    while (*str) uart_send_byte((uint8_t)*str++);
-    uart_send_byte('\r');
-    uart_send_byte('\n');
+    uint32_t id;
+    while (1) {
+        if (xQueueReceive(play_queue, &id, 0)) {
+            /* 等待当前播报完毕再播下一条 */
+            while (prompt_play_by_cmd_id(id, -1, NULL, false)) {
+                delay(2);
+            }
+        }
+        delay(10);
+    }
+    vTaskDelete(NULL);
 }
 
 
 void ASR_CODE(){
-  set_state_enter_wakeup(10000);
+  // 唤醒超时 30 秒（ALL 查询播报需 10~20 秒，留足余量）
+  // 非 ALL 查询时恢复短超时
+  if (snid == 28)
+      set_state_enter_wakeup(30000);
+  else
+      set_state_enter_wakeup(10000);
 
   switch (snid) {
-    // ========== 灯带控制 ==========
-    case 1:   uart_println("LIGHT:ON");       break;
-    case 2:   uart_println("LIGHT:OFF");      break;
-    case 3:   uart_println("LIGHT:BRIGHT:UP");    break;
-    case 4:   uart_println("LIGHT:BRIGHT:DOWN");  break;
-    case 5:   uart_println("LIGHT:BRIGHT:50");    break;
-    case 6:   uart_println("LIGHT:COLOR:WARM");   break;
-    case 7:   uart_println("LIGHT:COLOR:WHITE");  break;
-    case 8:   uart_println("LIGHT:COLOR:RED");    break;
-    case 9:   uart_println("LIGHT:COLOR:GREEN");  break;
-    case 10:  uart_println("LIGHT:COLOR:BLUE");   break;
-    case 11:  uart_println("LIGHT:MODE:READ");    break;
-    case 12:  uart_println("LIGHT:MODE:SLEEP");   break;
-    case 13:  uart_println("LIGHT:MODE:NIGHT");   break;
+    // ========== 灯带1控制（新统一格式: LIGHT:1:...）==========
+    case 1:   Serial1.println("LIGHT:1:ON");       break;
+    case 2:   Serial1.println("LIGHT:1:OFF");      break;
+    case 6:   Serial1.println("LIGHT:1:COLOR:WARM");   break;
+    case 7:   Serial1.println("LIGHT:1:COLOR:WHITE");  break;
+    case 8:   Serial1.println("LIGHT:1:COLOR:RED");    break;
+    case 9:   Serial1.println("LIGHT:1:COLOR:GREEN");  break;
+    case 10:  Serial1.println("LIGHT:1:COLOR:BLUE");   break;
+    case 11:  Serial1.println("LIGHT:1:MODE:READ");    break;
+    case 12:  Serial1.println("LIGHT:1:MODE:SLEEP");   break;
+    case 13:  Serial1.println("LIGHT:1:MODE:NIGHT");   break;
 
     // ========== 风扇控制 ==========
-    case 14:  uart_println("FAN:ON");         break;
-    case 15:  uart_println("FAN:OFF");        break;
-    case 16:  uart_println("FAN:SPEED:UP");   break;
-    case 17:  uart_println("FAN:SPEED:DOWN"); break;
-    case 18:  uart_println("FAN:SPEED:1");    break;
-    case 19:  uart_println("FAN:SPEED:2");    break;
-    case 20:  uart_println("FAN:SPEED:3");    break;
-    case 21:  uart_println("FAN:SPEED:4");    break;
+    case 14:  Serial1.println("FAN:ON");         break;
+    case 15:  Serial1.println("FAN:OFF");        break;
+    case 16:  Serial1.println("FAN:SPEED:UP");   break;
+    case 17:  Serial1.println("FAN:SPEED:DOWN"); break;
+    case 18:  Serial1.println("FAN:SPEED:1");    break;
+    case 19:  Serial1.println("FAN:SPEED:2");    break;
+    case 20:  Serial1.println("FAN:SPEED:3");    break;
+    case 21:  Serial1.println("FAN:SPEED:4");    break;
 
     // ========== 测试 LED ==========
-    case 22:  uart_println("LED:ON");         break;
-    case 23:  uart_println("LED:OFF");        break;
+    case 22:  Serial1.println("LED:ON");         break;
+    case 23:  Serial1.println("LED:OFF");        break;
 
-    // ========== 环境查询 ==========
-    case 24:  uart_println("QUERY:TEMP");     break;
-    case 25:  uart_println("QUERY:HUMI");     break;
-    case 26:  uart_println("QUERY:PM25");     break;
-    case 27:  uart_println("QUERY:LIGHT");    break;
-    case 28:  uart_println("QUERY:ALL");      break;
+    // ========== 灯带2控制（新统一格式: LIGHT:2:...）==========
+    case 29:  Serial1.println("LIGHT:2:ON");          break;
+    case 30:  Serial1.println("LIGHT:2:OFF");         break;
+    case 31:  Serial1.println("LIGHT:2:COLOR:WARM");  break;
+    case 32:  Serial1.println("LIGHT:2:COLOR:WHITE"); break;
+    case 33:  Serial1.println("LIGHT:2:COLOR:RED");   break;
+    case 34:  Serial1.println("LIGHT:2:COLOR:GREEN"); break;
+    case 35:  Serial1.println("LIGHT:2:COLOR:BLUE");  break;
+    case 36:  Serial1.println("LIGHT:2:MODE:READ");   break;
+    case 37:  Serial1.println("LIGHT:2:MODE:SLEEP");  break;
+    case 38:  Serial1.println("LIGHT:2:MODE:NIGHT");  break;
+
+    // ========== 环境查询（发送指令后立即返回，播报由 app_play 任务异步完成）==========
+    case 24:  Serial1.println("QUERY:TEMP");   break;
+    case 25:  Serial1.println("QUERY:HUMI");   break;
+    case 26:  Serial1.println("QUERY:PM25");   break;
+    case 27:  Serial1.println("QUERY:LIGHT");  break;
+    case 28:  Serial1.println("QUERY:ALL");    break;
 
     default: break;
   }
 }
 
 void hardware_init(){
-  // 初始化软件串口 TX 引脚（GPIO3 → STM32 PB11）
-  setPinFun(UART_TX_PIN, FIRST_FUNCTION);
-  pinMode(UART_TX_PIN, output);
-  digitalWrite(UART_TX_PIN, 1);  // 空闲态高电平
+  play_queue = xQueueCreate(32, 4);  /* 队列深度 32，ALL 查询最多 ~22 个片段 */
 
-  vol_set(3);  // 音量减半（范围 1~7）
+  // Serial1: GPIO2=TX, GPIO3=RX
+  setPinFun(2, FORTH_FUNCTION);
+  setPinFun(3, FORTH_FUNCTION);
+  Serial1.begin(9600);
+
+  // 板载 LED
+  setPinFun(4, FIRST_FUNCTION);
+  pinMode(4, output);
+
+  vol_set(3);
+
+  xTaskCreate(app_uart, "app_uart", 512, NULL, 3, NULL);
+  xTaskCreate(app_play, "app_play", 512, NULL, 4, NULL);
+
   vTaskDelete(NULL);
 }
 
@@ -100,9 +168,7 @@ void setup()
   // ========== 灯带控制 ==========
   //{ID:1,keyword:"命令词",ASR:"打开灯光",ASRTO:"好的，马上打开灯光"}
   //{ID:2,keyword:"命令词",ASR:"关闭灯光",ASRTO:"好的，马上关闭灯光"}
-  //{ID:3,keyword:"命令词",ASR:"调亮一点",ASRTO:"好的，已调亮"}
-  //{ID:4,keyword:"命令词",ASR:"调暗一点",ASRTO:"好的，已调暗"}
-  //{ID:5,keyword:"命令词",ASR:"亮度百分之五十",ASRTO:"好的，已设置亮度"}
+
   //{ID:6,keyword:"命令词",ASR:"暖光模式",ASRTO:"好的，已切换暖光"}
   //{ID:7,keyword:"命令词",ASR:"白光模式",ASRTO:"好的，已切换白光"}
   //{ID:8,keyword:"命令词",ASR:"红色灯光",ASRTO:"好的，已切换红色"}
@@ -111,6 +177,18 @@ void setup()
   //{ID:11,keyword:"命令词",ASR:"阅读模式",ASRTO:"好的，已切换阅读模式"}
   //{ID:12,keyword:"命令词",ASR:"睡眠模式",ASRTO:"好的，晚安"}
   //{ID:13,keyword:"命令词",ASR:"夜灯模式",ASRTO:"好的，已切换夜灯模式"}
+
+  // ========== 灯带2控制（192灯珠）==========
+  //{ID:29,keyword:"命令词",ASR:"打开灯带二",ASRTO:"好的，马上打开灯带二"}
+  //{ID:30,keyword:"命令词",ASR:"关闭灯带二",ASRTO:"好的，马上关闭灯带二"}
+  //{ID:31,keyword:"命令词",ASR:"灯带二暖光",ASRTO:"好的，已切换灯带二暖光"}
+  //{ID:32,keyword:"命令词",ASR:"灯带二白光",ASRTO:"好的，已切换灯带二白光"}
+  //{ID:33,keyword:"命令词",ASR:"灯带二红色",ASRTO:"好的，已切换灯带二红色"}
+  //{ID:34,keyword:"命令词",ASR:"灯带二绿色",ASRTO:"好的，已切换灯带二绿色"}
+  //{ID:35,keyword:"命令词",ASR:"灯带二蓝色",ASRTO:"好的，已切换灯带二蓝色"}
+  //{ID:36,keyword:"命令词",ASR:"灯带二阅读模式",ASRTO:"好的，已切换灯带二阅读模式"}
+  //{ID:37,keyword:"命令词",ASR:"灯带二睡眠模式",ASRTO:"好的，晚安灯带二"}
+  //{ID:38,keyword:"命令词",ASR:"灯带二夜灯模式",ASRTO:"好的，已切换灯带二夜灯模式"}
 
   // ========== 风扇控制 ==========
   //{ID:14,keyword:"命令词",ASR:"打开风扇",ASRTO:"好的，已打开风扇"}
@@ -133,7 +211,48 @@ void setup()
   //{ID:27,keyword:"命令词",ASR:"光照强度",ASRTO:"正在查询光照"}
   //{ID:28,keyword:"命令词",ASR:"全部环境信息",ASRTO:"正在查询环境信息"}
 
-  // 板载 LED（可选保留）
+  // ====== 语音片段库（ID 100~122，prompt_play_by_cmd_id 调用）======
+
+  // --- 数字 0~10 (ID 100~110) ---
+  //{ID:100,keyword:"命令词",ASR:"数字零",ASRTO:"零"}
+  //{ID:101,keyword:"命令词",ASR:"数字一",ASRTO:"一"}
+  //{ID:102,keyword:"命令词",ASR:"数字二",ASRTO:"二"}
+  //{ID:103,keyword:"命令词",ASR:"数字三",ASRTO:"三"}
+  //{ID:104,keyword:"命令词",ASR:"数字四",ASRTO:"四"}
+  //{ID:105,keyword:"命令词",ASR:"数字五",ASRTO:"五"}
+  //{ID:106,keyword:"命令词",ASR:"数字六",ASRTO:"六"}
+  //{ID:107,keyword:"命令词",ASR:"数字七",ASRTO:"七"}
+  //{ID:108,keyword:"命令词",ASR:"数字八",ASRTO:"八"}
+  //{ID:109,keyword:"命令词",ASR:"数字九",ASRTO:"九"}
+  //{ID:110,keyword:"命令词",ASR:"数字十",ASRTO:"十"}
+
+  // --- 数量级 (ID 111~112) ---
+  //{ID:111,keyword:"命令词",ASR:"单位百",ASRTO:"百"}
+  //{ID:112,keyword:"命令词",ASR:"单位千",ASRTO:"千"}
+
+  // --- 小数点 (ID 113) ---
+  //{ID:113,keyword:"命令词",ASR:"单位点",ASRTO:"点"}
+
+  // --- 单位 (ID 114~117) ---
+  //{ID:114,keyword:"命令词",ASR:"单位度",ASRTO:"度"}
+  //{ID:115,keyword:"命令词",ASR:"单位百分之",ASRTO:"百分之"}
+  //{ID:116,keyword:"命令词",ASR:"单位微克",ASRTO:"微克每立方米"}
+  //{ID:117,keyword:"命令词",ASR:"单位勒克斯",ASRTO:"勒克斯"}
+
+  // --- 前缀 (ID 118~121) ---
+  //{ID:118,keyword:"命令词",ASR:"前缀温度",ASRTO:"当前温度"}
+  //{ID:119,keyword:"命令词",ASR:"前缀湿度",ASRTO:"当前湿度"}
+  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"PM2.5浓度"}
+  //{ID:121,keyword:"命令词",ASR:"前缀光照",ASRTO:"当前光照"}
+
+  // --- 负号 (ID 122) ---
+  //{ID:122,keyword:"命令词",ASR:"零下温度",ASRTO:"零下"}
+
+  // --- 温度告警 (ID 123~124) ---
+  //{ID:123,keyword:"命令词",ASR:"警告高温",ASRTO:"温度偏高"}
+  //{ID:124,keyword:"命令词",ASR:"温度正常",ASRTO:"温度正常"}
+
+  // 板载 LED
   setPinFun(4, FIRST_FUNCTION);
   pinMode(4, output);
 }

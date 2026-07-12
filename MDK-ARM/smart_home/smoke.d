@@ -58,3 +58,6 @@ smart_home\smoke.o: ..\APP\DHT11.h
 smart_home\smoke.o: ..\APP\fan.h
 smart_home\smoke.o: ..\APP\ws2812.h
 smart_home\smoke.o: ../Core/Inc/tim.h
+smart_home\smoke.o: ..\APP\ws2812_2.h
+smart_home\smoke.o: ..\APP\ws2812_3.h
+smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\math.h

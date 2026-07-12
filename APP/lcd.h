@@ -4,5 +4,6 @@
 
 void lcd_recv(void);
 void lcd_send(void);
+void lcd_send_strip_state(uint8_t strip_id);
 #endif
 
