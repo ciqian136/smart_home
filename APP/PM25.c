@@ -2,20 +2,25 @@
 #include "PM25.h"
 #include "my_adc.h"
 
+#include "stm32f1xx_hal_adc.h"
 #include "stm32f1xx_hal_gpio.h"
 #include <stdint.h>
 #include <stdlib.h>
 
 #define LED_GPIO GPIOA
 #define LED_GPIO_PIN GPIO_PIN_6
+#define PM25_ADC_CHANNEL ADC_CHANNEL_4
 #define WINDOW_SIZE 5
-
-extern ADC_HandleTypeDef hadc1;
-extern volatile uint16_t adc_val[2];  /* [0]=烟雾, [1]=PM2.5 */
 
 static uint16_t *buf = NULL;
 static uint8_t  *buf_index = NULL; /* 当前窗口索引 */
 static uint16_t *g_adc = NULL;     /* 滤波后的ADC值 */
+
+static void pm25_delay_timer_init(void) {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+}
 
 static void delay_us(uint32_t us) {
     uint32_t start = DWT->CYCCNT;
@@ -26,6 +31,8 @@ static void delay_us(uint32_t us) {
 }
 void PM25_init(void)
 {
+    pm25_delay_timer_init();
+
     /* 动态分配滑动窗口缓冲区 */
     buf = (uint16_t *)malloc(WINDOW_SIZE * sizeof(uint16_t));
     buf_index = (uint8_t *)malloc(sizeof(uint8_t));
@@ -60,11 +67,10 @@ void PM25_proc(void)
 {
     /* ① LED拉低，开始采样周期 */
     HAL_GPIO_WritePin(LED_GPIO, LED_GPIO_PIN, GPIO_PIN_RESET);
-    delay_us(315);
+    delay_us(280);
 
-    /* ② 在280μs时读取ADC值（此时信号最稳定）*/
-    uint16_t val = adc_val[1];            
-    //delay_us(39);
+    /* ② 在280us采样点读取 ADC1_IN4 / PA4，避免连续 DMA 缓冲错相 */
+    uint16_t val = my_adc_read_channel(PM25_ADC_CHANNEL);
 
     /* ③ LED拉高，结束采样 */
     HAL_GPIO_WritePin(LED_GPIO, LED_GPIO_PIN, GPIO_PIN_SET);

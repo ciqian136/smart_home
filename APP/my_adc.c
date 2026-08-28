@@ -3,19 +3,40 @@
 #include "stm32f1xx_hal_adc.h"
 #include "usart.h"
 
-/* 引用 CubeMX 生成的 ADC1 句柄 */
 extern ADC_HandleTypeDef hadc1;
-/* adc_val[0] = ADC1_IN1 (PA1) - 烟雾传感器
-adc_val[1] = ADC1_IN4 (PA4) - PM2.5传感器 */
-volatile uint16_t adc_val[2]={0};
+
+#define ADC_POLL_TIMEOUT_MS 10U
 
 void my_adc_init(void)
 {
-    adc_val[0] = 0;
-    adc_val[1] = 0;
+    HAL_ADC_Stop(&hadc1);
     HAL_ADCEx_Calibration_Start(&hadc1);
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_val, 2); // 长度固定为2
 }
 
+uint16_t my_adc_read_channel(uint32_t channel)
+{
+    ADC_ChannelConfTypeDef sConfig = {0};
+    uint16_t value = 0;
+
+    sConfig.Channel = channel;
+    sConfig.Rank = ADC_REGULAR_RANK_1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        return 0;
+    }
+
+    if (HAL_ADC_Start(&hadc1) != HAL_OK) {
+        HAL_ADC_Stop(&hadc1);
+        return 0;
+    }
+
+    if (HAL_ADC_PollForConversion(&hadc1, ADC_POLL_TIMEOUT_MS) == HAL_OK) {
+        value = (uint16_t)HAL_ADC_GetValue(&hadc1);
+    }
+
+    HAL_ADC_Stop(&hadc1);
+    return value;
+}
 
 

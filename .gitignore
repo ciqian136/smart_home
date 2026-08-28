@@ -16,3 +16,9 @@ MDK-ARM/**/*.dep
 
 # MDK user-specific
 MDK-ARM/**/*.uvguix.*
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+MDK-ARM/keil_rebuild*.log
+
+# Local assistant/session files
+.claude/

@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-extern ADC_HandleTypeDef hadc1;
-extern volatile uint16_t adc_val[2];
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
 #define DO_GPIO_PIN GPIO_PIN_2       /* 数字报警输出引脚号 */
 #define ALARM_THRESHOLD 1000         /* 软件报警阈值 */
@@ -100,14 +98,8 @@ void smoke_proc(void) {
     uart_printf(&huart1, "[SMOKE] ready\r\n");
   }
 
-  /* 从 DMA 缓冲区读取 ADC 值（通道0 = 烟雾传感器）*/
-  uint16_t val = adc_val[0];
-  /* 轮询方式读取（备选，当前未使用）*/
-  // uint16_t val=0;
-  // HAL_ADC_Start(&hadc1);
-  // HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-  //   val=HAL_ADC_GetValue(&hadc1);
-  // HAL_ADC_Stop(&hadc1);
+  /* Smoke sensor: ADC1_IN1 / PA1, sampled on demand. */
+  uint16_t val = my_adc_read_channel(ADC_CHANNEL_1);
   
   /* 滑动平均滤波（窗口大小=5），消除采样噪声 */
   buf[*buf_index] = val;
