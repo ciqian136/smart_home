@@ -18,6 +18,10 @@
 #define VOICE_CAT_LED     "LED"
 #define VOICE_CAT_QUERY   "QUERY"
 
+#define VOICE_PLAY_CMD_SIZE 256
+#define VOICE_REPLY_DELAY_MS 1500U
+#define VOICE_MAX_SPOKEN_VALUE 9999
+
 /* ========== 语音片段 ID（与 ASRPRO setup() 中定义一致）========== */
 #define VID_ZERO     100   /* 零 */
 #define VID_ONE      101   /* 一 */
@@ -55,6 +59,10 @@ static const uint8_t digit_vid[10] = {
     VID_FIVE, VID_SIX, VID_SEVEN, VID_EIGHT, VID_NINE
 };
 
+static char voice_pending_cmd[VOICE_PLAY_CMD_SIZE];
+static uint32_t voice_pending_tick = 0;
+static uint8_t voice_pending_valid = 0;
+
 /**
   * @brief  将一个整数分解为中文语音片段，追加到字符串缓冲区
   * @note   如 31 → ",103,110,101" (三,十,一)
@@ -69,6 +77,7 @@ static int voice_append_number_buf(char *buf, int buf_size, int num)
         offset += snprintf(buf + offset, buf_size - offset, ",%d", VID_NEG);
         num = -num;
     }
+    if (num > VOICE_MAX_SPOKEN_VALUE) num = VOICE_MAX_SPOKEN_VALUE;
     if (num == 0) {
         offset += snprintf(buf + offset, buf_size - offset, ",%d", VID_ZERO);
         return offset;
@@ -103,22 +112,58 @@ static int voice_append_number_buf(char *buf, int buf_size, int num)
 }
 
 /**
-  * @brief  发送一条完整的 PLAYS 指令到语音模块（一次 UART 传输）
-  * @note   避免多段 uart_printf 导致 ASRPRO 超时截断
+  * @brief  缓存一条完整的 PLAYS 指令，延迟发送到语音模块
+  * @note   ASRPRO 先播报命令自带提示音，延迟发送可避免提示音占用播放通道时丢播。
   */
 static void voice_plays_send(const char *fmt, ...)
 {
-    char cmd[256];
     va_list ap;
     va_start(ap, fmt);
-    int len = vsnprintf(cmd, sizeof(cmd) - 2, fmt, ap);
+    int len = vsnprintf(voice_pending_cmd, sizeof(voice_pending_cmd), fmt, ap);
     va_end(ap);
-    if (len > 0 && len < (int)sizeof(cmd) - 2) {
-        cmd[len]     = '\r';
-        cmd[len + 1] = '\n';
-        cmd[len + 2] = '\0';
-        uart_printf(&huart3, "%s", cmd);
+
+    if (len <= 0 || len >= (int)sizeof(voice_pending_cmd)) {
+        voice_pending_valid = 0;
+        uart_printf(&huart1, "[VOICE] PLAYS too long, drop\r\n");
+        return;
     }
+
+    voice_pending_tick = HAL_GetTick() + VOICE_REPLY_DELAY_MS;
+    voice_pending_valid = 1;
+}
+
+static void voice_plays_service(void)
+{
+    if (!voice_pending_valid) return;
+    if ((int32_t)(HAL_GetTick() - voice_pending_tick) < 0) return;
+
+    voice_pending_valid = 0;
+    uart_printf(&huart3, "%s\r\n", voice_pending_cmd);
+}
+
+static int voice_clamp_value(int value, int min_value, int max_value)
+{
+    if (value < min_value) return min_value;
+    if (value > max_value) return max_value;
+    return value;
+}
+
+static void voice_take_pending_frame(char *local_buf, uint16_t local_buf_size)
+{
+    uint16_t copy_len;
+
+    if (local_buf_size == 0) return;
+
+    __disable_irq();
+    copy_len = uart3_msg_len;
+    if (copy_len >= local_buf_size) {
+        copy_len = local_buf_size - 1;
+    }
+    memcpy(local_buf, uart3_msg_buf, copy_len);
+    local_buf[copy_len] = '\0';
+    uart3_msg_len = 0;
+    uart3_msg_pending = 0;
+    __enable_irq();
 }
 #define COLOR_WARM_R    255
 #define COLOR_WARM_G    200
@@ -141,17 +186,12 @@ static void voice_plays_send(const char *fmt, ...)
   */
 void voice_parse(void)
 {
-    if (uart3_rx_len == 0) return;
+    if (!uart3_msg_pending) return;
 
-    /* ── 立即拷贝到局部缓冲区，防止 DMA 竞争覆盖 ── */
+    /* ── 立即拷贝到局部缓冲区，防止 UART 接收竞争覆盖 ── */
     char local_buf[128];
     memset(local_buf, 0, sizeof(local_buf));
-    strncpy(local_buf, (char *)uart3_rx_buf, sizeof(local_buf) - 1);
-    uint16_t local_len = uart3_rx_len;
-
-    /* 先清理全局缓冲区（让 DMA 可以安全写入）*/
-    memset(uart3_rx_buf, 0, sizeof(uart3_rx_buf));
-    uart3_rx_len = 0;
+    voice_take_pending_frame(local_buf, sizeof(local_buf));
 
     uart_printf(&huart1, "[VOICE] %s\r\n", local_buf);
 
@@ -337,7 +377,7 @@ void voice_parse(void)
         /* --- QUERY:TEMP --- */
         if (act != NULL && strcmp(act, "TEMP") == 0) {
             int v = (int)(DHT11_get_temp() + 0.5f);
-            if (v < -10) v = -10; if (v > 50) v = 50;
+            v = voice_clamp_value(v, -10, 50);
 
             /* 拼装完整 PLAYS 字符串，一次发送避免 ASRPRO 超时截断 */
             char seg[80];
@@ -356,7 +396,7 @@ void voice_parse(void)
         /* --- QUERY:HUMI --- */
         else if (act != NULL && strcmp(act, "HUMI") == 0) {
             int v = (int)(DHT11_get_humi() + 0.5f);
-            if (v < 0) v = 0; if (v > 100) v = 100;
+            v = voice_clamp_value(v, 0, 100);
 
             char seg[80];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d,%d", VID_PRE_HUMI, VID_PERCENT);
@@ -369,7 +409,7 @@ void voice_parse(void)
         /* --- QUERY:PM25 --- */
         else if (act != NULL && strcmp(act, "PM25") == 0) {
             int v = (int)(PM25_get_ugm3() + 0.5f);
-            if (v < 0) v = 0;
+            v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
 
             char seg[80];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_PM25);
@@ -383,7 +423,7 @@ void voice_parse(void)
         /* --- QUERY:LIGHT --- */
         else if (act != NULL && strcmp(act, "LIGHT") == 0) {
             int v = (int)(bh1750_get_lux() + 0.5f);
-            if (v < 0) v = 0;
+            v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
 
             char seg[80];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_LUX);
@@ -397,7 +437,7 @@ void voice_parse(void)
         /* --- QUERY:SMOKE --- */
         else if (act != NULL && strcmp(act, "SMOKE") == 0) {
             int v = (int)(smoke_get_ppm() + 0.5f);
-            if (v < 0) v = 0;
+            v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
 
             char seg[80];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_SMOKE);
@@ -409,11 +449,11 @@ void voice_parse(void)
         }
         /* --- QUERY:ALL --- */
         else if (act != NULL && strcmp(act, "ALL") == 0) {
-            int tv = (int)(DHT11_get_temp() + 0.5f);
-            int hv = (int)(DHT11_get_humi() + 0.5f);
-            int pv = (int)(PM25_get_ugm3() + 0.5f);
-            int lv = (int)(bh1750_get_lux() + 0.5f);
-            int sv = (int)(smoke_get_ppm() + 0.5f);
+            int tv = voice_clamp_value((int)(DHT11_get_temp() + 0.5f), -10, 50);
+            int hv = voice_clamp_value((int)(DHT11_get_humi() + 0.5f), 0, 100);
+            int pv = voice_clamp_value((int)(PM25_get_ugm3() + 0.5f), 0, VOICE_MAX_SPOKEN_VALUE);
+            int lv = voice_clamp_value((int)(bh1750_get_lux() + 0.5f), 0, VOICE_MAX_SPOKEN_VALUE);
+            int sv = voice_clamp_value((int)(smoke_get_ppm() + 0.5f), 0, VOICE_MAX_SPOKEN_VALUE);
 
             /* 把全部环境信息拼成一条 PLAYS 指令 */
             char seg[256];
@@ -450,6 +490,8 @@ void voice_parse(void)
   */
 void voice_run_send(void)
 {
-    if (uart3_rx_len == 0) return;
-    voice_parse();
+    if (uart3_msg_pending) {
+        voice_parse();
+    }
+    voice_plays_service();
 }

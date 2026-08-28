@@ -21,6 +21,9 @@ extern volatile uint8_t uart_rx_len;    /* 已接收数据长度 */
 //extern volatile uint8_t uart3_rx_byte = 0;   /* 串口3逐字节接收缓存（当前未使用）*/
 extern char uart3_rx_buf[125];         /* 串口3接收数据缓冲区 */
 extern volatile uint8_t uart3_rx_len;    /* 串口3已接收数据长度 */
+extern char uart3_msg_buf[125];        /* 串口3已完成帧副本 */
+extern volatile uint8_t uart3_msg_len; /* 串口3已完成帧长度 */
+extern volatile uint8_t uart3_msg_pending; /* 1=有待解析语音帧 */
 
 /* ---- 串口4（lcd）相关变量 ---- */
 //extern volatile uint8_t uart4_rx_byte;   /* 串口4逐字节接收缓存（当前未使用）*/

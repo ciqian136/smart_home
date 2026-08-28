@@ -13,6 +13,9 @@ volatile uint8_t uart2_rx_len = 0;
 volatile uint8_t uart3_rx_byte = 0;
 char uart3_rx_buf[125] = {0};
 volatile uint8_t uart3_rx_len = 0;
+char uart3_msg_buf[125] = {0};
+volatile uint8_t uart3_msg_len = 0;
+volatile uint8_t uart3_msg_pending = 0;
 
 volatile uint8_t uart4_rx_byte = 0;
 char uart4_rx_buf[125] = {0};
@@ -64,6 +67,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         if (Size < sizeof(uart3_rx_buf)) {
             uart3_rx_buf[Size] = '\0';
         }
+        if (!uart3_msg_pending) {
+            uint16_t copy_len = Size;
+            if (copy_len >= sizeof(uart3_msg_buf)) {
+                copy_len = sizeof(uart3_msg_buf) - 1;
+            }
+            memcpy(uart3_msg_buf, uart3_rx_buf, copy_len);
+            uart3_msg_buf[copy_len] = '\0';
+            uart3_msg_len = (uint8_t)copy_len;
+            uart3_msg_pending = 1;
+        }
+        memset(uart3_rx_buf, 0, sizeof(uart3_rx_buf));
+        uart3_rx_len = 0;
         HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
     } else if (huart == &huart4) {
         uart4_rx_len = Size;

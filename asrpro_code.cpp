@@ -15,10 +15,16 @@ void ASR_CODE();
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
 //  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
 // ============================================================
-#define RX_BUF_SIZE  128   /* ALL 查询（含烟雾）最长 ~85 字节，128 留足余量 */
+#define RX_BUF_SIZE  256
+#define PLAY_QUEUE_DEPTH 64
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
+
+static void queue_play_id(uint32_t id)
+{
+    if (id > 0) xQueueSend(play_queue, &id, 10);
+}
 
 /* ── 串口接收任务 ────────────────────────────────── */
 
@@ -35,21 +41,25 @@ static void app_uart(void *arg)
                 rx_buf[idx] = '\0';
                 idx = 0;
 
-                /* 回传确认 */
-                Serial1.print("[RX]");
-                Serial1.println(rx_buf);
+                /* 回传确认：PLAYS 很长，只确认类型，避免 STM32 侧 UART3 接收被长 echo 干扰 */
+                if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
+                    Serial1.println("[RX]PLAYS");
+                } else {
+                    Serial1.print("[RX]");
+                    Serial1.println(rx_buf);
+                }
 
                 /* 解析 PLAY:XXXXX */
                 if (strncmp(rx_buf, "PLAY:", 5) == 0) {
                     uint32_t id = atoi(rx_buf + 5);
-                    if (id > 0) xQueueSend(play_queue, &id, 0);
+                    queue_play_id(id);
                 }
                 /* 解析 PLAYS:X,Y,Z */
                 else if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
                     const char *p = rx_buf + 6;
                     while (*p) {
                         uint32_t id = atoi(p);
-                        if (id > 0) xQueueSend(play_queue, &id, 0);
+                        queue_play_id(id);
                         while (*p && *p != ',') p++;
                         if (*p == ',') p++;
                     }
@@ -147,7 +157,7 @@ void ASR_CODE(){
 }
 
 void hardware_init(){
-  play_queue = xQueueCreate(32, 4);  /* 队列深度 32，ALL 查询（含烟雾）最多 ~25 个片段 */
+  play_queue = xQueueCreate(PLAY_QUEUE_DEPTH, sizeof(uint32_t));
 
   // Serial1: GPIO2=TX, GPIO3=RX
   setPinFun(2, FORTH_FUNCTION);
