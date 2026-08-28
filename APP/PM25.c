@@ -68,6 +68,9 @@ void PM25_deinit(void)
 
 void PM25_proc(void)
 {
+    /* Settle ADC mux on PA4 while the LED is off; discard avoids PA1/PA4 crosstalk. */
+    (void)my_adc_read_channel(PM25_ADC_CHANNEL);
+
     /* ① LED拉低，开始采样周期 */
     HAL_GPIO_WritePin(LED_GPIO, LED_GPIO_PIN, GPIO_PIN_RESET);
     delay_us(280);
