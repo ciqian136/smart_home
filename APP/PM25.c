@@ -10,6 +10,9 @@
 #define LED_GPIO GPIOA
 #define LED_GPIO_PIN GPIO_PIN_6
 #define PM25_ADC_CHANNEL ADC_CHANNEL_4
+#define PM25_CLEAN_AIR_ADC 200.0f
+#define PM25_ADC_TO_MV (3300.0f / 4096.0f)
+#define PM25_SENSITIVITY_MV_PER_UGM3 5.0f
 #define WINDOW_SIZE 5
 
 static uint16_t *buf = NULL;
@@ -94,11 +97,10 @@ uint16_t PM25_get_adc(void) { return g_adc ? *g_adc : 0; }
 
 /**
   * @brief  获取 PM2.5 浓度（µg/m³）
-  * @note   基于 Sharp GP2Y1014AU0F 传感器特性曲线
-  *         V_out(volts) = adc * 3.3 / 4096  (12-bit ADC, 3.3V 参考电压)
-  *         灵敏度: 0.5V / 0.1mg/m³ → 5mV / µg/m³
-  *         清洁空气偏置电压: ~0.6V (600mV)
-  *         公式: µg/m³ = (V_mV - 600) / 5.0
+  * @note   当前硬件实测 PM2.5 ADC 空气基线约在 200 counts 附近，
+  *         低于传感器数据手册常见的 600mV 偏置值。直接按 600mV
+  *         换算会让 adc=236~278 的有效读数被截断为 0。
+  *         后续实测清洁空气稳定值后，只需要调整 PM25_CLEAN_AIR_ADC。
   * @return PM2.5 浓度（µg/m³），无效时返回 0
   */
 float PM25_get_ugm3(void)
@@ -108,16 +110,10 @@ float PM25_get_ugm3(void)
     uint16_t adc = *g_adc;
     if (adc == 0) return 0.0f;
 
-    /* ADC → 电压(mV):  12-bit, Vref = 3.3V */
-    float v_mv = adc * 3300.0f / 4096.0f;
+    float signal_adc = (float)adc - PM25_CLEAN_AIR_ADC;
+    if (signal_adc <= 0.0f) return 0.0f;
 
-    /* Sharp GP2Y1014AU0F: µg/m³ = (V_mV - 600mV) / 5.0mV_per_µg/m³ */
-    float ugm3 = (v_mv - 600.0f) / 5.0f;
-
-    /* 负值截断为 0 */
-    if (ugm3 < 0.0f) ugm3 = 0.0f;
-
-    return ugm3;
+    return (signal_adc * PM25_ADC_TO_MV) / PM25_SENSITIVITY_MV_PER_UGM3;
 }
 
 
