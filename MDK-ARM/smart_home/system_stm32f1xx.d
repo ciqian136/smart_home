@@ -2,7 +2,7 @@ smart_home\system_stm32f1xx.o: ../Core/Src/system_stm32f1xx.c
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xe.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Include/core_cm3.h
-smart_home\system_stm32f1xx.o: E:\keil\ARM\ARMCC\Bin\..\include\stdint.h
+smart_home\system_stm32f1xx.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Include/cmsis_version.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Include/cmsis_compiler.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
@@ -13,7 +13,7 @@ smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal
 smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_def.h
 smart_home\system_stm32f1xx.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
 smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h
-smart_home\system_stm32f1xx.o: E:\keil\ARM\ARMCC\Bin\..\include\stddef.h
+smart_home\system_stm32f1xx.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h
 smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h
 smart_home\system_stm32f1xx.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h

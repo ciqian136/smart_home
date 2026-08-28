@@ -3,7 +3,7 @@
 <title>Static Call Graph - [smart_home\smart_home.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image smart_home\smart_home.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060960: Last Updated: Sun Jul 12 17:01:30 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060528: Last Updated: Thu Aug 27 22:02:42 2026
 <BR><P>
 <H3>Maximum Stack Usage =       1104 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -107,9 +107,9 @@ Function Pointers
  <LI><a href="#[46]">main</a> from main.o(i.main) referenced from entry9a.o(.ARM.Collect$$$$0000000B)
  <LI><a href="#[54]">smoke_proc</a> from smoke.o(i.smoke_proc) referenced from schedule.o(.data)
  <LI><a href="#[57]">voice_run_send</a> from voice.o(i.voice_run_send) referenced from schedule.o(.data)
- <LI><a href="#[50]">ws2812_2_set_all</a> from ws2812_2.o(i.ws2812_2_set_all) referenced from main.o(i.main)
- <LI><a href="#[51]">ws2812_3_set_all</a> from ws2812_3.o(i.ws2812_3_set_all) referenced from main.o(i.main)
- <LI><a href="#[4f]">ws2812_set_all</a> from ws2812.o(i.ws2812_set_all) referenced from main.o(i.main)
+ <LI><a href="#[50]">ws2812_2_set_all</a> from ws2812_2.o(i.ws2812_2_set_all) referenced from schedule.o(i.schedule_init)
+ <LI><a href="#[51]">ws2812_3_set_all</a> from ws2812_3.o(i.ws2812_3_set_all) referenced from schedule.o(i.schedule_init)
+ <LI><a href="#[4f]">ws2812_set_all</a> from ws2812.o(i.ws2812_set_all) referenced from schedule.o(i.schedule_init)
 </UL>
 <P>
 <H3>
@@ -134,11 +134,9 @@ Global Symbols
 
 <P><STRONG><a name="[151]"></a>_main_init</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry9a.o(.ARM.Collect$$$$0000000B))
 
-<P><STRONG><a name="[152]"></a>__rt_lib_shutdown_fini</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry12b.o(.ARM.Collect$$$$0000000E))
+<P><STRONG><a name="[152]"></a>__rt_final_cpp</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry10a.o(.ARM.Collect$$$$0000000D))
 
-<P><STRONG><a name="[153]"></a>__rt_final_cpp</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry10a.o(.ARM.Collect$$$$0000000F))
-
-<P><STRONG><a name="[154]"></a>__rt_final_exit</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry11a.o(.ARM.Collect$$$$00000011))
+<P><STRONG><a name="[153]"></a>__rt_final_exit</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, entry11a.o(.ARM.Collect$$$$0000000F))
 
 <P><STRONG><a name="[0]"></a>Reset_Handler</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, startup_stm32f103xe.o(.text))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xe.o(RESET)
@@ -309,11 +307,11 @@ Global Symbols
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
 </UL>
 
-<P><STRONG><a name="[155]"></a>_ll_ushift_r</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llushr.o(.text), UNUSED)
+<P><STRONG><a name="[154]"></a>_ll_ushift_r</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llushr.o(.text), UNUSED)
 
-<P><STRONG><a name="[156]"></a>___aeabi_memcpy4$move</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
+<P><STRONG><a name="[155]"></a>___aeabi_memcpy4$move</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
 
-<P><STRONG><a name="[157]"></a>___aeabi_memcpy8$move</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
+<P><STRONG><a name="[156]"></a>___aeabi_memcpy8$move</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
 
 <P><STRONG><a name="[12d]"></a>__aeabi_memcpy</STRONG> (Thumb, 64 bytes, Stack size 8 bytes, memmovea.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = __aeabi_memcpy
@@ -328,18 +326,18 @@ Global Symbols
 <LI><a href="#[12e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_lcd_buf
 </UL>
 
-<P><STRONG><a name="[158]"></a>__aeabi_memmove4</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
+<P><STRONG><a name="[157]"></a>__aeabi_memmove4</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
 
-<P><STRONG><a name="[159]"></a>__aeabi_memmove8</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
+<P><STRONG><a name="[158]"></a>__aeabi_memmove8</STRONG> (Thumb, 0 bytes, Stack size 8 bytes, memmovea.o(.text), UNUSED)
 
 <P><STRONG><a name="[5f]"></a>__aeabi_memset</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, memseta.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_memset$wrapper
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr
 </UL>
 
-<P><STRONG><a name="[15a]"></a>__aeabi_memset4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[159]"></a>__aeabi_memset4</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
-<P><STRONG><a name="[15b]"></a>__aeabi_memset8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[15a]"></a>__aeabi_memset8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
 <P><STRONG><a name="[5e]"></a>__aeabi_memclr</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, memseta.o(.text))
 <BR><BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memset
@@ -359,7 +357,7 @@ Global Symbols
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 </UL>
 
-<P><STRONG><a name="[15c]"></a>__aeabi_memclr8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
+<P><STRONG><a name="[15b]"></a>__aeabi_memclr8</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, memseta.o(.text), UNUSED)
 
 <P><STRONG><a name="[60]"></a>_memset$wrapper</STRONG> (Thumb, 18 bytes, Stack size 8 bytes, memseta.o(.text), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[5f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memset
@@ -410,7 +408,7 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[11d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_recv
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
-<LI><a href="#[138]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_bool_value
+<LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_bool_value
 </UL>
 
 <P><STRONG><a name="[144]"></a>strtok</STRONG> (Thumb, 62 bytes, Stack size 16 bytes, strtok.o(.text))
@@ -442,12 +440,12 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
 <LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fsub
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_proc
 <LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_infnan2
 <LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_frsub
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[67]"></a>__aeabi_fsub</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, fadd.o(.text))
@@ -457,7 +455,7 @@ Global Symbols
 </UL>
 <BR>[Called By]<UL><LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 <LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_get_ugm3
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[68]"></a>__aeabi_frsub</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, fadd.o(.text))
@@ -465,7 +463,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[90]"></a>__aeabi_fmul</STRONG> (Thumb, 100 bytes, Stack size 8 bytes, fmul.o(.text))
@@ -474,8 +472,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 <LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_get_ugm3
 <LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[69]"></a>__aeabi_fdiv</STRONG> (Thumb, 124 bytes, Stack size 8 bytes, fdiv.o(.text))
@@ -486,11 +484,11 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 <LI><a href="#[fa]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_get_ugm3
 <LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_read_raw
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_proc
 <LI><a href="#[10b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_invalid
 <LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_divzero
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[6a]"></a>__aeabi_i2f</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, fflti.o(.text))
@@ -499,8 +497,8 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_float_epilogue
 </UL>
 <BR>[Called By]<UL><LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[6b]"></a>__aeabi_ui2f</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, ffltui.o(.text))
@@ -524,7 +522,7 @@ Global Symbols
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send
 </UL>
 
-<P><STRONG><a name="[15d]"></a>__aeabi_cfcmpeq</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, cfcmple.o(.text), UNUSED)
+<P><STRONG><a name="[15c]"></a>__aeabi_cfcmpeq</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, cfcmple.o(.text), UNUSED)
 
 <P><STRONG><a name="[fb]"></a>__aeabi_cfcmple</STRONG> (Thumb, 20 bytes, Stack size 0 bytes, cfcmple.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
@@ -532,7 +530,7 @@ Global Symbols
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_proc
 </UL>
 
-<P><STRONG><a name="[15e]"></a>__aeabi_uidiv</STRONG> (Thumb, 0 bytes, Stack size 12 bytes, uidiv.o(.text), UNUSED)
+<P><STRONG><a name="[15d]"></a>__aeabi_uidiv</STRONG> (Thumb, 0 bytes, Stack size 12 bytes, uidiv.o(.text), UNUSED)
 
 <P><STRONG><a name="[113]"></a>__aeabi_uidivmod</STRONG> (Thumb, 44 bytes, Stack size 12 bytes, uidiv.o(.text), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
@@ -556,7 +554,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[61]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;atoi
 </UL>
 
-<P><STRONG><a name="[15f]"></a>__I$use$fp</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, iusefp.o(.text), UNUSED)
+<P><STRONG><a name="[15e]"></a>__I$use$fp</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, iusefp.o(.text), UNUSED)
 
 <P><STRONG><a name="[66]"></a>_float_round</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, fepilogue.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
@@ -575,10 +573,10 @@ Global Symbols
 <P><STRONG><a name="[10d]"></a>__ARM_scalbnf</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, fscalb.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[10e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_underflow
 <LI><a href="#[10c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_overflow
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
-<P><STRONG><a name="[160]"></a>scalbnf</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, fscalb.o(.text), UNUSED)
+<P><STRONG><a name="[15f]"></a>scalbnf</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, fscalb.o(.text), UNUSED)
 
 <P><STRONG><a name="[71]"></a>__aeabi_dadd</STRONG> (Thumb, 322 bytes, Stack size 48 bytes, dadd.o(.text), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[72]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_lasr
@@ -623,17 +621,17 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[66]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_float_round
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[110]"></a>__aeabi_cdrcmple</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, cdrcmple.o(.text), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits
 </UL>
 
-<P><STRONG><a name="[161]"></a>__fp_status</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, fpstat.o(.text), UNUSED)
+<P><STRONG><a name="[160]"></a>__fp_status</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, fpstat.o(.text), UNUSED)
 
-<P><STRONG><a name="[13e]"></a>__ieee_status</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, fpstat.o(.text))
-<BR><BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<P><STRONG><a name="[13c]"></a>__ieee_status</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, fpstat.o(.text))
+<BR><BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[5d]"></a>__scatterload</STRONG> (Thumb, 28 bytes, Stack size 0 bytes, init.o(.text))
@@ -642,7 +640,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[5c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_main_scatterload
 </UL>
 
-<P><STRONG><a name="[162]"></a>__scatterload_rt2</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, init.o(.text), UNUSED)
+<P><STRONG><a name="[161]"></a>__scatterload_rt2</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, init.o(.text), UNUSED)
 
 <P><STRONG><a name="[6e]"></a>__aeabi_llsl</STRONG> (Thumb, 30 bytes, Stack size 0 bytes, llshl.o(.text), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[71]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
@@ -651,13 +649,13 @@ Global Symbols
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uldivmod
 </UL>
 
-<P><STRONG><a name="[163]"></a>_ll_shift_l</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llshl.o(.text), UNUSED)
+<P><STRONG><a name="[162]"></a>_ll_shift_l</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llshl.o(.text), UNUSED)
 
 <P><STRONG><a name="[72]"></a>__aeabi_lasr</STRONG> (Thumb, 36 bytes, Stack size 0 bytes, llsshr.o(.text), UNUSED)
 <BR><BR>[Called By]<UL><LI><a href="#[71]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dadd
 </UL>
 
-<P><STRONG><a name="[164]"></a>_ll_sshift_r</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llsshr.o(.text), UNUSED)
+<P><STRONG><a name="[163]"></a>_ll_sshift_r</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, llsshr.o(.text), UNUSED)
 
 <P><STRONG><a name="[6f]"></a>__rt_ctype_table</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, ctype_o.o(.text))
 <BR><BR>[Called By]<UL><LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strtol
@@ -737,9 +735,9 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 416<LI>Call Chain = DHT11_ReadData &rArr; DHT11_ReadByte &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[8c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_us
 <LI><a href="#[89]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadByte
 <LI><a href="#[88]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_Mode_Out
@@ -767,11 +765,11 @@ Global Symbols
 <P><STRONG><a name="[91]"></a>DHT11_init</STRONG> (Thumb, 134 bytes, Stack size 8 bytes, dht11.o(i.DHT11_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = DHT11_init &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[58]"></a>DHT11_proc</STRONG> (Thumb, 80 bytes, Stack size 8 bytes, dht11.o(i.DHT11_proc))
@@ -933,11 +931,11 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 </UL>
-<BR>[Called By]<UL><LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
-<LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
+<BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 <LI><a href="#[11c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_flush_reply
 <LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
 <LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_read_raw
+<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
 </UL>
 
 <P><STRONG><a name="[aa]"></a>HAL_GPIO_DeInit</STRONG> (Thumb, 308 bytes, Stack size 24 bytes, stm32f1xx_hal_gpio.o(i.HAL_GPIO_DeInit))
@@ -966,21 +964,19 @@ Global Symbols
 </UL>
 
 <P><STRONG><a name="[8e]"></a>HAL_GPIO_WritePin</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, stm32f1xx_hal_gpio.o(i.HAL_GPIO_WritePin))
-<BR><BR>[Called By]<UL><LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
-<LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
+<BR><BR>[Called By]<UL><LI><a href="#[f1]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_GPIO_Init
 <LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MQTT_Handle
 <LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 <LI><a href="#[55]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_proc
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
 </UL>
 
 <P><STRONG><a name="[7e]"></a>HAL_GetTick</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, stm32f1xx_hal.o(i.HAL_GetTick))
-<BR><BR>[Called By]<UL><LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
-<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
+<BR><BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
 <LI><a href="#[b8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_OscConfig
 <LI><a href="#[b6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCC_ClockConfig
 <LI><a href="#[b5]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_RCCEx_PeriphCLKConfig
-<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[94]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADCEx_Calibration_Start
 <LI><a href="#[82]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ADC_Enable
@@ -1000,7 +996,9 @@ Global Symbols
 <LI><a href="#[84]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_I2C_Master_Transmit
 <LI><a href="#[a3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_I2C_Master_Receive
 <LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_proc
+<LI><a href="#[140]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
 <LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_proc
+<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
 </UL>
 
 <P><STRONG><a name="[9e]"></a>HAL_I2C_DeInit</STRONG> (Thumb, 60 bytes, Stack size 8 bytes, stm32f1xx_hal_i2c.o(i.HAL_I2C_DeInit))
@@ -1264,8 +1262,8 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[cd]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UART_Start_Receive_IT
 </UL>
-<BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_uart_init
-<LI><a href="#[ce]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UARTEx_RxEventCallback
+<BR>[Called By]<UL><LI><a href="#[ce]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UARTEx_RxEventCallback
+<LI><a href="#[135]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_uart_init
 </UL>
 
 <P><STRONG><a name="[ce]"></a>HAL_UARTEx_RxEventCallback</STRONG> (Thumb, 146 bytes, Stack size 16 bytes, my_uart.o(i.HAL_UARTEx_RxEventCallback))
@@ -1347,11 +1345,11 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_WritePin
 <LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_set_all
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[e7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_r
 <LI><a href="#[e8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_g
 <LI><a href="#[ea]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_count
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_b
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
 <LI><a href="#[ec]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;json_get_msg_id
 <LI><a href="#[e3]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;get_msg_type
@@ -1480,7 +1478,7 @@ Global Symbols
 <LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[55]"></a>PM25_proc</STRONG> (Thumb, 126 bytes, Stack size 16 bytes, pm25.o(i.PM25_proc))
@@ -1592,14 +1590,14 @@ Global Symbols
 <P><STRONG><a name="[5]"></a>UsageFault_Handler</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, stm32f1xx_it.o(i.UsageFault_Handler))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f103xe.o(RESET)
 </UL>
-<P><STRONG><a name="[105]"></a>__0snprintf</STRONG> (Thumb, 48 bytes, Stack size 40 bytes, printfa.o(i.__0snprintf), UNUSED)
+<P><STRONG><a name="[105]"></a>__0snprintf</STRONG> (Thumb, 44 bytes, Stack size 32 bytes, printfa.o(i.__0snprintf), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 </UL>
 
-<P><STRONG><a name="[165]"></a>__1snprintf</STRONG> (Thumb, 0 bytes, Stack size 40 bytes, printfa.o(i.__0snprintf), UNUSED)
+<P><STRONG><a name="[164]"></a>__1snprintf</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, printfa.o(i.__0snprintf), UNUSED)
 
-<P><STRONG><a name="[e6]"></a>__2snprintf</STRONG> (Thumb, 0 bytes, Stack size 40 bytes, printfa.o(i.__0snprintf))
-<BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = __2snprintf
+<P><STRONG><a name="[e6]"></a>__2snprintf</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, printfa.o(i.__0snprintf))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = __2snprintf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 <LI><a href="#[11c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_flush_reply
@@ -1608,16 +1606,16 @@ Global Symbols
 <LI><a href="#[142]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_append_number_buf
 </UL>
 
-<P><STRONG><a name="[166]"></a>__c89snprintf</STRONG> (Thumb, 0 bytes, Stack size 40 bytes, printfa.o(i.__0snprintf), UNUSED)
+<P><STRONG><a name="[165]"></a>__c89snprintf</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, printfa.o(i.__0snprintf), UNUSED)
 
-<P><STRONG><a name="[167]"></a>snprintf</STRONG> (Thumb, 0 bytes, Stack size 40 bytes, printfa.o(i.__0snprintf), UNUSED)
+<P><STRONG><a name="[166]"></a>snprintf</STRONG> (Thumb, 0 bytes, Stack size 32 bytes, printfa.o(i.__0snprintf), UNUSED)
 
 <P><STRONG><a name="[107]"></a>__0sprintf</STRONG> (Thumb, 34 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_sputc
 <LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 </UL>
 
-<P><STRONG><a name="[168]"></a>__1sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
+<P><STRONG><a name="[167]"></a>__1sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
 
 <P><STRONG><a name="[119]"></a>__2sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = __2sprintf
@@ -1627,19 +1625,19 @@ Global Symbols
 <LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;json_find_value
 </UL>
 
-<P><STRONG><a name="[169]"></a>__c89sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
+<P><STRONG><a name="[168]"></a>__c89sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
 
-<P><STRONG><a name="[16a]"></a>sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
+<P><STRONG><a name="[169]"></a>sprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0sprintf), UNUSED)
 
-<P><STRONG><a name="[108]"></a>__0vsnprintf</STRONG> (Thumb, 46 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
+<P><STRONG><a name="[108]"></a>__0vsnprintf</STRONG> (Thumb, 40 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 </UL>
 
-<P><STRONG><a name="[16b]"></a>__1vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
+<P><STRONG><a name="[16a]"></a>__1vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
 
-<P><STRONG><a name="[16c]"></a>__2vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
+<P><STRONG><a name="[16b]"></a>__2vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
 
-<P><STRONG><a name="[16d]"></a>__c89vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
+<P><STRONG><a name="[16c]"></a>__c89vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf), UNUSED)
 
 <P><STRONG><a name="[141]"></a>vsnprintf</STRONG> (Thumb, 0 bytes, Stack size 24 bytes, printfa.o(i.__0vsnprintf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = vsnprintf
@@ -1648,8 +1646,8 @@ Global Symbols
 <LI><a href="#[147]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_plays_send
 </UL>
 
-<P><STRONG><a name="[13f]"></a>__ARM_fpclassifyf</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, fpclassifyf.o(i.__ARM_fpclassifyf))
-<BR><BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<P><STRONG><a name="[13d]"></a>__ARM_fpclassifyf</STRONG> (Thumb, 38 bytes, Stack size 0 bytes, fpclassifyf.o(i.__ARM_fpclassifyf))
+<BR><BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[62]"></a>__aeabi_errno_addr</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, errno.o(i.__aeabi_errno_addr))
@@ -1658,14 +1656,14 @@ Global Symbols
 <LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strtol
 </UL>
 
-<P><STRONG><a name="[16e]"></a>__rt_errno_addr</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, errno.o(i.__aeabi_errno_addr), UNUSED)
+<P><STRONG><a name="[16d]"></a>__rt_errno_addr</STRONG> (Thumb, 0 bytes, Stack size 0 bytes, errno.o(i.__aeabi_errno_addr), UNUSED)
 
 <P><STRONG><a name="[109]"></a>__mathlib_flt_divzero</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_divzero))
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = __mathlib_flt_divzero &rArr; __aeabi_fdiv
 </UL>
 <BR>[Calls]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[10a]"></a>__mathlib_flt_infnan2</STRONG> (Thumb, 4 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_infnan2))
@@ -1673,7 +1671,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[10b]"></a>__mathlib_flt_invalid</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_invalid))
@@ -1681,29 +1679,29 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[10c]"></a>__mathlib_flt_overflow</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_overflow))
 <BR><BR>[Calls]<UL><LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbnf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[10e]"></a>__mathlib_flt_underflow</STRONG> (Thumb, 10 bytes, Stack size 0 bytes, funder.o(i.__mathlib_flt_underflow))
 <BR><BR>[Calls]<UL><LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbnf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
-<P><STRONG><a name="[16f]"></a>__scatterload_copy</STRONG> (Thumb, 14 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_copy), UNUSED)
+<P><STRONG><a name="[16e]"></a>__scatterload_copy</STRONG> (Thumb, 14 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_copy), UNUSED)
 
-<P><STRONG><a name="[170]"></a>__scatterload_null</STRONG> (Thumb, 2 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_null), UNUSED)
+<P><STRONG><a name="[16f]"></a>__scatterload_null</STRONG> (Thumb, 2 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_null), UNUSED)
 
-<P><STRONG><a name="[171]"></a>__scatterload_zeroinit</STRONG> (Thumb, 14 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_zeroinit), UNUSED)
+<P><STRONG><a name="[170]"></a>__scatterload_zeroinit</STRONG> (Thumb, 14 bytes, Stack size unknown bytes, handlers.o(i.__scatterload_zeroinit), UNUSED)
 
-<P><STRONG><a name="[140]"></a>__set_errno</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, errno.o(i.__set_errno))
-<BR><BR>[Called By]<UL><LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<P><STRONG><a name="[13e]"></a>__set_errno</STRONG> (Thumb, 6 bytes, Stack size 0 bytes, errno.o(i.__set_errno))
+<BR><BR>[Called By]<UL><LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 
 <P><STRONG><a name="[125]"></a>bh1750_get_lux</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, bh1750.o(i.bh1750_get_lux))
@@ -1715,12 +1713,12 @@ Global Symbols
 <P><STRONG><a name="[114]"></a>bh1750_init</STRONG> (Thumb, 172 bytes, Stack size 8 bytes, bh1750.o(i.bh1750_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = bh1750_init &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<BR>[Calls]<UL><LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[83]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;BH1750_SendCommand
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[56]"></a>bh1750_proc</STRONG> (Thumb, 128 bytes, Stack size 16 bytes, bh1750.o(i.bh1750_proc))
@@ -1746,17 +1744,17 @@ Global Symbols
 <P><STRONG><a name="[11b]"></a>esp32_check_cmd_timeout</STRONG> (Thumb, 54 bytes, Stack size 8 bytes, esp32.o(i.esp32_check_cmd_timeout))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = esp32_check_cmd_timeout &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
+<BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
 </UL>
 
 <P><STRONG><a name="[5b]"></a>esp32_check_online</STRONG> (Thumb, 164 bytes, Stack size 8 bytes, esp32.o(i.esp32_check_online))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = esp32_check_online &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> schedule.o(.data)
@@ -1764,21 +1762,21 @@ Global Symbols
 <P><STRONG><a name="[11c]"></a>esp32_flush_reply</STRONG> (Thumb, 140 bytes, Stack size 272 bytes, esp32.o(i.esp32_flush_reply))
 <BR><BR>[Stack]<UL><LI>Max Depth = 824<LI>Call Chain = esp32_flush_reply &rArr; esp32_run_recv &rArr; MQTT_Handle &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
+<BR>[Calls]<UL><LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[11d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_recv
 <LI><a href="#[e6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2snprintf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
+<BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 </UL>
 
 <P><STRONG><a name="[52]"></a>esp32_init_nonblock</STRONG> (Thumb, 1760 bytes, Stack size 8 bytes, esp32.o(i.esp32_init_nonblock))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = esp32_init_nonblock &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[11a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;check_uart2_response
 <LI><a href="#[119]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2sprintf
 <LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memclr
@@ -1795,7 +1793,7 @@ Global Symbols
 <LI><a href="#[11f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strncmp
 <LI><a href="#[e0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strstr
 </UL>
-<BR>[Called By]<UL><LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
+<BR>[Called By]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 <LI><a href="#[11c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_flush_reply
 </UL>
@@ -1803,14 +1801,14 @@ Global Symbols
 <P><STRONG><a name="[53]"></a>esp32_run_send</STRONG> (Thumb, 638 bytes, Stack size 104 bytes, esp32.o(i.esp32_run_send))
 <BR><BR>[Stack]<UL><LI>Max Depth = 928<LI>Call Chain = esp32_run_send &rArr; esp32_flush_reply &rArr; esp32_run_recv &rArr; MQTT_Handle &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
+<BR>[Calls]<UL><LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
 <LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
 <LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
 <LI><a href="#[e7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_r
 <LI><a href="#[e8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_g
 <LI><a href="#[ea]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_count
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_b
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[120]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_is_ready
 <LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 <LI><a href="#[126]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_get_speed
@@ -1855,10 +1853,10 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[ca]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PWM_Start
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
-<P><STRONG><a name="[13b]"></a>fan_is_open</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, fan.o(i.fan_is_open))
+<P><STRONG><a name="[139]"></a>fan_is_open</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, fan.o(i.fan_is_open))
 <BR><BR>[Called By]<UL><LI><a href="#[12e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_lcd_buf
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 </UL>
@@ -1944,29 +1942,20 @@ Global Symbols
 <P><STRONG><a name="[131]"></a>lcd_send_strip_state</STRONG> (Thumb, 206 bytes, Stack size 40 bytes, lcd.o(i.lcd_send_strip_state))
 <BR><BR>[Stack]<UL><LI>Max Depth = 408<LI>Call Chain = lcd_send_strip_state &rArr; send_end &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[e7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_r
+<BR>[Calls]<UL><LI><a href="#[e7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_r
 <LI><a href="#[e8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_g
 <LI><a href="#[e9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_get_b
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[12f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;send_end
 </UL>
 <BR>[Called By]<UL><LI><a href="#[12e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_lcd_buf
 </UL>
 
-<P><STRONG><a name="[46]"></a>main</STRONG> (Thumb, 186 bytes, Stack size 0 bytes, main.o(i.main))
+<P><STRONG><a name="[46]"></a>main</STRONG> (Thumb, 56 bytes, Stack size 0 bytes, main.o(i.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 840<LI>Call Chain = main &rArr; schedule_run &rArr; esp32_flush_reply &rArr; esp32_run_recv &rArr; MQTT_Handle &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_set_all
-<LI><a href="#[135]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_init
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
-<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
+<BR>[Calls]<UL><LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_run
 <LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
-<LI><a href="#[133]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_uart_init
-<LI><a href="#[134]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_adc_init
-<LI><a href="#[127]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_init
-<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
-<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
 <LI><a href="#[f9]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_USART3_UART_Init
 <LI><a href="#[f8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_USART2_UART_Init
 <LI><a href="#[f7]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_USART1_UART_Init
@@ -1977,7 +1966,6 @@ Global Symbols
 <LI><a href="#[f0]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_DMA_Init
 <LI><a href="#[ee]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MX_ADC1_Init
 <LI><a href="#[ab]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Init
-<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
 <LI><a href="#[ff]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SystemClock_Config
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> entry9a.o(.ARM.Collect$$$$0000000B)
@@ -1985,7 +1973,7 @@ Global Symbols
 <P><STRONG><a name="[92]"></a>malloc</STRONG> (Thumb, 92 bytes, Stack size 20 bytes, malloc.o(i.malloc))
 <BR><BR>[Stack]<UL><LI>Max Depth = 20<LI>Call Chain = malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
+<BR>[Called By]<UL><LI><a href="#[140]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
 <LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
 <LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
 <LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
@@ -1997,32 +1985,32 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[94]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADCEx_Calibration_Start
 <LI><a href="#[9a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_ADC_Start_DMA
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
-<P><STRONG><a name="[133]"></a>my_uart_init</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, my_uart.o(i.my_uart_init))
+<P><STRONG><a name="[135]"></a>my_uart_init</STRONG> (Thumb, 48 bytes, Stack size 8 bytes, my_uart.o(i.my_uart_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = my_uart_init &rArr; HAL_UARTEx_ReceiveToIdle_IT &rArr; UART_Start_Receive_IT
 </UL>
 <BR>[Calls]<UL><LI><a href="#[cc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UARTEx_ReceiveToIdle_IT
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[e4]"></a>parse_onenet_params</STRONG> (Thumb, 192 bytes, Stack size 56 bytes, json_parser.o(i.parse_onenet_params))
 <BR><BR>[Stack]<UL><LI>Max Depth = 160<LI>Call Chain = parse_onenet_params &rArr; json_find_value &rArr; __2sprintf
 </UL>
-<BR>[Calls]<UL><LI><a href="#[13c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_string_value
-<LI><a href="#[13a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_int_value
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
-<LI><a href="#[138]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_bool_value
+<BR>[Calls]<UL><LI><a href="#[13a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_string_value
+<LI><a href="#[138]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_int_value
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_bool_value
 <LI><a href="#[12b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;json_find_value
 </UL>
 <BR>[Called By]<UL><LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MQTT_Handle
 </UL>
 
-<P><STRONG><a name="[172]"></a>__mathlib_powf</STRONG> (Thumb, 0 bytes, Stack size 48 bytes, powf.o(i.powf), UNUSED)
+<P><STRONG><a name="[171]"></a>__mathlib_powf</STRONG> (Thumb, 0 bytes, Stack size 48 bytes, powf.o(i.powf), UNUSED)
 
-<P><STRONG><a name="[13d]"></a>powf</STRONG> (Thumb, 1548 bytes, Stack size 48 bytes, powf.o(i.powf))
+<P><STRONG><a name="[13b]"></a>powf</STRONG> (Thumb, 1548 bytes, Stack size 48 bytes, powf.o(i.powf))
 <BR><BR>[Stack]<UL><LI>Max Depth = 68<LI>Call Chain = powf &rArr; __aeabi_fadd &rArr; _float_epilogue
 </UL>
 <BR>[Calls]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_i2f
@@ -2035,21 +2023,34 @@ Global Symbols
 <LI><a href="#[10b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_invalid
 <LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_infnan2
 <LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__mathlib_flt_divzero
-<LI><a href="#[13f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_fpclassifyf
+<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_fpclassifyf
 <LI><a href="#[7a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_ffix_r
-<LI><a href="#[13e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ieee_status
+<LI><a href="#[13c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ieee_status
 <LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_frsub
 <LI><a href="#[10d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__ARM_scalbnf
-<LI><a href="#[140]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__set_errno
+<LI><a href="#[13e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__set_errno
 </UL>
 <BR>[Called By]<UL><LI><a href="#[121]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_get_ppm
 </UL>
 
-<P><STRONG><a name="[132]"></a>schedule_init</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, schedule.o(i.schedule_init))
-<BR><BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<P><STRONG><a name="[132]"></a>schedule_init</STRONG> (Thumb, 140 bytes, Stack size 8 bytes, schedule.o(i.schedule_init))
+<BR><BR>[Stack]<UL><LI>Max Depth = 376<LI>Call Chain = schedule_init &rArr; smoke_init &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
+</UL>
+<BR>[Calls]<UL><LI><a href="#[eb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_set_all
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
+<LI><a href="#[13f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_strip_init
+<LI><a href="#[140]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
+<LI><a href="#[135]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_uart_init
+<LI><a href="#[134]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;my_adc_init
+<LI><a href="#[127]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_init
+<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
+<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
+</UL>
+<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[137]"></a>schedule_run</STRONG> (Thumb, 104 bytes, Stack size 16 bytes, schedule.o(i.schedule_run))
+<P><STRONG><a name="[133]"></a>schedule_run</STRONG> (Thumb, 104 bytes, Stack size 16 bytes, schedule.o(i.schedule_run))
 <BR><BR>[Stack]<UL><LI>Max Depth = 840<LI>Call Chain = schedule_run &rArr; esp32_flush_reply &rArr; esp32_run_recv &rArr; MQTT_Handle &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
@@ -2068,21 +2069,21 @@ Global Symbols
 <LI><a href="#[90]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fmul
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
 <LI><a href="#[fb]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_cfcmple
-<LI><a href="#[13d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
+<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;powf
 </UL>
 <BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send
 </UL>
 
-<P><STRONG><a name="[136]"></a>smoke_init</STRONG> (Thumb, 180 bytes, Stack size 8 bytes, smoke.o(i.smoke_init))
+<P><STRONG><a name="[140]"></a>smoke_init</STRONG> (Thumb, 180 bytes, Stack size 8 bytes, smoke.o(i.smoke_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 368<LI>Call Chain = smoke_init &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<BR>[Calls]<UL><LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;malloc
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[120]"></a>smoke_is_ready</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, smoke.o(i.smoke_is_ready))
@@ -2093,9 +2094,9 @@ Global Symbols
 <P><STRONG><a name="[54]"></a>smoke_proc</STRONG> (Thumb, 180 bytes, Stack size 16 bytes, smoke.o(i.smoke_proc))
 <BR><BR>[Stack]<UL><LI>Max Depth = 376<LI>Call Chain = smoke_proc &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
+<BR>[Calls]<UL><LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
 <LI><a href="#[7e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GetTick
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> schedule.o(.data)
 </UL>
@@ -2105,11 +2106,7 @@ Global Symbols
 <BR>[Calls]<UL><LI><a href="#[db]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_UART_Transmit
 <LI><a href="#[141]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vsnprintf
 </UL>
-<BR>[Called By]<UL><LI><a href="#[136]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
-<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
-<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
-<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
-<LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 <LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
 <LI><a href="#[52]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_init_nonblock
 <LI><a href="#[11c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_flush_reply
@@ -2125,8 +2122,12 @@ Global Symbols
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
 <LI><a href="#[147]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_plays_send
 <LI><a href="#[54]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_proc
+<LI><a href="#[140]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;smoke_init
 <LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send
 <LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_proc
+<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
+<LI><a href="#[fc]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;PM25_init
+<LI><a href="#[91]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_init
 </UL>
 
 <P><STRONG><a name="[143]"></a>voice_parse</STRONG> (Thumb, 3126 bytes, Stack size 448 bytes, voice.o(i.voice_parse))
@@ -2145,7 +2146,7 @@ Global Symbols
 <LI><a href="#[12a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_speed_up
 <LI><a href="#[129]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_speed_down
 <LI><a href="#[128]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_set_gear
-<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_is_open
+<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_is_open
 <LI><a href="#[146]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_f2iz
 <LI><a href="#[147]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_plays_send
 <LI><a href="#[142]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_append_number_buf
@@ -2175,14 +2176,14 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[148]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_2_send
 </UL>
-<BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
+<BR>[Address Reference Count : 1]<UL><LI> schedule.o(i.schedule_init)
 </UL>
 <P><STRONG><a name="[51]"></a>ws2812_3_set_all</STRONG> (Thumb, 66 bytes, Stack size 16 bytes, ws2812_3.o(i.ws2812_3_set_all))
 <BR><BR>[Stack]<UL><LI>Max Depth = 76<LI>Call Chain = ws2812_3_set_all &rArr; ws2812_3_send &rArr; HAL_DMA_Start &rArr; DMA_SetConfig
 </UL>
 <BR>[Calls]<UL><LI><a href="#[14a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_3_send
 </UL>
-<BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
+<BR>[Address Reference Count : 1]<UL><LI> schedule.o(i.schedule_init)
 </UL>
 <P><STRONG><a name="[14d]"></a>ws2812_color_to_buffer</STRONG> (Thumb, 170 bytes, Stack size 36 bytes, ws2812.o(i.ws2812_color_to_buffer))
 <BR><BR>[Stack]<UL><LI>Max Depth = 36<LI>Call Chain = ws2812_color_to_buffer
@@ -2205,7 +2206,7 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[14c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ws2812_send
 </UL>
-<BR>[Address Reference Count : 1]<UL><LI> main.o(i.main)
+<BR>[Address Reference Count : 1]<UL><LI> schedule.o(i.schedule_init)
 </UL>
 <P><STRONG><a name="[e9]"></a>ws2812_strip_get_b</STRONG> (Thumb, 48 bytes, Stack size 0 bytes, ws2812.o(i.ws2812_strip_get_b))
 <BR><BR>[Called By]<UL><LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;esp32_run_send
@@ -2230,10 +2231,10 @@ Global Symbols
 <LI><a href="#[131]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send_strip_state
 </UL>
 
-<P><STRONG><a name="[135]"></a>ws2812_strip_init</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, ws2812.o(i.ws2812_strip_init))
+<P><STRONG><a name="[13f]"></a>ws2812_strip_init</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, ws2812.o(i.ws2812_strip_init))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = ws2812_strip_init
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 </UL>
 
 <P><STRONG><a name="[130]"></a>ws2812_strip_is_open</STRONG> (Thumb, 74 bytes, Stack size 8 bytes, ws2812.o(i.ws2812_strip_is_open))
@@ -2245,7 +2246,7 @@ Global Symbols
 <P><STRONG><a name="[eb]"></a>ws2812_strip_set_all</STRONG> (Thumb, 106 bytes, Stack size 24 bytes, ws2812.o(i.ws2812_strip_set_all))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = ws2812_strip_set_all
 </UL>
-<BR>[Called By]<UL><LI><a href="#[46]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<BR>[Called By]<UL><LI><a href="#[132]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;schedule_init
 <LI><a href="#[df]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;MQTT_Handle
 <LI><a href="#[12e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_lcd_buf
 <LI><a href="#[143]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;voice_parse
@@ -2467,7 +2468,7 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
 </UL>
 
-<P><STRONG><a name="[138]"></a>parse_bool_value</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, json_parser.o(i.parse_bool_value))
+<P><STRONG><a name="[136]"></a>parse_bool_value</STRONG> (Thumb, 54 bytes, Stack size 16 bytes, json_parser.o(i.parse_bool_value))
 <BR><BR>[Stack]<UL><LI>Max Depth = 28<LI>Call Chain = parse_bool_value &rArr; strncmp
 </UL>
 <BR>[Calls]<UL><LI><a href="#[11f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;strncmp
@@ -2475,26 +2476,26 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
 </UL>
 
-<P><STRONG><a name="[139]"></a>parse_float_value</STRONG> (Thumb, 140 bytes, Stack size 32 bytes, json_parser.o(i.parse_float_value))
+<P><STRONG><a name="[137]"></a>parse_float_value</STRONG> (Thumb, 140 bytes, Stack size 32 bytes, json_parser.o(i.parse_float_value))
 <BR><BR>[Stack]<UL><LI>Max Depth = 52<LI>Call Chain = parse_float_value &rArr; __aeabi_fadd &rArr; _float_epilogue
 </UL>
 <BR>[Calls]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_i2f
 <LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fadd
-<LI><a href="#[13a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_int_value
+<LI><a href="#[138]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_int_value
 <LI><a href="#[90]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fmul
 <LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fdiv
 </UL>
 <BR>[Called By]<UL><LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
 </UL>
 
-<P><STRONG><a name="[13a]"></a>parse_int_value</STRONG> (Thumb, 54 bytes, Stack size 12 bytes, json_parser.o(i.parse_int_value))
+<P><STRONG><a name="[138]"></a>parse_int_value</STRONG> (Thumb, 54 bytes, Stack size 12 bytes, json_parser.o(i.parse_int_value))
 <BR><BR>[Stack]<UL><LI>Max Depth = 12<LI>Call Chain = parse_int_value
 </UL>
 <BR>[Called By]<UL><LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
-<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
+<LI><a href="#[137]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_float_value
 </UL>
 
-<P><STRONG><a name="[13c]"></a>parse_string_value</STRONG> (Thumb, 182 bytes, Stack size 16 bytes, json_parser.o(i.parse_string_value))
+<P><STRONG><a name="[13a]"></a>parse_string_value</STRONG> (Thumb, 182 bytes, Stack size 16 bytes, json_parser.o(i.parse_string_value))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = parse_string_value
 </UL>
 <BR>[Called By]<UL><LI><a href="#[e4]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;parse_onenet_params
@@ -2512,8 +2513,8 @@ Local Symbols
 <BR>[Calls]<UL><LI><a href="#[84]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_I2C_Master_Transmit
 <LI><a href="#[85]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;I2C_Reset
 </UL>
-<BR>[Called By]<UL><LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
-<LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_read_raw
+<BR>[Called By]<UL><LI><a href="#[115]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_read_raw
+<LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;bh1750_init
 </UL>
 
 <P><STRONG><a name="[85]"></a>I2C_Reset</STRONG> (Thumb, 44 bytes, Stack size 8 bytes, bh1750.o(i.I2C_Reset))
@@ -2540,7 +2541,7 @@ Local Symbols
 </UL>
 
 <P><STRONG><a name="[142]"></a>voice_append_number_buf</STRONG> (Thumb, 340 bytes, Stack size 40 bytes, voice.o(i.voice_append_number_buf))
-<BR><BR>[Stack]<UL><LI>Max Depth = 80<LI>Call Chain = voice_append_number_buf &rArr; __2snprintf
+<BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = voice_append_number_buf &rArr; __2snprintf
 </UL>
 <BR>[Calls]<UL><LI><a href="#[e6]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__2snprintf
 </UL>
@@ -2565,7 +2566,7 @@ Local Symbols
 <LI><a href="#[126]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_get_speed
 <LI><a href="#[131]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_send_strip_state
 <LI><a href="#[12f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;send_end
-<LI><a href="#[13b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_is_open
+<LI><a href="#[139]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;fan_is_open
 <LI><a href="#[117]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_memmove
 </UL>
 <BR>[Called By]<UL><LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;lcd_recv
@@ -2600,8 +2601,8 @@ Local Symbols
 <P><STRONG><a name="[89]"></a>DHT11_ReadByte</STRONG> (Thumb, 116 bytes, Stack size 16 bytes, dht11.o(i.DHT11_ReadByte))
 <BR><BR>[Stack]<UL><LI>Max Depth = 376<LI>Call Chain = DHT11_ReadByte &rArr; uart_printf &rArr; HAL_UART_Transmit &rArr; UART_WaitOnFlagUntilTimeout
 </UL>
-<BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
-<LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
+<BR>[Calls]<UL><LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_GPIO_ReadPin
+<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;uart_printf
 <LI><a href="#[8c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_us
 </UL>
 <BR>[Called By]<UL><LI><a href="#[8d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DHT11_ReadData
@@ -2657,7 +2658,7 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[106]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_core
 </UL>
 
-<P><STRONG><a name="[106]"></a>_printf_core</STRONG> (Thumb, 1704 bytes, Stack size 136 bytes, printfa.o(i._printf_core), UNUSED)
+<P><STRONG><a name="[106]"></a>_printf_core</STRONG> (Thumb, 1744 bytes, Stack size 136 bytes, printfa.o(i._printf_core), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[111]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_pre_padding
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_printf_post_padding
 <LI><a href="#[10f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_fp_digits

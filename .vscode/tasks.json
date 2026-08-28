@@ -1,0 +1,112 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "STM32: configure Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "Debug"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "STM32: build Debug",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "Debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "STM32: flash UART",
+            "type": "shell",
+            "command": "STM32_Programmer_CLI",
+            "args": [
+                "-c",
+                "port=${input:serialPort}",
+                "br=${input:baudRate}",
+                "P=EVEN",
+                "db=8",
+                "sb=1",
+                "-w",
+                "${workspaceFolder}/build/Debug/smart_home.hex",
+                "-v",
+                "-g",
+                "0x08000000"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "STM32: flash J-Link",
+            "type": "shell",
+            "command": "STM32_Programmer_CLI",
+            "args": [
+                "-c",
+                "port=JLINK",
+                "freq=${input:jlinkSpeed}",
+                "-w",
+                "${workspaceFolder}/build/Debug/smart_home.hex",
+                "-v",
+                "-g",
+                "0x08000000"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "STM32: build + flash UART",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "STM32: build Debug",
+                "STM32: flash UART"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "STM32: build + flash J-Link",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "STM32: build Debug",
+                "STM32: flash J-Link"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "serialPort",
+            "type": "promptString",
+            "description": "STM32 UART bootloader serial port",
+            "default": "COM6"
+        },
+        {
+            "id": "baudRate",
+            "type": "promptString",
+            "description": "STM32 UART bootloader baud rate",
+            "default": "57600"
+        },
+        {
+            "id": "jlinkSpeed",
+            "type": "promptString",
+            "description": "J-Link SWD speed in KHz",
+            "default": "4000"
+        }
+    ]
+}
+

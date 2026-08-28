@@ -1,11 +1,11 @@
 smart_home\smoke.o: ..\APP\smoke.c
 smart_home\smoke.o: ..\APP\smoke.h
 smart_home\smoke.o: ..\APP\headfile.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\stdio.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\string.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\stdlib.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\stdarg.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\stdint.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdarg.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 smart_home\smoke.o: ../Core/Inc/main.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 smart_home\smoke.o: ../Core/Inc/stm32f1xx_hal_conf.h
@@ -20,7 +20,7 @@ smart_home\smoke.o: ../Drivers/CMSIS/Include/cmsis_armcc.h
 smart_home\smoke.o: ../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\stddef.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_rcc_ex.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio.h
 smart_home\smoke.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_gpio_ex.h
@@ -41,7 +41,7 @@ smart_home\smoke.o: ../Core/Inc/gpio.h
 smart_home\smoke.o: ../Core/Inc/usart.h
 smart_home\smoke.o: ../Core/Inc/dma.h
 smart_home\smoke.o: ../Core/Inc/adc.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\time.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\time.h
 smart_home\smoke.o: ../Core/Inc/i2c.h
 smart_home\smoke.o: ..\APP\schedule.h
 smart_home\smoke.o: ..\APP\headfile.h
@@ -60,4 +60,4 @@ smart_home\smoke.o: ..\APP\ws2812.h
 smart_home\smoke.o: ../Core/Inc/tim.h
 smart_home\smoke.o: ..\APP\ws2812_2.h
 smart_home\smoke.o: ..\APP\ws2812_3.h
-smart_home\smoke.o: E:\keil\ARM\ARMCC\Bin\..\include\math.h
+smart_home\smoke.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\math.h

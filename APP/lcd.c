@@ -131,7 +131,7 @@ static void parse_lcd_buf(void)
                         is_on ? "\xE5\xBC\x80" : "\xE5\x85\xB3"); send_end();
             uart_printf(&huart4, "sys1=0"); send_end();  /* 解除风扇同步锁 */
 
-            uart_printf(&huart1, "[LCD] 查询风扇状态 speed=%d %s\r\n",
+            uart_printf(&huart1, "[LCD] Query fan status speed=%d %s\r\n",
                         speed, is_on ? "ON" : "OFF");
             idx += 5;
             continue;
