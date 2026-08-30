@@ -44,6 +44,16 @@ ESP32:串口1:TX:7
 volatile uint8_t esp32_rx_pending = 0;
 volatile uint8_t at_cmd_busy       = 0;   /* 1=AT 指令执行中，禁止发送新命令 */
 volatile uint8_t esp32_initialized = 0;   /* 1=非阻塞初始化已完成 */
+volatile uint8_t esp32_uart1_status_report_enabled =
+    ESP32_UART1_STATUS_REPORT_DEFAULT;
+
+/* ESP 状态日志统一由此开关控制，默认不发送到串口1。 */
+#define ESP32_UART1_STATUS_PRINTF(...)                                      \
+  do {                                                                      \
+    if (esp32_uart1_status_report_enabled) {                                \
+      uart_printf(&huart1, __VA_ARGS__);                                    \
+    }                                                                       \
+  } while (0)
 
 static uint32_t at_cmd_start_tick = 0;      /* 发送 AT 指令时的系统 tick */
 static uint8_t  at_cmd_timeout_logged = 0;  /* 防止超时日志重复刷屏 */
@@ -247,7 +257,7 @@ void esp32_check_cmd_timeout(void)
   if (at_cmd_busy && (HAL_GetTick() - at_cmd_start_tick) > AT_CMD_TIMEOUT_MS) {
     at_cmd_busy = 0;
     if (!at_cmd_timeout_logged) {
-      uart_printf(&huart1, "[ESP32] AT cmd timeout, reset busy\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] AT cmd timeout, reset busy\r\n");
       at_cmd_timeout_logged = 1;   /* 只打印一次，后续由 send/init 清除此标志 */
     }
   }
@@ -432,7 +442,7 @@ void esp32_init_nonblock(void)
       memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
       uart2_rx_len = 0;
       esp32_rx_pending = 0;
-      uart_printf(&huart1, "[ESP32] re-init after fail cooldown\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] re-init after fail cooldown\r\n");
     }
     return;
   }
@@ -441,7 +451,7 @@ void esp32_init_nonblock(void)
 
   /* ── IDLE: 准备开始 ─────────────────────────── */
   case ESP_INIT_IDLE:
-    uart_printf(&huart1, "[ESP32] init start...\r\n");
+    ESP32_UART1_STATUS_PRINTF("[ESP32] init start...\r\n");
     init_ctx.state = ESP_INIT_ATE;
     init_ctx.retry_count = 0;
     memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
@@ -461,7 +471,7 @@ void esp32_init_nonblock(void)
     break;
   case ESP_INIT_ATE_WAIT:
     if (esp32_got_ok || check_uart2_response("OK")) {
-      uart_printf(&huart1, "[ESP32] init: ATE ok\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] init: ATE ok\r\n");
       init_ctx.state = ESP_INIT_RST;
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;
@@ -527,7 +537,7 @@ void esp32_init_nonblock(void)
     break;
   case ESP_INIT_CWJAP_WAIT:
     if (esp32_got_ok || check_uart2_response("OK")) {
-      uart_printf(&huart1, "[ESP32] init: WiFi connected\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] init: WiFi connected\r\n");
       init_ctx.state = ESP_INIT_MQTTUSERCFG;
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;  /* 超时清除 busy */
@@ -574,7 +584,7 @@ void esp32_init_nonblock(void)
     break;
   case ESP_INIT_MQTTCONN_WAIT:
     if (esp32_got_ok || check_uart2_response("OK")) {
-      uart_printf(&huart1, "[ESP32] init: MQTT connected\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] init: MQTT connected\r\n");
       init_ctx.state = ESP_INIT_SUB_POST_REPLY;
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;  /* 超时清除 busy */
@@ -621,7 +631,7 @@ void esp32_init_nonblock(void)
     if (esp32_got_ok || check_uart2_response("OK")) {
       init_ctx.state = ESP_INIT_DONE;
       esp32_initialized = 1;
-      uart_printf(&huart1, "[ESP32] nonblock init done!\r\n");
+      ESP32_UART1_STATUS_PRINTF("[ESP32] nonblock init done!\r\n");
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;  /* 超时清除 busy */
       if (++init_ctx.retry_count >= 3) init_ctx.state = ESP_INIT_FAIL;
@@ -635,7 +645,7 @@ void esp32_init_nonblock(void)
     break;
   case ESP_INIT_FAIL:
   default:
-    uart_printf(&huart1, "[ESP32] nonblock init failed!\r\n");
+    ESP32_UART1_STATUS_PRINTF("[ESP32] nonblock init failed!\r\n");
     break;
   }
 }
@@ -662,7 +672,7 @@ void esp32_check_online(void)
     init_ctx.retry_count = 0;
     memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
     uart2_rx_len = 0;
-    uart_printf(&huart1, "[ESP32] disconnected, start reconnect...\r\n");
+    ESP32_UART1_STATUS_PRINTF("[ESP32] disconnected, start reconnect...\r\n");
     return;
   }
 
@@ -720,9 +730,10 @@ void esp32_init(void) {
   /* 只有全部成功（ret==0）才标记初始化完成 */
   if (ret == 0) {
     esp32_initialized = 1;
-    uart_printf(&huart1, "[ESP32] blocking init done!\r\n");
+    ESP32_UART1_STATUS_PRINTF("[ESP32] blocking init done!\r\n");
   } else {
-    uart_printf(&huart1, "[ESP32] blocking init FAILED (%d), fallback to nonblock\r\n", ret);
+    ESP32_UART1_STATUS_PRINTF(
+        "[ESP32] blocking init FAILED (%d), fallback to nonblock\r\n", ret);
     /* esp32_initialized 保持 0，非阻塞 init 会接管 */
   }
 }
@@ -752,7 +763,7 @@ int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
     while ((HAL_GetTick() - start_time) < time_out_ms) {
       /* 如果收到期望的响应关键字，返回成功 */
       if (strstr(uart2_rx_buf, expected_resp) != NULL) {
-        uart_printf(&huart1, "%s", uart2_rx_buf);
+        ESP32_UART1_STATUS_PRINTF("%s", uart2_rx_buf);
         memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
         uart2_rx_len = 0;
         return 0;
@@ -760,7 +771,7 @@ int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
       HAL_Delay(10);
     }
     /* 超时未收到期望响应，打印错误信息并重试 */
-      uart_printf(&huart1, "%s", uart2_rx_buf);
+      ESP32_UART1_STATUS_PRINTF("%s", uart2_rx_buf);
     
     retry_count++;
     HAL_Delay(500);
@@ -860,9 +871,9 @@ void MQTT_Handle(char *subrecv_start)
     parse_onenet_params(json_buf, 1, found, "code", 'i', &code);
 
     if (found[0] && code == 200) {
-      uart_printf(&huart1, "\r\n[MSG] up success(code=%d)\r\n", code);
+      ESP32_UART1_STATUS_PRINTF("\r\n[MSG] up success(code=%d)\r\n", code);
     } else {
-      uart_printf(&huart1, "\r\n[MSG] up false (code=%d)\r\n", code);
+      ESP32_UART1_STATUS_PRINTF("\r\n[MSG] up false (code=%d)\r\n", code);
     }
     break;
   }
@@ -881,13 +892,13 @@ void MQTT_Handle(char *subrecv_start)
     if (found[0]) {
       HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,
                         led ? GPIO_PIN_RESET : GPIO_PIN_SET);
-      uart_printf(&huart1, "[CTRL] LED %s\r\n", led ? "ON" : "OFF");
+      ESP32_UART1_STATUS_PRINTF("[CTRL] LED %s\r\n", led ? "ON" : "OFF");
     }
 
     /* ── 风扇控制 ──────────────────────────── */
     if (found[1]) {
       fan_set(fan_val);
-      uart_printf(&huart1, "[CTRL] fan=%d\r\n", fan_val);
+      ESP32_UART1_STATUS_PRINTF("[CTRL] fan=%d\r\n", fan_val);
     }
 
     /* ── 灯带 RGB：遍历 MAX_STRIPS，逐条解析下发通道 ── */
@@ -913,7 +924,8 @@ void MQTT_Handle(char *subrecv_start)
 
             if (sid <= ws2812_strip_get_count()) {
                 ws2812_strip_set_all(sid, r, g, b);
-                uart_printf(&huart1, "[CTRL] RGB%d R=%d G=%d B=%d\r\n", sid, r, g, b);
+                ESP32_UART1_STATUS_PRINTF(
+                    "[CTRL] RGB%d R=%d G=%d B=%d\r\n", sid, r, g, b);
             }
         }
     }
@@ -928,13 +940,13 @@ void MQTT_Handle(char *subrecv_start)
 
   /* ========== 属性设置响应（set_reply）========== */
   case MSG_SET_REPLY: {
-    uart_printf(&huart1, "[MSG]cmd setted\r\n");
+    ESP32_UART1_STATUS_PRINTF("[MSG]cmd setted\r\n");
     break;
   }
 
   /* ========== 未知消息类型 ========== */
   default: {
-    uart_printf(&huart1, "[MSG] don't know\r\n");
+    ESP32_UART1_STATUS_PRINTF("[MSG] don't know\r\n");
     break;
   }
   }
@@ -969,7 +981,7 @@ void TIME_Handle(char *timerecv_start)
     ntp_updated = 1;
 
     // 调试打印（可选）
-    uart_printf(&huart1, "[NTP] Time: %s\r\n", ntp_time_str);
+    ESP32_UART1_STATUS_PRINTF("[NTP] Time: %s\r\n", ntp_time_str);
 
 }
 

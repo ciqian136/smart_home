@@ -21,6 +21,7 @@
 #include "json_parser.h"
 #include "esp32.h"
 #include "my_uart.h"
+#include "face.h"
 #include "smoke.h"
 #include "my_adc.h"
 #include "PM25.h"

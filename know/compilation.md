@@ -1,4 +1,18 @@
-# 编译注意事项 (Keil MDK)
+# 编译注意事项
+
+## 开发环境优先级
+- **主要流程**: VSCode/CMake/STM32CubeCLT/GCC，用 `.vscode/tasks.json` 中的任务编译和烧录。
+- **Keil MDK**: 仅作为兼容工程，不是每次修改必须维护的主流程；除非用户明确要求或改动涉及 Keil 工程引用，否则不需要每次 Rebuild。
+- **CubeMX**: 修改外设、引脚、DMA、NVIC 时必须同步 `smart_home.ioc`，避免下次打开 CubeMX 后配置丢失。
+- **项目记忆**: 修改原项目的结构、协议、外设分配、构建流程时，必须同步更新 `know/` 下对应说明文件，方便后续继续开发。
+
+## VSCode / CMake
+- Debug 构建: `cmake --build --preset Debug`
+- J-Link 烧录: `STM32_Programmer_CLI -c port=JLINK freq=4000 -w build\Debug\smart_home.hex -v -g 0x08000000`
+- UART Bootloader 烧录: `STM32_Programmer_CLI -c port=COM6 br=57600 P=EVEN db=8 sb=1 -w build\Debug\smart_home.hex -v -g 0x08000000`
+- 新增 APP 模块时必须加入根目录 `CMakeLists.txt` 的 `target_sources()`。
+
+## Keil MDK 兼容
 
 ## 编译器
 - **工具链**: Keil MDK ARMCC V5.06 update 7
@@ -42,3 +56,4 @@ TIM4 的 4 个通道共享同一个定时器。发送 WS2812 数据时：
 ## 编译目标
 - 输出文件: `MDK-ARM/smart_home/smart_home.hex` (flash 烧录)
 - 输出文件: `MDK-ARM/smart_home/smart_home.axf` (调试)
+- Keil Rebuild 会更新 `MDK-ARM/smart_home/` 下大量 `.o/.d/.axf/.hex/.map` 产物；这些不属于源码修改，提交时应避免混入，除非用户明确要求提交产物。

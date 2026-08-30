@@ -29,6 +29,13 @@ extern volatile uint8_t uart3_msg_pending; /* 1=有待解析语音帧 */
 //extern volatile uint8_t uart4_rx_byte;   /* 串口4逐字节接收缓存（当前未使用）*/
 extern char uart4_rx_buf[125];         /* 串口4接收数据缓冲区 */
 extern volatile uint8_t uart4_rx_len;    /* 串口4已接收数据长度 */
+
+/* ---- 串口5（OpenART face）相关变量 ---- */
+extern char uart5_rx_buf[64];
+extern volatile uint8_t uart5_rx_len;
+extern char uart5_msg_buf[64];
+extern volatile uint8_t uart5_msg_len;
+extern volatile uint8_t uart5_msg_pending;
 #endif
 
 

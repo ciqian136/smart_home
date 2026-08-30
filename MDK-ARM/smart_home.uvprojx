@@ -1039,6 +1039,16 @@
               <FilePath>..\APP\my_uart.h</FilePath>
             </File>
             <File>
+              <FileName>face.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\face.c</FilePath>
+            </File>
+            <File>
+              <FileName>face.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\face.h</FilePath>
+            </File>
+            <File>
               <FileName>smoke.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\smoke.c</FilePath>

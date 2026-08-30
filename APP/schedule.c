@@ -6,6 +6,7 @@
 #include "lcd.h"
 
 #include "my_uart.h"
+#include "face.h"
 #include "smoke.h"
 #include "voice.h"
 
@@ -25,6 +26,7 @@ void test_proc(void)
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},       
     {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
+    {face_proc, 20, 0},            /* OpenART face result parser */
     {esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
     {smoke_proc, 300, 0},       
     {PM25_proc, 300, 0},        
@@ -45,6 +47,7 @@ void schedule_init(void)
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	/*基本原件初始化*/
   my_uart_init();
+	face_init();
 	my_adc_init();
 	uart_printf(&huart1,"[stm32]start");
 	/*各模块初始化*/

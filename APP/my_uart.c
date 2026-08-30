@@ -21,6 +21,13 @@ volatile uint8_t uart4_rx_byte = 0;
 char uart4_rx_buf[125] = {0};
 volatile uint8_t uart4_rx_len = 0;
 
+volatile uint8_t uart5_rx_byte = 0;
+char uart5_rx_buf[64] = {0};
+volatile uint8_t uart5_rx_len = 0;
+char uart5_msg_buf[64] = {0};
+volatile uint8_t uart5_msg_len = 0;
+volatile uint8_t uart5_msg_pending = 0;
+
 
 /**
   * @brief  串口格式化打印函数（类似 printf，支持可变参数）
@@ -45,6 +52,7 @@ void my_uart_init(void)
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, (uint8_t *)uart2_rx_buf, sizeof(uart2_rx_buf));
   HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
   HAL_UARTEx_ReceiveToIdle_IT(&huart4, (uint8_t *)uart4_rx_buf, sizeof(uart4_rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart5, (uint8_t *)uart5_rx_buf, sizeof(uart5_rx_buf));
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -86,6 +94,24 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
             uart4_rx_buf[Size] = '\0';
         }
         HAL_UARTEx_ReceiveToIdle_IT(&huart4, (uint8_t *)uart4_rx_buf, sizeof(uart4_rx_buf));
+    } else if (huart == &huart5) {
+        uart5_rx_len = Size;
+        if (Size < sizeof(uart5_rx_buf)) {
+            uart5_rx_buf[Size] = '\0';
+        }
+        if (!uart5_msg_pending) {
+            uint16_t copy_len = Size;
+            if (copy_len >= sizeof(uart5_msg_buf)) {
+                copy_len = sizeof(uart5_msg_buf) - 1;
+            }
+            memcpy(uart5_msg_buf, uart5_rx_buf, copy_len);
+            uart5_msg_buf[copy_len] = '\0';
+            uart5_msg_len = (uint8_t)copy_len;
+            uart5_msg_pending = 1;
+        }
+        memset(uart5_rx_buf, 0, sizeof(uart5_rx_buf));
+        uart5_rx_len = 0;
+        HAL_UARTEx_ReceiveToIdle_IT(&huart5, (uint8_t *)uart5_rx_buf, sizeof(uart5_rx_buf));
     }
 }
 

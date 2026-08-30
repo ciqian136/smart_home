@@ -10,6 +10,7 @@ void ASR_CODE();
 //{speak:小蝶-清新女声,vol:10,speed:10,platform:haohaodada}
 //{playid:10001,voice:欢迎使用语音助手，用天问五幺唤醒我。}
 //{playid:10002,voice:我退下了，用天问五幺唤醒我}
+//{playid:10003,voice:欢迎回家，曾先生}
 
 // ============================================================
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动

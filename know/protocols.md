@@ -83,3 +83,23 @@ val = strtok(NULL, ":\r\n");  // WARM / WHITE / RED...
 ### ASRPRO 固件 (asrpro_code.cpp)
 - 语音 ID → `Serial1.println("LIGHT:1:ON")` 映射
 - 位于 case 1~38 的 switch 语句中
+
+---
+
+## 4. OpenART 人脸识别 (UART5, 115200)
+
+### OpenART → STM32
+```
+FACE:ZENG,85\r\n
+FACE:NONE\r\n
+FACE:ERR,MODEL\r\n
+```
+- `FACE:ZENG,<score>`: 检测到 `zeng` 类别，`score` 为 0~100 的置信度整数。
+- `FACE:NONE`: 当前未检测到目标；STM32 连续收到 3 次后才清除主人识别状态。
+- `FACE:ERR,<code>`: OpenART 模型或推理异常；STM32 立即清除主人识别状态。
+- STM32 仍兼容旧的 `FACE:OWNER,<score>` 帧，但 OpenART 新版本只发送 `FACE:ZENG,<score>`。
+
+### STM32 端状态规则
+- `score >= 70` 且连续 3 次 ZENG，`face_is_zeng_detected()` 才返回 1。
+- 超过 2000ms 没收到有效帧，`face_get_online()` 和 `face_is_zeng_detected()` 都返回 0。
+- 后续语音、继电器、舵机等扩展只读取 `face` 模块状态，不在 UART 回调里直接执行动作。

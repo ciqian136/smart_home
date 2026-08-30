@@ -10,6 +10,8 @@
 #include "usart.h"
 #include "json_parser.h"
 
+#define ESP32_UART1_STATUS_REPORT_DEFAULT 0U
+
 
 /** @brief ESP32 初始化（WiFi连接 + MQTT配置 + 订阅主题）— 阻塞式 */
 void esp32_init(void);
@@ -37,6 +39,7 @@ extern volatile uint8_t esp32_rx_pending;     /* 串口收到新数据 */
 extern volatile uint8_t at_cmd_busy;          /* AT 指令执行中 */
 extern volatile uint8_t esp32_initialized;    /* 非阻塞初始化完成 */
 extern volatile uint8_t need_send_reply;      /* 需要回复 set_reply */
+extern volatile uint8_t esp32_uart1_status_report_enabled;
 
 #endif
 

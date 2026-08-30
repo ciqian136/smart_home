@@ -7,6 +7,7 @@
 #include "BH1750.h"
 #include "smoke.h"
 #include "lcd.h"
+#include "face.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -21,6 +22,8 @@
 #define VOICE_PLAY_CMD_SIZE 256
 #define VOICE_REPLY_DELAY_MS 1500U
 #define VOICE_MAX_SPOKEN_VALUE 9999
+#define FACE_WELCOME_PLAY_ID 10003U
+#define FACE_WELCOME_COOLDOWN_MS 5000U
 
 /* ========== 语音片段 ID（与 ASRPRO setup() 中定义一致）========== */
 #define VID_ZERO     100   /* 零 */
@@ -62,6 +65,9 @@ static const uint8_t digit_vid[10] = {
 static char voice_pending_cmd[VOICE_PLAY_CMD_SIZE];
 static uint32_t voice_pending_tick = 0;
 static uint8_t voice_pending_valid = 0;
+static uint8_t face_welcome_pending = 0;
+static uint8_t face_welcome_sent = 0;
+static uint32_t face_welcome_last_sent_tick = 0;
 
 /**
   * @brief  将一个整数分解为中文语音片段，追加到字符串缓冲区
@@ -132,13 +138,41 @@ static void voice_plays_send(const char *fmt, ...)
     voice_pending_valid = 1;
 }
 
-static void voice_plays_service(void)
+static uint8_t voice_plays_service(void)
 {
-    if (!voice_pending_valid) return;
-    if ((int32_t)(HAL_GetTick() - voice_pending_tick) < 0) return;
+    if (!voice_pending_valid) return 0;
+    if ((int32_t)(HAL_GetTick() - voice_pending_tick) < 0) return 0;
 
     voice_pending_valid = 0;
     uart_printf(&huart3, "%s\r\n", voice_pending_cmd);
+    return 1;
+}
+
+static void voice_face_welcome_service(void)
+{
+    uint32_t now = HAL_GetTick();
+
+    if (face_take_owner_detected_event()) {
+        /*
+         * 识别状态已经确认后只接收一次事件。冷却期间再次识别直接丢弃，
+         * 不延迟到冷却结束后补播，避免人脸已经离开时仍然播报欢迎语。
+         */
+        if (!face_welcome_sent ||
+            now - face_welcome_last_sent_tick >= FACE_WELCOME_COOLDOWN_MS) {
+            face_welcome_pending = 1;
+        }
+    }
+
+    /*
+     * 用户语音命令还处于延迟发送阶段时不能覆盖它；已发送的命令会由
+     * ASRPRO 自己的播放队列串行播放，欢迎语从同一串口通道进入队列。
+     */
+    if (voice_pending_valid || !face_welcome_pending) return;
+
+    uart_printf(&huart3, "PLAY:%u\r\n", FACE_WELCOME_PLAY_ID);
+    face_welcome_pending = 0;
+    face_welcome_sent = 1;
+    face_welcome_last_sent_tick = HAL_GetTick();
 }
 
 static int voice_clamp_value(int value, int min_value, int max_value)
@@ -490,8 +524,14 @@ void voice_parse(void)
   */
 void voice_run_send(void)
 {
+    uint8_t voice_sent;
+
     if (uart3_msg_pending) {
         voice_parse();
     }
-    voice_plays_service();
+
+    voice_sent = voice_plays_service();
+    if (!voice_sent) {
+        voice_face_welcome_service();
+    }
 }
