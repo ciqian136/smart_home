@@ -273,7 +273,7 @@ void esp32_flush_reply(void)
 /**
   * @brief  ESP32 数据发送任务 - 向 OneNET 分时上报传感器数据
   *         每次调用只发送一个属性组（~50ms），切换 case 顺序轮询
-  *         完整一轮 10 个 case，每 1s 发送一次（10→1 降频），总间隔 = 10s
+  *         完整一轮 11 个 case，每 1s 发送一次（10→1 降频），总间隔约 11s
   */
 void esp32_run_send(void) {
 

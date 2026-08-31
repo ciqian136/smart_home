@@ -11,6 +11,37 @@
 | STM32/ESP32 回复下发 | `$sys/{PRODUCT_ID}/{DEVICE_NAME}/thing/property/set_reply` |
 | OneNET 上报回复 | `$sys/{PRODUCT_ID}/{DEVICE_NAME}/thing/property/post/reply` |
 
+所有属性上报当前使用固定消息 ID `"123"`。这个 `id` 是 OneNET 属性上报 payload 的消息 ID，不是物模型属性 identifier。
+
+## STM32 上报字段访问表
+
+以下为当前 STM32 固件会主动上报到 OneNET 的完整属性全集。`构建类型` 对应 `build_onenet_cmd()` 的类型参数：`i=int`，`f=float`，`b=bool`。
+
+| OneNET identifier | OneNET 类型 | 构建类型 | STM32 数值访问 | 上报条件/说明 |
+|-------------------|-------------|----------|----------------|---------------|
+| `test_int` | int | `i` | `test_int++` | `esp32_run_send()` 内部静态计数器，每轮对应 case 到达时递增 |
+| `MQ2` | float | `f` | `device_state_get_smoke()` | 仅 `device_state_smoke_valid()` 为真时上报，单位 ppm |
+| `PM25` | float | `f` | `device_state_get_pm25()` | 仅 `device_state_pm25_valid()` 为真时上报，单位 ug/m3 |
+| `humi` | float | `f` | `device_state_get_humidity()` | 仅 `device_state_humidity_valid()` 为真时上报，单位 % |
+| `temp` | float | `f` | `device_state_get_temperature()` | 仅 `device_state_temperature_valid()` 为真时上报，单位 degC |
+| `light` | float | `f` | `device_state_get_light()` | 仅 `device_state_light_valid()` 为真时上报，单位 lux |
+| `fan` | int | `i` | `device_state_get_fan_speed()` | 总是上报，范围 0~1000 PWM |
+| `RGB1_RAD` | int | `i` | `device_state_get_strip_rgb(1, &r, &g, &b)` 里的 `r` | 室内灯红色分量，0~255；历史字段名是 `RAD`，不是 `RED` |
+| `RGB1_GREEN` | int | `i` | `device_state_get_strip_rgb(1, &r, &g, &b)` 里的 `g` | 室内灯绿色分量，0~255 |
+| `RGB1_BLUE` | int | `i` | `device_state_get_strip_rgb(1, &r, &g, &b)` 里的 `b` | 室内灯蓝色分量，0~255 |
+| `RGB3_RAD` | int | `i` | `device_state_get_strip_rgb(3, &r, &g, &b)` 里的 `r` | 室外灯红色分量，0~255；历史字段名是 `RAD`，不是 `RED` |
+| `RGB3_GREEN` | int | `i` | `device_state_get_strip_rgb(3, &r, &g, &b)` 里的 `g` | 室外灯绿色分量，0~255 |
+| `RGB3_BLUE` | int | `i` | `device_state_get_strip_rgb(3, &r, &g, &b)` 里的 `b` | 室外灯蓝色分量，0~255 |
+| `LED` | bool | `b` | `device_state_get_board_led()` | 总是上报，板载 LED 状态 |
+| `auto_enabled` | bool | `b` | `device_state_get_auto_enabled() && !device_state_manual_override_active()` | 总是上报；自动开启但处于手动覆盖期时上报 false |
+| `fan_mode` | int | `i` | `device_state_get_fan_mode()` | 总是上报，`0=停止`，`1=手动`，`2=自动` |
+| `PM25_alarm` | bool | `b` | `device_state_pm25_alarm()` | 总是上报，PM2.5 是否超过当前阈值 |
+| `MQ2_alarm` | bool | `b` | `device_state_smoke_alarm()` | 总是上报，MQ2 DO 报警或 ppm 超过当前阈值 |
+| `RGB1_PRESET_STATE` | int | `i` | `esp32_get_light_preset_state(1)` | 室内灯当前预设状态，`0~8` 或 `99=CUSTOM` |
+| `RGB3_PRESET_STATE` | int | `i` | `esp32_get_light_preset_state(3)` | 室外灯当前预设状态，`0~8` 或 `99=CUSTOM` |
+
+不会主动上报 `RGB2_*`、`RGB2_PRESET_STATE` 或任何灯带4字段。ID2 是原入户灯保留通道，ID4 不存在可用硬件输出。
+
 ## 必须保留的上报属性
 
 | 字段 | 类型 | 范围/枚举 | 说明 |
