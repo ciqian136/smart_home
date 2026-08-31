@@ -8,14 +8,16 @@
       .title { fill: #ffffff; font: 600 13px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
       .label { fill: #53616b; font: 11px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
       .small { fill: #53616b; font: 9px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
-      .value { fill: #1d2a33; font: 700 24px "Segoe UI", Arial, sans-serif; }
-      .unit { fill: #53616b; font: 10px "Segoe UI", Arial, sans-serif; }
+      .value { fill: #1d2a33; font: 700 22px "Segoe UI", Arial, sans-serif; }
+      .unit { fill: #53616b; font: 9px "Segoe UI", Arial, sans-serif; }
       .button { fill: #ffffff; stroke: #bfc9ce; stroke-width: 1; }
       .buttonText { fill: #34444d; font: 10px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
       .selected { fill: #0f9d8a; stroke: #0f9d8a; }
       .selectedText { fill: #ffffff; font: 600 10px "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
       .line { stroke: #dbe2e5; stroke-width: 1; }
       .muted { fill: #87949c; font: 9px "Segoe UI", Arial, sans-serif; }
+      .ok { fill: #2c9b77; }
+      .warn { fill: #d6762d; }
     </style>
     <symbol id="wifi" viewBox="0 0 20 16">
       <path d="M1 5.5C6.5 0.8 13.5 0.8 19 5.5M4.5 9C8 6.1 12 6.1 15.5 9M8.2 12.2C10.2 10.7 11.8 10.7 13.8 12.2" fill="none" stroke="#7ce0b2" stroke-width="1.6" stroke-linecap="round"/>
@@ -38,6 +40,10 @@
       <path d="M7 19c-2.4-1.5-2.5-3.4-.4-4.9 2.2-1.5 2.1-3.5-.1-5M13 20c-2.5-1.6-2.6-3.8-.4-5.3 2.3-1.5 2.1-3.8-.1-5.4M18 18c-1.8-1.3-1.8-2.9-.2-4.1 1.7-1.2 1.6-2.8-.1-4" fill="none" stroke="#8b6dca" stroke-width="1.7" stroke-linecap="round"/>
       <path d="M3 21h18" stroke="#8b6dca" stroke-width="1.5" stroke-linecap="round"/>
     </symbol>
+    <symbol id="dust" viewBox="0 0 24 24">
+      <circle cx="6" cy="9" r="2" fill="#7d8790"/><circle cx="12" cy="12" r="2.7" fill="#7d8790"/><circle cx="18" cy="8" r="1.8" fill="#7d8790"/>
+      <circle cx="8" cy="17" r="1.5" fill="#7d8790"/><circle cx="17" cy="17" r="2.2" fill="#7d8790"/>
+    </symbol>
     <symbol id="bulb" viewBox="0 0 24 24">
       <path d="M8.1 14.8c-1.3-1-2.1-2.5-2.1-4.2a6 6 0 1 1 12 0c0 1.7-.8 3.2-2.1 4.2-.8.6-1.2 1.2-1.2 2.1H9.3c0-.9-.4-1.5-1.2-2.1Z" fill="none" stroke="#e2a93b" stroke-width="1.7"/>
       <path d="M9.2 19h5.6M10.2 21h3.6" stroke="#e2a93b" stroke-width="1.6" stroke-linecap="round"/>
@@ -51,10 +57,6 @@
       <circle cx="9" cy="10" r="1" fill="#2c9b77"/><circle cx="15" cy="10" r="1" fill="#2c9b77"/>
       <path d="M8.5 14.2c1.9 2 5.1 2 7 0" fill="none" stroke="#2c9b77" stroke-width="1.5" stroke-linecap="round"/>
     </symbol>
-    <symbol id="power" viewBox="0 0 24 24">
-      <path d="M12 3v8" stroke="#e35d6a" stroke-width="2" stroke-linecap="round"/>
-      <path d="M7 6.5a8 8 0 1 0 10 0" fill="none" stroke="#e35d6a" stroke-width="2" stroke-linecap="round"/>
-    </symbol>
     <symbol id="back" viewBox="0 0 24 24">
       <path d="M14.5 5 7.5 12l7 7M8 12h10" fill="none" stroke="#5b6a73" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
@@ -64,47 +66,55 @@
   <g transform="translate(10 8)">
     <rect class="screen" x="0" y="0" width="320" height="240" rx="5"/>
     <rect class="header" x="3" y="3" width="314" height="27"/>
-    <text class="title" x="14" y="21">&#x667A;&#x80FD;&#x5BB6;&#x5C45;</text>
+    <text class="title" x="14" y="21">环境总览</text>
+    <text x="208" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">AUTO</text>
     <use href="#wifi" x="263" y="9" width="16" height="14"/>
-    <text x="284" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">&#x5728;&#x7EBF;</text>
+    <text x="284" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">在线</text>
 
-    <rect class="tile" x="8" y="38" width="98" height="68" rx="3"/>
-    <use href="#thermo" x="16" y="49" width="22" height="22"/>
-    <text class="label" x="45" y="55">&#x6E29;&#x5EA6;</text>
-    <text class="value" x="44" y="85">25.6</text><text class="unit" x="86" y="84">&#x00B0;C</text>
+    <rect class="tile" x="8" y="38" width="96" height="54" rx="3"/>
+    <use href="#thermo" x="15" y="47" width="18" height="18"/>
+    <text class="label" x="40" y="54">温度</text>
+    <text class="value" x="38" y="82">25.6</text><text class="unit" x="84" y="81">°C</text>
 
-    <rect class="tile" x="112" y="38" width="98" height="68" rx="3"/>
-    <use href="#drop" x="120" y="49" width="22" height="22"/>
-    <text class="label" x="149" y="55">&#x6E7F;&#x5EA6;</text>
-    <text class="value" x="148" y="85">58.2</text><text class="unit" x="190" y="84">%</text>
+    <rect class="tile" x="112" y="38" width="96" height="54" rx="3"/>
+    <use href="#drop" x="119" y="47" width="18" height="18"/>
+    <text class="label" x="144" y="54">湿度</text>
+    <text class="value" x="142" y="82">58.2</text><text class="unit" x="187" y="81">%</text>
 
-    <rect class="tile" x="8" y="114" width="98" height="68" rx="3"/>
-    <use href="#smoke" x="16" y="125" width="22" height="22"/>
-    <text class="label" x="45" y="131">PM2.5</text>
-    <text class="value" x="44" y="161">18.4</text><text class="unit" x="83" y="160" font-size="8">ug</text>
+    <rect class="tile" x="216" y="38" width="96" height="54" rx="3"/>
+    <use href="#sun" x="223" y="47" width="18" height="18"/>
+    <text class="label" x="248" y="54">光照</text>
+    <text class="value" x="246" y="82">328</text><text class="unit" x="287" y="81">lux</text>
 
-    <rect class="tile" x="112" y="114" width="98" height="68" rx="3"/>
-    <use href="#sun" x="120" y="125" width="22" height="22"/>
-    <text class="label" x="149" y="131">&#x5149;&#x7167;</text>
-    <text class="value" x="148" y="161">328</text><text class="unit" x="187" y="160">lux</text>
+    <rect class="tile" x="8" y="100" width="96" height="54" rx="3"/>
+    <use href="#dust" x="16" y="109" width="18" height="18"/>
+    <text class="label" x="40" y="116">PM2.5</text>
+    <text class="value" x="38" y="144">18.4</text><text class="unit" x="80" y="143">ug</text>
 
-    <rect class="tile" x="216" y="38" width="96" height="144" rx="3"/>
-    <text class="label" x="226" y="54">&#x8BBE;&#x5907;&#x72B6;&#x6001;</text>
-    <line class="line" x1="226" y1="61" x2="302" y2="61"/>
-    <use href="#bulb" x="226" y="69" width="17" height="17"/>
-    <text class="small" x="247" y="80">&#x706F;&#x5E26;1</text><circle cx="293" cy="77" r="4" fill="#31ad79"/>
-    <use href="#fan" x="226" y="94" width="17" height="17"/>
-    <text class="small" x="247" y="105">&#x98CE;&#x6247;</text><text x="272" y="105" fill="#239b8e" font-size="10" font-family="Segoe UI">450</text>
-    <use href="#face" x="226" y="119" width="17" height="17"/>
-    <text class="small" x="247" y="130">&#x8BC6;&#x522B;</text><text x="273" y="130" fill="#2c9b77" font-size="10" font-family="Microsoft YaHei, Arial">&#x5DF2;&#x8BC6;&#x522B;</text>
-    <line class="line" x1="226" y1="145" x2="302" y2="145"/>
-    <text class="muted" x="226" y="162">UART4  9600</text>
+    <rect class="tile" x="112" y="100" width="96" height="54" rx="3"/>
+    <use href="#smoke" x="119" y="109" width="18" height="18"/>
+    <text class="label" x="144" y="116">烟雾</text>
+    <text class="value" x="142" y="144">120</text><text class="unit" x="184" y="143">ppm</text>
+
+    <rect class="tile" x="216" y="100" width="96" height="54" rx="3"/>
+    <text class="label" x="226" y="116">空气状态</text>
+    <text x="226" y="143" fill="#2c9b77" font-size="20" font-weight="700" font-family="Microsoft YaHei, Arial">正常</text>
+
+    <rect class="tile" x="8" y="163" width="304" height="32" rx="3"/>
+    <use href="#bulb" x="18" y="171" width="14" height="14"/>
+    <text class="small" x="37" y="182">灯光 开</text>
+    <use href="#fan" x="94" y="171" width="14" height="14"/>
+    <text class="small" x="113" y="182">风扇 450</text>
+    <use href="#face" x="177" y="171" width="14" height="14"/>
+    <text class="small" x="196" y="182">已识别</text>
+    <circle cx="270" cy="178" r="4" fill="#31ad79"/><text class="small" x="279" y="182">在线</text>
+
     <rect x="8" y="204" width="98" height="27" class="selected" rx="3"/>
     <rect x="112" y="204" width="98" height="27" class="nav" rx="3"/>
     <rect x="216" y="204" width="96" height="27" class="nav" rx="3"/>
-    <text class="selectedText" x="46" y="221">&#x73AF;&#x5883;</text>
-    <text class="buttonText" x="145" y="221">&#x706F;&#x5E26;</text>
-    <text class="buttonText" x="253" y="221">&#x98CE;&#x6247;</text>
+    <text class="selectedText" x="46" y="221">环境</text>
+    <text class="buttonText" x="145" y="221">灯光</text>
+    <text class="buttonText" x="253" y="221">风扇</text>
   </g>
 
   <!-- page1 -->
@@ -112,20 +122,19 @@
     <rect class="screen" x="0" y="0" width="320" height="240" rx="5"/>
     <rect class="header" x="3" y="3" width="314" height="27"/>
     <use href="#back" x="10" y="8" width="17" height="17"/>
-    <text class="title" x="37" y="21">&#x706F;&#x5E26;&#x63A7;&#x5236;</text>
-    <text x="267" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">&#x624B;&#x52A8;</text>
+    <text class="title" x="37" y="21">灯光控制</text>
+    <text x="267" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">手动</text>
 
-    <rect class="selected" x="8" y="38" width="72" height="23" rx="3"/>
-    <rect class="button" x="86" y="38" width="72" height="23" rx="3"/>
-    <rect class="button" x="164" y="38" width="72" height="23" rx="3"/>
-    <rect class="button" x="242" y="38" width="70" height="23" rx="3"/>
-    <text class="selectedText" x="34" y="53">&#x706F;&#x5E26;1</text><text class="buttonText" x="112" y="53">&#x706F;&#x5E26;2</text><text class="buttonText" x="190" y="53">&#x706F;&#x5E26;3</text><text class="buttonText" x="267" y="53">&#x706F;&#x5E26;4</text>
+    <rect class="selected" x="8" y="38" width="150" height="24" rx="3"/>
+    <rect class="button" x="164" y="38" width="148" height="24" rx="3"/>
+    <text class="selectedText" x="67" y="54">室内灯</text>
+    <text class="buttonText" x="223" y="54">室外灯</text>
 
     <rect x="8" y="72" width="76" height="102" fill="#fff8df" stroke="#e4c75a" stroke-width="1" rx="3"/>
     <use href="#bulb" x="29" y="83" width="34" height="34"/>
-    <text class="label" x="25" y="134">&#x5F53;&#x524D;&#x989C;&#x8272;</text>
-    <rect x="20" y="143" width="52" height="15" fill="#ffb83e" rx="2"/>
-    <text x="24" y="169" fill="#895f00" font-size="9" font-family="Segoe UI">255 180 60</text>
+    <text class="label" x="21" y="132">当前颜色</text>
+    <rect x="20" y="141" width="52" height="15" fill="#ffb83e" rx="2"/>
+    <text x="20" y="168" fill="#895f00" font-size="9" font-family="Segoe UI">255 180 60</text>
 
     <rect class="tile" x="92" y="72" width="220" height="102" rx="3"/>
     <text class="label" x="103" y="88">R</text><rect x="120" y="80" width="126" height="9" fill="#f1d9dc" rx="4"/><rect x="120" y="80" width="118" height="9" fill="#e35d6a" rx="4"/><text class="value" x="263" y="91" font-size="16">255</text>
@@ -133,9 +142,9 @@
     <text class="label" x="103" y="150">B</text><rect x="120" y="142" width="126" height="9" fill="#d9e6f2" rx="4"/><rect x="120" y="142" width="28" height="9" fill="#3194d0" rx="4"/><text class="value" x="263" y="153" font-size="16">60</text>
 
     <rect class="button" x="8" y="182" width="72" height="21" rx="3"/><rect class="button" x="86" y="182" width="72" height="21" rx="3"/><rect class="button" x="164" y="182" width="72" height="21" rx="3"/><rect class="button" x="242" y="182" width="70" height="21" rx="3"/>
-    <text class="buttonText" x="33" y="196">&#x9884;&#x8BBE;&#x767D;</text><text class="buttonText" x="112" y="196">&#x6696;&#x5149;</text><text class="buttonText" x="189" y="196">&#x591C;&#x706F;</text><text class="buttonText" x="264" y="196">&#x5173;&#x95ED;</text>
+    <text class="buttonText" x="31" y="196">白光</text><text class="buttonText" x="111" y="196">暖光</text><text class="buttonText" x="190" y="196">夜灯</text><text class="buttonText" x="263" y="196">关闭</text>
     <rect class="nav" x="8" y="210" width="98" height="21" rx="3"/><rect class="selected" x="112" y="210" width="98" height="21" rx="3"/><rect class="nav" x="216" y="210" width="96" height="21" rx="3"/>
-    <text class="buttonText" x="46" y="224">&#x73AF;&#x5883;</text><text class="selectedText" x="150" y="224">&#x706F;&#x5E26;</text><text class="buttonText" x="253" y="224">&#x98CE;&#x6247;</text>
+    <text class="buttonText" x="46" y="224">环境</text><text class="selectedText" x="150" y="224">灯光</text><text class="buttonText" x="253" y="224">风扇</text>
   </g>
 
   <!-- page2 -->
@@ -143,26 +152,27 @@
     <rect class="screen" x="0" y="0" width="320" height="240" rx="5"/>
     <rect class="header" x="3" y="3" width="314" height="27"/>
     <use href="#back" x="10" y="8" width="17" height="17"/>
-    <text class="title" x="37" y="21">&#x98CE;&#x6247;&#x63A7;&#x5236;</text>
-    <text x="270" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">&#x5728;&#x7EBF;</text>
+    <text class="title" x="37" y="21">风扇控制</text>
+    <text x="270" y="20" fill="#7ce0b2" font-size="10" font-family="Microsoft YaHei, Arial">AUTO</text>
 
     <rect class="tile" x="8" y="39" width="126" height="108" rx="3"/>
     <use href="#fan" x="52" y="50" width="35" height="35"/>
     <text class="value" x="38" y="116">450</text><text class="unit" x="91" y="115">PWM</text>
-    <text class="label" x="40" y="134">&#x5F53;&#x524D;&#x901F;&#x5EA6;</text>
-    <rect class="tile" x="142" y="39" width="170" height="108" rx="3"/>
-    <text class="label" x="154" y="57">&#x8FD0;&#x884C;&#x72B6;&#x6001;</text>
-    <circle cx="161" cy="75" r="5" fill="#31ad79"/><text x="174" y="79" fill="#2c9b77" font-size="12" font-family="Microsoft YaHei, Arial">&#x8FD0;&#x884C;&#x4E2D;</text>
-    <line class="line" x1="154" y1="90" x2="300" y2="90"/>
-    <text class="small" x="154" y="108">&#x8BED;&#x97F3;</text><text x="218" y="108" fill="#2c9b77" font-size="10" font-family="Microsoft YaHei, Arial">&#x53EF;&#x7528;</text>
-    <text class="small" x="154" y="128">&#x4EBA;&#x8138;&#x8BC6;&#x522B;</text><text x="218" y="128" fill="#2c9b77" font-size="10" font-family="Microsoft YaHei, Arial">ZENG</text>
+    <text class="label" x="40" y="134">当前速度</text>
 
-    <text class="label" x="8" y="166">&#x901F;&#x5EA6;</text><rect x="45" y="159" width="267" height="10" fill="#d9eee6" rx="5"/><rect x="45" y="159" width="120" height="10" fill="#239b8e" rx="5"/><circle cx="165" cy="164" r="7" fill="#ffffff" stroke="#239b8e" stroke-width="2"/>
+    <rect class="tile" x="142" y="39" width="170" height="108" rx="3"/>
+    <text class="label" x="154" y="57">运行状态</text>
+    <circle cx="161" cy="75" r="5" fill="#31ad79"/><text x="174" y="79" fill="#2c9b77" font-size="12" font-family="Microsoft YaHei, Arial">自动调节</text>
+    <line class="line" x1="154" y1="90" x2="300" y2="90"/>
+    <use href="#thermo" x="154" y="98" width="14" height="14"/><text class="small" x="174" y="109">温度 28.4°C</text>
+    <use href="#face" x="154" y="119" width="14" height="14"/><text class="small" x="174" y="130">人脸 已识别</text>
+
+    <text class="label" x="8" y="166">速度</text><rect x="45" y="159" width="267" height="10" fill="#d9eee6" rx="5"/><rect x="45" y="159" width="120" height="10" fill="#239b8e" rx="5"/><circle cx="165" cy="164" r="7" fill="#ffffff" stroke="#239b8e" stroke-width="2"/>
     <rect class="selected" x="8" y="180" width="98" height="22" rx="3"/><rect class="button" x="112" y="180" width="98" height="22" rx="3"/><rect class="button" x="216" y="180" width="96" height="22" rx="3"/>
-    <text class="selectedText" x="46" y="195">&#x624B;&#x52A8;</text><text class="buttonText" x="150" y="195">&#x81EA;&#x52A8;</text><text class="buttonText" x="253" y="195">&#x505C;&#x6B62;</text>
+    <text class="selectedText" x="46" y="195">自动</text><text class="buttonText" x="150" y="195">手动</text><text class="buttonText" x="253" y="195">停止</text>
     <rect class="nav" x="8" y="210" width="98" height="21" rx="3"/><rect class="nav" x="112" y="210" width="98" height="21" rx="3"/><rect class="selected" x="216" y="210" width="96" height="21" rx="3"/>
-    <text class="buttonText" x="46" y="224">&#x73AF;&#x5883;</text><text class="buttonText" x="150" y="224">&#x706F;&#x5E26;</text><text class="selectedText" x="253" y="224">&#x98CE;&#x6247;</text>
+    <text class="buttonText" x="46" y="224">环境</text><text class="buttonText" x="150" y="224">灯光</text><text class="selectedText" x="253" y="224">风扇</text>
   </g>
 
-  <text x="10" y="324" fill="#50606a" font-size="10" font-family="Segoe UI, Arial">320x240 HMI mockup  |  page0: dashboard  |  page1: RGB  |  page2: fan</text>
+  <text x="10" y="324" fill="#50606a" font-size="10" font-family="Segoe UI, Arial">320x240 HMI mockup | page0: environment with MQ2 smoke | page1: two lights only | page2: fan only</text>
 </svg>
