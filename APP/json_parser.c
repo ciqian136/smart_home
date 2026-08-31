@@ -255,10 +255,10 @@ uint8_t json_get_msg_id(const char *json, char *msg_id, uint8_t size) {
 MqttMsgType_t get_msg_type(const char *topic) {
   if (strstr(topic, "/thing/property/post/reply") != NULL)
     return MSG_POST_REPLY;   /* 属性上报响应 */
-  if (strstr(topic, "/thing/property/set") != NULL)
-    return MSG_PROPERTY_SET; /* 属性设置（云端下发）*/
   if (strstr(topic, "/thing/property/set_reply") != NULL)
     return MSG_SET_REPLY;    /* 属性设置响应 */
+  if (strstr(topic, "/thing/property/set") != NULL)
+    return MSG_PROPERTY_SET; /* 属性设置（云端下发）*/
   return MSG_UNKNOWN;        /* 未知消息类型 */
 }
 

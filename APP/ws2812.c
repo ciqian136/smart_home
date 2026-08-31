@@ -6,9 +6,9 @@ uint16_t dma_buffer[TOTAL_BITS];
 /* 灯带1 基础颜色（向后兼容）*/
 
 /* 基础颜色 */
-static uint8_t ws2812_base_r = 255;
-static uint8_t ws2812_base_g = 200;
-static uint8_t ws2812_base_b = 100;
+static uint8_t ws2812_base_r = 0;
+static uint8_t ws2812_base_g = 0;
+static uint8_t ws2812_base_b = 0;
 
 /**
   * @brief 将颜色数据转换为 PWM 占空比序列，并在末尾追加复位位
@@ -155,6 +155,22 @@ void ws2812_strip_set_all(uint8_t id, uint8_t r, uint8_t g, uint8_t b)
     s->cur_b = b;
 
     /* 直接通过函数指针调用硬件驱动，无需 switch/if-else */
+    s->set_all(r, g, b);
+}
+
+void ws2812_strip_set_all_force(uint8_t id, uint8_t r, uint8_t g, uint8_t b)
+{
+    ws2812_strip_t *s = NULL;
+    for (uint8_t i = 0; i < ws2812_strip_count; i++) {
+        if (ws2812_strips[i].id == id) {
+            s = &ws2812_strips[i];
+            break;
+        }
+    }
+    if (s == NULL || s->set_all == NULL) return;
+    s->cur_r = r;
+    s->cur_g = g;
+    s->cur_b = b;
     s->set_all(r, g, b);
 }
 

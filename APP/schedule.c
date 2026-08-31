@@ -1,4 +1,8 @@
 #include "schedule.h"
+#include "automation.h"
+#include "config_store.h"
+#include "device_state.h"
+#include "health_monitor.h"
 #include "PM25.h"
 #include "dht11.h"
 #include "esp32.h"
@@ -14,6 +18,7 @@ typedef struct {
     void (*task_func)(void);
     uint32_t rate_ms;
     uint32_t last_run;
+    uint8_t health_id;
 } task_t;
 
 uint8_t task_num;
@@ -25,17 +30,20 @@ void test_proc(void)
 /* 调度任务表 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},       
-    {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
-    {face_proc, 20, 0},            /* OpenART face result parser */
-    {esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
-    {smoke_proc, 300, 0},       
-    {PM25_proc, 300, 0},        
-    {bh1750_proc,300,0},        
-	{voice_run_send,10,0},
-    {DHT11_proc,300,0},
-    {lcd_recv,10,0},
-    {lcd_send,1000,0},
-    {esp32_check_online, 500, 0}, /* 每 500ms 检测在线状态（内部含 30s ping/10s WiFi）*/
+    {esp32_init_nonblock, 20, 0, 0},  /* 非阻塞初始化状态机 */
+    {face_proc, 20, 0, 1},            /* OpenART face result parser */
+    {device_state_service, 50, 0, 2},
+    {automation_service, 50, 0, 3},
+    {esp32_run_send, 100, 0, 4},
+    {smoke_proc, 300, 0, 5},
+    {PM25_proc, 300, 0, 6},
+    {bh1750_proc, 300, 0, 7},
+	{voice_run_send, 10, 0, 8},
+    {DHT11_proc, 300, 0, 9},
+    {lcd_recv, 10, 0, 10},
+    {lcd_send, 100, 0, 11},
+    {esp32_check_online, 500, 0, 12},
+    {health_monitor_service, 1000, 0, 13},
 };
 
 void schedule_init(void)
@@ -48,22 +56,26 @@ void schedule_init(void)
 	/*基本原件初始化*/
   my_uart_init();
 	face_init();
+	face_uart1_status_report_enabled = 0U;
+	smoke_uart1_log_enabled = 1U;
 	my_adc_init();
 	uart_printf(&huart1,"[stm32]start");
 	/*各模块初始化*/
-	 /* 灯带统一初始化：注册硬件参数 → 初始关闭 */
-	ws2812_strip_init(1, 48,  ws2812_set_all);     /* TIM4_CH1 PD12 */
-	ws2812_strip_init(2, 192, ws2812_2_set_all);   /* TIM4_CH2 PD13 */
-	ws2812_strip_init(3, 192, ws2812_3_set_all);   /* TIM4_CH3 PD14 */
-	ws2812_strip_set_all(1, 0, 0, 0);
-	ws2812_strip_set_all(2, 0, 0, 0);
-	ws2812_strip_set_all(3, 0, 0, 0);
-	 smoke_init();
-   DHT11_init();
-   PM25_init();
-   fan_init();
+	 /* 灯带统一初始化：1=室内48灯珠，2=原入户保留不用，3=室外192灯珠 */
+	ws2812_strip_init(DEVICE_STRIP_INDOOR_ID, 48,  ws2812_set_all);      /* TIM4_CH1 PD12 */
+	ws2812_strip_init(DEVICE_STRIP_ENTRY_RESERVED_ID, 192, ws2812_2_set_all); /* TIM4_CH2 PD13 */
+	ws2812_strip_init(DEVICE_STRIP_OUTDOOR_ID, 192, ws2812_3_set_all);   /* TIM4_CH3 PD14 */
+    fan_init();
+    smoke_init();
+    DHT11_init();
+    PM25_init();
 	 bh1750_init();
-   //esp32_init();
+    config_store_init();
+    device_state_init();
+    automation_init();
+    health_monitor_init();
+    /* IDs 0..12 are real work tasks; ID 13 is the monitor service itself. */
+    health_monitor_set_expected_mask((1UL << 13U) - 1UL);
 }
 
 void schedule_run(void)
@@ -84,10 +96,11 @@ void schedule_run(void)
     {
         uint32_t now_time = HAL_GetTick();  /* 获取当前系统时间（ms）*/
         /* 判断是否到达执行时间（当前时间 >= 上次执行时间 + 周期）*/
-        if (now_time >= schedule_task_t[i].rate_ms + schedule_task_t[i].last_run)
+        if (now_time - schedule_task_t[i].last_run >= schedule_task_t[i].rate_ms)
         {
            schedule_task_t[i].last_run = now_time;  /* 更新上次执行时间 */
            schedule_task_t[i].task_func();           /* 执行任务函数 */
+           health_monitor_task_beat(schedule_task_t[i].health_id);
         }
     }
 }

@@ -3,12 +3,12 @@
 
 #include "headfile.h"
 
-/* ── 灯带3参数 ──────────────────────────────── */
+/* ── 灯带3参数：室外灯，192 LED ──────────────────────────────────── */
 #define NUM_LEDS3       192             // 灯珠数量
 #define BITS_PER_LED3   24
 #define DATA_BITS3      (NUM_LEDS3 * BITS_PER_LED3)   // 4608
 #define RESET_US3       80              // 复位时间 80us
-#define RESET_BITS3     ((uint16_t)(RESET_US3 / 1.25f) + 1)  // 80/1.25+1=65
+#define RESET_BITS3     ((RESET_US3 * 4U / 5U) + 1U)  // 80/1.25+1=65
 #define TOTAL_BITS3     (DATA_BITS3 + RESET_BITS3)     // ~4673
 
 /* TIM4_CH3 共用 ARR=89，不需要重新定义 */

@@ -7,7 +7,7 @@
 ## 数据结构 (ws2812.h)
 
 ```c
-#define MAX_STRIPS  4
+#define MAX_STRIPS  3
 
 typedef void (*ws2812_set_all_func_t)(uint8_t r, uint8_t g, uint8_t b);
 
@@ -36,26 +36,30 @@ if (r == s->cur_r && g == s->cur_g && b == s->cur_b) return;
 ```
 防止查询→反馈→事件触发→重复发送的回环。即使 HMI 在 STM32 设置滑块值时触发滑动事件，相同 RGB 值会被静默跳过。
 
-## 初始化示例 (main.c)
+## 当前硬件映射
+
+| 灯带ID | 用户名称 | 状态 | LED 数 | 硬件通道 |
+|--------|----------|------|--------|----------|
+| 1 | 室内灯 | 启用 | 48 | TIM4_CH1 / PD12 |
+| 2 | 原入户灯 | 保留不用 | 192 | TIM4_CH2 / PD13 |
+| 3 | 室外灯 | 启用 | 192 | TIM4_CH3 / PD14 |
+
+ID2 只保留物理注册和启动强制关闭，不在 LCD、语音或云端控制中暴露。ID4 不可用，TIM4_CH4 / PD15 已经分配给风扇 PWM。
+
+## 初始化示例 (schedule.c)
 
 ```c
-ws2812_strip_init(1, 48,  ws2812_set_all);     // TIM4_CH1, 48 LED
-ws2812_strip_init(2, 192, ws2812_2_set_all);   // TIM4_CH2, 192 LED
-ws2812_strip_init(3, 192, ws2812_3_set_all);   // TIM4_CH3, 192 LED
-ws2812_strip_set_all(1, 0, 0, 0);  // 全部初始关闭
-ws2812_strip_set_all(2, 0, 0, 0);
-ws2812_strip_set_all(3, 0, 0, 0);
+ws2812_strip_init(DEVICE_STRIP_INDOOR_ID, 48, ws2812_set_all);
+ws2812_strip_init(DEVICE_STRIP_ENTRY_RESERVED_ID, 192, ws2812_2_set_all);
+ws2812_strip_init(DEVICE_STRIP_OUTDOOR_ID, 192, ws2812_3_set_all);
+device_state_init();  // 读取配置，并对三条物理灯带各强制发送一次 OFF
 ```
 
-## 添加新灯带步骤
+`device_state_init()` 使用 `ws2812_strip_set_all_force()`，因此即使驱动缓存默认也是 0/0/0，启动时仍会真实刷新一次全灭状态。
 
-1. 复制 `ws2812_2.c/.h` → 改名为 `ws2812_4.c/.h`
-2. 修改宏定义 (NUM_LEDS4, RESET_US4 等)
-3. 修改所有寄存器引用 (CCR2→CCR4, CC2DE→CC4DE, DMA_FLAG_TC4→...)
-4. 在 CubeMX 配置新 DMA 通道
-5. 在 `headfile.h` 加 `#include "ws2812_4.h"`
-6. 在 `main.c` 加 `ws2812_strip_init(4, N, ws2812_4_set_all);`
-7. **无需修改 ws2812.c 统一层、lcd.c、voice.c、esp32.c** — 全部自动路由
+## 扩展约束
+
+当前项目不再规划灯带4。若未来增加新硬件，必须先重新分配风扇 PWM 或新增可用定时器/DMA 输出，再扩展 `MAX_STRIPS` 和上层控制协议。
 
 ## 三个硬件驱动对比
 

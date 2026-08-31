@@ -1,0 +1,15 @@
+; STM32F103ZET6 application image.
+; The last 8 KiB (0x0807E000..0x0807FFFF) is reserved for config_store.
+LR_IROM1 0x08000000 0x0007E000
+{
+  ER_IROM1 0x08000000 0x0007E000
+  {
+    *.o (RESET, +First)
+    *(InRoot$$Sections)
+    .ANY (+RO)
+  }
+  RW_IRAM1 0x20000000 0x00010000
+  {
+    .ANY (+RW +ZI)
+  }
+}

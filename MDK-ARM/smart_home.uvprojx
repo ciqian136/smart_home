@@ -18,7 +18,7 @@
           <Vendor>STMicroelectronics</Vendor>
           <PackID>Keil.STM32F1xx_DFP.2.4.1</PackID>
           <PackURL>https://www.keil.com/pack/</PackURL>
-          <Cpu>IRAM(0x20000000-0x2000FFFF) IROM(0x8000000-0x807FFFF) CLOCK(8000000) CPUTYPE("Cortex-M3") TZ</Cpu>
+          <Cpu>IRAM(0x20000000-0x2000FFFF) IROM(0x8000000-0x807DFFF) CLOCK(8000000) CPUTYPE("Cortex-M3") TZ</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
           <FlashDriverDll></FlashDriverDll>
@@ -252,7 +252,7 @@
               <IROM>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x80000</Size>
+                <Size>0x7E000</Size>
               </IROM>
               <XRAM>
                 <Type>0</Type>
@@ -277,7 +277,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x80000</Size>
+                <Size>0x7E000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -371,7 +371,7 @@
             <TextAddressRange></TextAddressRange>
             <DataAddressRange></DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile></ScatterFile>
+            <ScatterFile>smart_home.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -1167,6 +1167,46 @@
               <FileName>ws2812_3.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\ws2812_3.h</FilePath>
+            </File>
+            <File>
+              <FileName>device_state.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\device_state.c</FilePath>
+            </File>
+            <File>
+              <FileName>device_state.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\device_state.h</FilePath>
+            </File>
+            <File>
+              <FileName>automation.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\automation.c</FilePath>
+            </File>
+            <File>
+              <FileName>automation.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\automation.h</FilePath>
+            </File>
+            <File>
+              <FileName>config_store.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\config_store.c</FilePath>
+            </File>
+            <File>
+              <FileName>config_store.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\config_store.h</FilePath>
+            </File>
+            <File>
+              <FileName>health_monitor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\health_monitor.c</FilePath>
+            </File>
+            <File>
+              <FileName>health_monitor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\health_monitor.h</FilePath>
             </File>
           </Files>
         </Group>

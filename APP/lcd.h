@@ -5,5 +5,6 @@
 void lcd_recv(void);
 void lcd_send(void);
 void lcd_send_strip_state(uint8_t strip_id);
+void lcd_send_page_enter(uint8_t page_id);
 #endif
 

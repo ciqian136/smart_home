@@ -1,11 +1,9 @@
 #include "esp32.h"
-#include "DHT11.h"
-#include "fan.h"
-#include "ws2812.h"
-#include "smoke.h"
+#include "device_state.h"
 
 #include "my_uart.h"
 #include <string.h>
+#include <stdlib.h>
 
 /*
 引脚定义
@@ -40,6 +38,9 @@ ESP32:串口1:TX:7
 #define ESP_RST_WAIT_MS        3000U   /* AT+RST 后等待复位 */
 #define ESP_CHECK_INTERVAL_MS  10000U  /* 每 10s 检查一次连接状态 */
 #define MQTT_PING_INTERVAL_MS  30000U  /* 每 30s 发送一次 MQTT PING */
+#define ESP_RUNTIME_TIMEOUT_RECONNECTS 3U
+#define ESP_RECONNECT_MIN_INTERVAL_MS  3000U
+#define ESP_NO_ALIVE_RECONNECT_MS      120000U
 
 volatile uint8_t esp32_rx_pending = 0;
 volatile uint8_t at_cmd_busy       = 0;   /* 1=AT 指令执行中，禁止发送新命令 */
@@ -67,6 +68,30 @@ volatile uint8_t need_send_reply = 0;
 static uint32_t last_esp_check_tick  = 0;
 static uint32_t last_mqtt_ping_tick  = 0;
 static uint8_t  esp_offline_flag     = 0;
+static uint8_t  esp_reconnect_requested = 0;
+static uint8_t  esp_runtime_timeout_count = 0;
+static uint32_t last_esp_alive_tick = 0;
+static uint32_t last_reconnect_tick = 0;
+
+static void esp32_note_alive(void);
+static void esp32_request_reconnect(const char *reason);
+static void esp32_start_reconnect(void);
+
+static void esp32_note_alive(void)
+{
+  last_esp_alive_tick = HAL_GetTick();
+  esp_runtime_timeout_count = 0U;
+}
+
+static void esp32_request_reconnect(const char *reason)
+{
+  if (!esp_reconnect_requested) {
+    ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect requested: %s\r\n",
+                              reason ? reason : "unknown");
+  }
+  esp_reconnect_requested = 1U;
+  esp_offline_flag = 1U;
+}
 
 static void queue_set_reply(const char *msg_id)
 {
@@ -82,6 +107,7 @@ static void queue_set_reply(const char *msg_id)
 void esp32_flush_reply(void)
 {
   if (!need_send_reply) return;
+  if (esp_reconnect_requested) return;
   if (at_cmd_busy) return;  /* 等当前指令完成，下一轮再试 */
 
   char cmd[256];
@@ -118,7 +144,8 @@ void esp32_flush_reply(void)
 #define SEND_CASE_FAN       6
 #define SEND_CASE_RGB_GROUP 7    /* 灯带 RGB 上报（轮询）*/
 #define SEND_CASE_LED       8
-#define SEND_CASE_MAX       9
+#define SEND_CASE_MODE      9    /* AUTO/MANUAL + fan mode */
+#define SEND_CASE_MAX       10
 
 /**
   * @brief  ESP32 数据发送任务 - 向 OneNET 分时上报传感器数据
@@ -130,6 +157,7 @@ void esp32_run_send(void) {
   esp32_flush_reply();
 
   /* 非阻塞初始化未完成 或 AT 指令忙则跳过 */
+  if (esp_reconnect_requested) return;
   if (!esp32_initialized) return;
   if (at_cmd_busy) return;
 
@@ -155,61 +183,72 @@ void esp32_run_send(void) {
 
   /* ── 1: 烟雾传感器 MQ2 (ppm) ───────────────── */
   case SEND_CASE_MQ2:
-    if (smoke_is_ready()) {
+    if (device_state_smoke_valid()) {
       build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                       "MQ2", 'f', (double)smoke_get_ppm());
+                       "MQ2", 'f', (double)device_state_get_smoke());
     }
     break;
 
   /* ── 2: PM2.5 (µg/m³) ──────────────────────── */
   case SEND_CASE_PM25:
-    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "PM25", 'f', (double)PM25_get_ugm3());
+    if (device_state_pm25_valid()) {
+      build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
+                       "PM25", 'f', (double)device_state_get_pm25());
+    }
     break;
 
   /* ── 3: 湿度 (%) ───────────────────────────── */
   case SEND_CASE_HUMI:
-    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "humi", 'f', DHT11_get_humi());
+    if (device_state_humidity_valid()) {
+      build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
+                       "humi", 'f', (double)device_state_get_humidity());
+    }
     break;
 
   /* ── 4: 温度 (°C) ──────────────────────────── */
   case SEND_CASE_TEMP:
-    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "temp", 'f', DHT11_get_temp());
+    if (device_state_temperature_valid()) {
+      build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
+                       "temp", 'f', (double)device_state_get_temperature());
+    }
     break;
 
   /* ── 5: 光照强度 (lux) ─────────────────────── */
   case SEND_CASE_LIGHT:
-    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "light", 'f', (double)bh1750_get_lux());
+    if (device_state_light_valid()) {
+      build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
+                       "light", 'f', (double)device_state_get_light());
+    }
     break;
 
   /* ── 6: 风扇转速 ────────────────────────────── */
   case SEND_CASE_FAN:
     build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "fan", 'i', fan_get_speed());
+                     "fan", 'i', device_state_get_fan_speed());
     break;
 
-  /* ── 7: 灯带 RGB 轮询上报（strip 1~MAX_STRIPS）── */
+  /* ── 7: 灯带 RGB 轮询上报：1=室内, 3=室外, 2=保留不用 ── */
   case SEND_CASE_RGB_GROUP: {
     static uint8_t rgb_report_idx = 0;
     uint8_t sid = rgb_report_idx + 1;
 
-    if (sid <= ws2812_strip_get_count()) {
+    if (sid <= device_state_get_strip_count() && device_state_strip_is_active(sid)) {
+        uint8_t r, g, b;
         char r_name[16], g_name[16], b_name[16];
-        snprintf(r_name, sizeof(r_name), "RGB%d_RAD",   sid);
-        snprintf(g_name, sizeof(g_name), "RGB%d_GREEN", sid);
-        snprintf(b_name, sizeof(b_name), "RGB%d_BLUE",  sid);
+        if (device_state_get_strip_rgb(sid, &r, &g, &b)) {
+          snprintf(r_name, sizeof(r_name), "RGB%d_RAD",   sid);
+          snprintf(g_name, sizeof(g_name), "RGB%d_GREEN", sid);
+          snprintf(b_name, sizeof(b_name), "RGB%d_BLUE",  sid);
 
-        build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 3,
-                         r_name, 'i', ws2812_strip_get_r(sid),
-                         g_name, 'i', ws2812_strip_get_g(sid),
-                         b_name, 'i', ws2812_strip_get_b(sid));
+          build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 3,
+                           r_name, 'i', r,
+                           g_name, 'i', g,
+                           b_name, 'i', b);
+        }
     }
 
     rgb_report_idx++;
-    if (rgb_report_idx >= MAX_STRIPS) rgb_report_idx = 0;
+    if (rgb_report_idx >= device_state_get_strip_count()) rgb_report_idx = 0;
     break;
   }
 
@@ -217,9 +256,22 @@ void esp32_run_send(void) {
   case SEND_CASE_LED:
     build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
                      "LED", 'b',
-                     (HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_5) == GPIO_PIN_RESET));
+                     device_state_get_board_led());
+    break;
+
+  case SEND_CASE_MODE:
+    build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 4,
+                     "auto_enabled", 'b',
+                     device_state_get_auto_enabled() &&
+                         !device_state_manual_override_active(),
+                     "fan_mode", 'i', device_state_get_fan_mode(),
+                     "PM25_alarm", 'b', device_state_pm25_alarm(),
+                     "MQ2_alarm", 'b', device_state_smoke_alarm());
     break;
   }
+
+  send_case++;
+  if (send_case >= SEND_CASE_MAX) send_case = 0;
 
   /* 有数据才发送（MQ2 未就绪时跳过） */
   if (cmd_buf[0] != '\0') {
@@ -241,10 +293,6 @@ void esp32_run_send(void) {
     }
   }
 
-  /* case 递增，循环轮询 */
-  send_case++;
-  if (send_case >= SEND_CASE_MAX)
-    send_case = 0;
 }
 
 /**
@@ -256,9 +304,16 @@ void esp32_check_cmd_timeout(void)
 {
   if (at_cmd_busy && (HAL_GetTick() - at_cmd_start_tick) > AT_CMD_TIMEOUT_MS) {
     at_cmd_busy = 0;
+    if (esp32_initialized && esp_runtime_timeout_count < 0xFFU) {
+      esp_runtime_timeout_count++;
+    }
     if (!at_cmd_timeout_logged) {
       ESP32_UART1_STATUS_PRINTF("[ESP32] AT cmd timeout, reset busy\r\n");
       at_cmd_timeout_logged = 1;   /* 只打印一次，后续由 send/init 清除此标志 */
+    }
+    if (esp32_initialized &&
+        esp_runtime_timeout_count >= ESP_RUNTIME_TIMEOUT_RECONNECTS) {
+      esp32_request_reconnect("AT timeout");
     }
   }
 }
@@ -285,7 +340,23 @@ static void buf_consume(char *buf, uint16_t *len, uint16_t consumed)
   *         4. 所有 memmove 后更新 len，确保后续处理使用新长度
   */
 void esp32_run_recv(void) {
-  if (uart2_rx_len == 0) return;
+  uint8_t rx_frame[sizeof(uart2_rx_buf)];
+  uint16_t rx_len;
+
+  while ((rx_len = my_uart2_take_frame(rx_frame, sizeof(rx_frame))) > 0U) {
+    uint16_t available = (uint16_t)(sizeof(uart2_rx_buf) - 1U - uart2_rx_len);
+    if (rx_len > available) {
+      /* Keep the newest complete receive chunk if the parser is stuck. */
+      uart2_rx_len = 0U;
+      available = (uint16_t)(sizeof(uart2_rx_buf) - 1U);
+    }
+    if (rx_len > available) rx_len = available;
+    memcpy(uart2_rx_buf + uart2_rx_len, rx_frame, rx_len);
+    uart2_rx_len = (uint16_t)(uart2_rx_len + rx_len);
+    uart2_rx_buf[uart2_rx_len] = '\0';
+  }
+
+  if (uart2_rx_len == 0U) return;
 
   char    *buf = uart2_rx_buf;
   uint16_t len = uart2_rx_len;
@@ -307,17 +378,52 @@ void esp32_run_recv(void) {
         at_cmd_busy = 0;              /* OK → 命令成功 */
         at_cmd_timeout_logged = 0;
         esp32_got_ok = 1;             /* 通知 init 状态机 */
+        esp32_note_alive();
       } else if (line_len >= 5 && (strncmp(p, "ERROR", 5) == 0 || strncmp(p, "error", 5) == 0)) {
         is_status = 1;
         at_cmd_busy = 0;              /* ERROR → 命令失败 */
         at_cmd_timeout_logged = 0;
         esp32_got_ok = 1;             /* 也通知 init（失败也算响应） */
-      } else if (strncmp(p, "WIFI", 4) == 0) {
+        if (esp32_initialized && esp_runtime_timeout_count < 0xFFU) {
+          esp_runtime_timeout_count++;
+        }
+      } else if (line_len >= 15 && strncmp(p, "WIFI DISCONNECT", 15) == 0) {
         is_status = 1;
+        if (esp32_initialized) esp32_request_reconnect("WIFI DISCONNECT");
+      } else if (line_len >= 8 && strncmp(p, "WIFI", 4) == 0) {
+        is_status = 1;
+        if (strstr(p, "GOT IP") != NULL || strstr(p, "CONNECTED") != NULL) {
+          esp32_note_alive();
+        }
+      } else if (line_len >= 9 && strncmp(p, "+CWSTATE:", 9) == 0) {
+        int state = atoi(p + 9);
+        is_status = 1;
+        at_cmd_busy = 0;
+        at_cmd_timeout_logged = 0;
+        if (state == 2) {
+          esp32_note_alive();
+        } else if (esp32_initialized) {
+          esp32_request_reconnect("CWSTATE offline");
+        }
+      } else if (strstr(p, "MQTTDISCONNECTED") != NULL) {
+        is_status = 1;
+        if (esp32_initialized) esp32_request_reconnect("MQTT disconnected");
+      } else if (strncmp(p, "+MQTTPING:", 10) == 0 ||
+                 strstr(p, "MQTTCONNECTED") != NULL) {
+        is_status = 1;
+        at_cmd_busy = 0;
+        at_cmd_timeout_logged = 0;
+        esp32_note_alive();
       } else if (strncmp(p, "+MQTT", 5) == 0 && strstr(p, "+MQTTSUBRECV:") == NULL) {
         is_status = 1;
+        esp32_note_alive();
       } else if (line_len == 0) {
         is_status = 1;
+      }
+
+      if (esp32_initialized &&
+          esp_runtime_timeout_count >= ESP_RUNTIME_TIMEOUT_RECONNECTS) {
+        esp32_request_reconnect("runtime ERROR");
       }
 
       if (is_status) {
@@ -346,6 +452,7 @@ void esp32_run_recv(void) {
       if (msg_end != NULL) {
         at_cmd_busy = 0;              /* post/reply 到达 = 命令已完成 */
         at_cmd_timeout_logged = 0;
+        esp32_note_alive();
         MQTT_Handle(sub_start);
 
         uint16_t consumed = (msg_end + 3) - buf;
@@ -408,12 +515,45 @@ typedef struct {
 
 static esp_init_ctx_t init_ctx = {ESP_INIT_IDLE, 0, 0, 0, {0}};
 
+static void esp32_start_reconnect(void)
+{
+  uint32_t now = HAL_GetTick();
+
+  if (last_reconnect_tick != 0U &&
+      now - last_reconnect_tick < ESP_RECONNECT_MIN_INTERVAL_MS) {
+    return;
+  }
+
+  last_reconnect_tick = now;
+  esp32_initialized = 0;
+  esp_reconnect_requested = 0U;
+  esp_offline_flag = 0U;
+  at_cmd_busy = 0U;
+  at_cmd_timeout_logged = 0U;
+  esp32_got_ok = 0U;
+  esp_runtime_timeout_count = 0U;
+  init_ctx.state = ESP_INIT_IDLE;
+  init_ctx.retry_count = 0U;
+  init_ctx.start_time = 0U;
+  init_ctx.timeout_ms = 0U;
+  memset(init_ctx.cmd_buf, 0, sizeof(init_ctx.cmd_buf));
+  memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
+  uart2_rx_len = 0U;
+  esp32_rx_pending = 0U;
+  my_uart2_clear_frames();
+  last_esp_check_tick = now;
+  last_mqtt_ping_tick = now;
+
+  ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect start\r\n");
+}
+
 /* 快速检查 uart2 接收缓冲区是否包含期望字符串，找到后清空 */
 static uint8_t check_uart2_response(const char *expected)
 {
   if (uart2_rx_len > 0 && strstr(uart2_rx_buf, expected) != NULL) {
     at_cmd_busy = 0;
     at_cmd_timeout_logged = 0;
+    esp32_note_alive();
     memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
     uart2_rx_len = 0;
     return 1;
@@ -442,6 +582,10 @@ void esp32_init_nonblock(void)
       memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
       uart2_rx_len = 0;
       esp32_rx_pending = 0;
+      my_uart2_clear_frames();
+      esp_reconnect_requested = 0U;
+      esp_offline_flag = 0U;
+      esp_runtime_timeout_count = 0U;
       ESP32_UART1_STATUS_PRINTF("[ESP32] re-init after fail cooldown\r\n");
     }
     return;
@@ -631,6 +775,9 @@ void esp32_init_nonblock(void)
     if (esp32_got_ok || check_uart2_response("OK")) {
       init_ctx.state = ESP_INIT_DONE;
       esp32_initialized = 1;
+      esp_reconnect_requested = 0U;
+      esp_offline_flag = 0U;
+      esp32_note_alive();
       ESP32_UART1_STATUS_PRINTF("[ESP32] nonblock init done!\r\n");
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;  /* 超时清除 busy */
@@ -662,21 +809,22 @@ void esp32_init_nonblock(void)
   */
 void esp32_check_online(void)
 {
-  if (!esp32_initialized) return;
+  uint32_t now = HAL_GetTick();
 
   /* 离线重连：检测到离线标志，重置初始化状态 */
-  if (esp_offline_flag) {
-    esp32_initialized = 0;
-    esp_offline_flag = 0;
-    init_ctx.state = ESP_INIT_IDLE;
-    init_ctx.retry_count = 0;
-    memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
-    uart2_rx_len = 0;
-    ESP32_UART1_STATUS_PRINTF("[ESP32] disconnected, start reconnect...\r\n");
+  if (esp_reconnect_requested || esp_offline_flag) {
+    esp32_start_reconnect();
     return;
   }
 
-  uint32_t now = HAL_GetTick();
+  if (!esp32_initialized) return;
+
+  if (last_esp_alive_tick != 0U &&
+      now - last_esp_alive_tick >= ESP_NO_ALIVE_RECONNECT_MS) {
+    esp32_request_reconnect("no alive response");
+    esp32_start_reconnect();
+    return;
+  }
 
   /* MQTT PING: 每 30s */
   if (now - last_mqtt_ping_tick >= MQTT_PING_INTERVAL_MS) {
@@ -699,6 +847,11 @@ void esp32_check_online(void)
       at_cmd_timeout_logged = 0;
     }
   }
+}
+
+uint8_t esp32_get_online(void)
+{
+  return (esp32_initialized && !esp_reconnect_requested && !esp_offline_flag) ? 1U : 0U;
 }
 
 /**
@@ -880,29 +1033,69 @@ void MQTT_Handle(char *subrecv_start)
 
   /* ========== 云端下发的属性设置（property/set）========== */
   case MSG_PROPERTY_SET: {
-    int led = 0, fan_val = 0;
+    int led = 0, fan_val = 0, auto_enabled = 0, fan_mode = 0;
+    int temp_low_c10 = 0, temp_mid_c10 = 0, temp_high_c10 = 0;
+    int light_on_lux = 0, light_off_lux = 0;
+    int pm25_limit = 0, smoke_limit_ppm = 0;
 
     /* 基础控制：LED + 风扇（2 个字段）*/
-    uint8_t found[2] = {0};
-    parse_onenet_params(json_buf, 2, found,
+    uint8_t found[11] = {0};
+    parse_onenet_params(json_buf, 11, found,
         "LED", 'b', &led,
-        "fan", 'i', &fan_val);
+        "fan", 'i', &fan_val,
+        "auto_enabled", 'b', &auto_enabled,
+        "fan_mode", 'i', &fan_mode,
+        "temp_low_c10", 'i', &temp_low_c10,
+        "temp_mid_c10", 'i', &temp_mid_c10,
+        "temp_high_c10", 'i', &temp_high_c10,
+        "light_on_lux", 'i', &light_on_lux,
+        "light_off_lux", 'i', &light_off_lux,
+        "pm25_limit", 'i', &pm25_limit,
+        "smoke_limit_ppm", 'i', &smoke_limit_ppm);
 
     /* ── LED 控制 ──────────────────────────── */
     if (found[0]) {
-      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_5,
-                        led ? GPIO_PIN_RESET : GPIO_PIN_SET);
+      device_state_set_board_led(led ? 1U : 0U, DEVICE_SOURCE_CLOUD);
       ESP32_UART1_STATUS_PRINTF("[CTRL] LED %s\r\n", led ? "ON" : "OFF");
     }
 
     /* ── 风扇控制 ──────────────────────────── */
     if (found[1]) {
-      fan_set(fan_val);
+      device_state_set_fan((uint16_t)(fan_val < 0 ? 0 : fan_val),
+                           DEVICE_FAN_MANUAL, DEVICE_SOURCE_CLOUD);
       ESP32_UART1_STATUS_PRINTF("[CTRL] fan=%d\r\n", fan_val);
     }
 
-    /* ── 灯带 RGB：遍历 MAX_STRIPS，逐条解析下发通道 ── */
-    for (uint8_t sid = 1; sid <= MAX_STRIPS; sid++) {
+    if (found[3] && fan_mode >= DEVICE_FAN_OFF && fan_mode <= DEVICE_FAN_AUTO) {
+      device_state_set_fan_mode((device_fan_mode_t)fan_mode,
+                                DEVICE_SOURCE_CLOUD);
+    }
+
+    if (found[2]) {
+      /* When both fields arrive, auto_enabled is the final authority. */
+      device_state_set_auto_enabled(auto_enabled ? 1U : 0U,
+                                    DEVICE_SOURCE_CLOUD);
+    }
+
+    if (found[4] && found[5] && found[6]) {
+      device_state_set_temperature_thresholds((int16_t)temp_low_c10,
+                                              (int16_t)temp_mid_c10,
+                                              (int16_t)temp_high_c10,
+                                              DEVICE_SOURCE_CLOUD);
+    }
+    if (found[7] && found[8]) {
+      device_state_set_light_thresholds((uint16_t)(light_on_lux < 0 ? 0 : light_on_lux),
+                                        (uint16_t)(light_off_lux < 0 ? 0 : light_off_lux),
+                                        DEVICE_SOURCE_CLOUD);
+    }
+    if (found[9] && found[10]) {
+      device_state_set_air_limits((uint16_t)(pm25_limit < 0 ? 0 : pm25_limit),
+                                  (uint16_t)(smoke_limit_ppm < 0 ? 0 : smoke_limit_ppm),
+                                  DEVICE_SOURCE_CLOUD);
+    }
+
+    /* ── 灯带 RGB：1=室内, 3=室外；2=原入户通道保留但不使用 ── */
+    for (uint8_t sid = 1; sid <= DEVICE_STATE_STRIP_COUNT; sid++) {
         char rn[16], gn[16], bn[16];
         int  r_val = 0, g_val = 0, b_val = 0;
         uint8_t rgb_found[3] = {0};
@@ -917,13 +1110,20 @@ void MQTT_Handle(char *subrecv_start)
             bn, 'i', &b_val);
 
         if (rgb_found[0] || rgb_found[1] || rgb_found[2]) {
-            /* 只更新云台下发的通道，其余保持当前值 */
-            uint8_t r = rgb_found[0] ? (uint8_t)r_val : ws2812_strip_get_r(sid);
-            uint8_t g = rgb_found[1] ? (uint8_t)g_val : ws2812_strip_get_g(sid);
-            uint8_t b = rgb_found[2] ? (uint8_t)b_val : ws2812_strip_get_b(sid);
+            if (!device_state_strip_is_active(sid)) {
+                ESP32_UART1_STATUS_PRINTF("[CTRL] RGB%d reserved, ignored\r\n", sid);
+                continue;
+            }
 
-            if (sid <= ws2812_strip_get_count()) {
-                ws2812_strip_set_all(sid, r, g, b);
+            /* 只更新云台下发的通道，其余保持当前值 */
+            uint8_t r, g, b;
+            if (!device_state_get_strip_rgb(sid, &r, &g, &b)) continue;
+            if (rgb_found[0]) r = (uint8_t)(r_val < 0 ? 0 : r_val > 255 ? 255 : r_val);
+            if (rgb_found[1]) g = (uint8_t)(g_val < 0 ? 0 : g_val > 255 ? 255 : g_val);
+            if (rgb_found[2]) b = (uint8_t)(b_val < 0 ? 0 : b_val > 255 ? 255 : b_val);
+
+            if (sid <= device_state_get_strip_count()) {
+                device_state_set_strip_rgb(sid, r, g, b, DEVICE_SOURCE_CLOUD);
                 ESP32_UART1_STATUS_PRINTF(
                     "[CTRL] RGB%d R=%d G=%d B=%d\r\n", sid, r, g, b);
             }

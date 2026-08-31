@@ -5,7 +5,6 @@
 #include "stm32f1xx_hal_adc.h"
 #include "stm32f1xx_hal_gpio.h"
 #include <stdint.h>
-#include <stdlib.h>
 
 #define LED_GPIO GPIOA
 #define LED_GPIO_PIN GPIO_PIN_6
@@ -15,9 +14,17 @@
 #define PM25_SENSITIVITY_MV_PER_UGM3 5.0f
 #define WINDOW_SIZE 5
 
-static uint16_t *buf = NULL;
-static uint8_t  *buf_index = NULL; /* 当前窗口索引 */
-static uint16_t *g_adc = NULL;     /* 滤波后的ADC值 */
+static uint16_t buf[WINDOW_SIZE];
+static uint8_t  buf_index = 0U;     /* 当前窗口索引 */
+static uint16_t g_adc = 0U;         /* 滤波后的ADC值 */
+static uint8_t  g_ready = 0U;
+
+volatile uint8_t pm25_uart1_log_enabled = PM25_UART1_LOG_DEFAULT;
+
+#define PM25_LOG(...)                                      \
+    do {                                                   \
+        if (pm25_uart1_log_enabled) uart_printf(&huart1, __VA_ARGS__); \
+    } while (0)
 
 static void pm25_delay_timer_init(void) {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
@@ -36,33 +43,21 @@ void PM25_init(void)
 {
     pm25_delay_timer_init();
 
-    /* 动态分配滑动窗口缓冲区 */
-    buf = (uint16_t *)malloc(WINDOW_SIZE * sizeof(uint16_t));
-    buf_index = (uint8_t *)malloc(sizeof(uint8_t));
-    g_adc = (uint16_t *)malloc(sizeof(uint16_t));
-
-    /* 内存分配失败检查 */
-    if (!buf || !buf_index || !g_adc) {
-        uart_printf(&huart1, "[PM25] 内存分配失败!\r\n");
-        while (1);
-    }
-
     /* 初始化变量 */
-    *g_adc = 0;
-    *buf_index = 0;
-    for (uint8_t i = 0; i < WINDOW_SIZE; i++) buf[i] = 0;
+    g_adc = 0U;
+    buf_index = 0U;
+    g_ready = 0U;
+    for (uint8_t i = 0; i < WINDOW_SIZE; i++) buf[i] = 0U;
 
     /* 点亮传感器LED，开始工作 */
     HAL_GPIO_WritePin(LED_GPIO, LED_GPIO_PIN, GPIO_PIN_SET);  
-    uart_printf(&huart1, "[PM25] inited\r\n");
+    PM25_LOG("[PM25] inited\r\n");
 }
 
 void PM25_deinit(void)
 {
-    if (buf)       { free(buf);       buf = NULL;       }
-    if (buf_index) { free(buf_index); buf_index = NULL; }
-    if (g_adc)     { free(g_adc);     g_adc = NULL;     }
-    uart_printf(&huart1, "[PM25] deinit\r\n");
+    g_ready = 0U;
+    PM25_LOG("[PM25] deinit\r\n");
 }
 
 
@@ -83,20 +78,21 @@ void PM25_proc(void)
     delay_us(9685);
 
     /* ④ 滑动平均滤波（窗口大小=5）*/
-    buf[*buf_index] = val;
-    (*buf_index)++;
-    if (*buf_index >= WINDOW_SIZE) *buf_index = 0;
+    buf[buf_index] = val;
+    buf_index++;
+    if (buf_index >= WINDOW_SIZE) buf_index = 0U;
 
     uint32_t sum = 0;
     for (uint8_t i = 0; i < WINDOW_SIZE; i++) sum += buf[i];
-    *g_adc = (uint16_t)(sum / WINDOW_SIZE);
+    g_adc = (uint16_t)(sum / WINDOW_SIZE);
+    g_ready = 1U;
 
-//uart_printf(&huart1, "[PM25] avg=%d\r\n", *g_adc);
+// PM25_LOG("[PM25] avg=%u\r\n", g_adc);
 
 }
 
 
-uint16_t PM25_get_adc(void) { return g_adc ? *g_adc : 0; }
+uint16_t PM25_get_adc(void) { return g_adc; }
 
 /**
   * @brief  获取 PM2.5 浓度（µg/m³）
@@ -108,9 +104,7 @@ uint16_t PM25_get_adc(void) { return g_adc ? *g_adc : 0; }
   */
 float PM25_get_ugm3(void)
 {
-    if (!g_adc) return 0.0f;
-
-    uint16_t adc = *g_adc;
+    uint16_t adc = g_adc;
     if (adc == 0) return 0.0f;
 
     float signal_adc = (float)adc - PM25_CLEAN_AIR_ADC;
@@ -118,5 +112,7 @@ float PM25_get_ugm3(void)
 
     return (signal_adc * PM25_ADC_TO_MV) / PM25_SENSITIVITY_MV_PER_UGM3;
 }
+
+uint8_t PM25_is_ready(void) { return g_ready; }
 
 

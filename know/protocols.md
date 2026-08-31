@@ -22,6 +22,8 @@ b13.txt="开"\xFF\xFF\xFF
 | `07` | `55 AA 07 <strip_id> 0D 0A` | 6B | 查询灯带状态 |
 | `05` | `55 AA 05 H L 0D 0A` | 7B | 风扇转速 (大端) |
 
+- 当前用户可操作灯带只保留 `1=室内灯` 和 `3=室外灯`；`2=原入户灯` 仅物理注册并在启动时强制关闭，不在 LCD/语音/云端暴露；`TIM4_CH4/PD15` 已用于风扇 PWM，不再暴露灯带4。
+
 ### 解析机制
 - 累积缓冲区 `lcd_buf[128]` + `lcd_buf_len`
 - `lcd_recv()` 每10ms将 UART4 RX 追加到累积缓冲
@@ -31,7 +33,7 @@ b13.txt="开"\xFF\xFF\xFF
 ### 屏幕脚本关键函数
 - `printh XX` — 发送单字节十六进制
 - `prints h0.val,1` — 发送控件值 (1字节)
-- 屏幕脚本**没有变量**，用隐藏控件 `h_cur` 充当变量存储灯带ID
+- 屏幕脚本**没有变量**，用隐藏控件 `h_cur` 充当变量存储灯带ID，仅允许写入 1 或 3
 - 控件可互相读取：`n0.val=h0.val`, `prints h_cur.val,1`
 
 ---
@@ -49,11 +51,11 @@ b13.txt="开"\xFF\xFF\xFF
 - 上报主题: `$sys/{PID}/{DEV}/thing/property/post`
 - 订阅: `post/reply` + `property/set`
 - JSON 格式: `{"id":"123","version":"1.0","params":{"temp":{"value":25.5}}}`
-- 上报分 9 个 case 轮询（1条/秒），含 4 条灯带的 RGB 合并上报
+- 上报分 case 轮询（约1条/秒），含 3 路灯带 RGB、风扇、自动模式、空气质量告警等状态
 
 ### 云端下发
 - `property/set` → `parse_onenet_params()` 批量解析
-- 遍历 `MAX_STRIPS` 逐条检查 `RGB<n>_RAD/GREEN/BLUE` 字段
+- 遍历已启用灯带，逐条检查 `RGB<n>_RAD/GREEN/BLUE` 字段；`RGB2_*` 下发会被识别为保留通道并忽略
 - 只更新下发的通道，其余保持当前值
 - 通过 `queue_set_reply()` 排队回复
 
@@ -65,24 +67,40 @@ b13.txt="开"\xFF\xFF\xFF
 ```
 CATEGORY:TARGET:ACTION:VALUE\r\n
 ```
-- 新格式: `LIGHT:1:ON`, `LIGHT:2:COLOR:WARM`, `LIGHT:ALL:OFF`
+- 新格式: `LIGHT:1:ON`, `LIGHT:3:COLOR:WARM`, `LIGHT:ALL:OFF`
 - 兼容旧格式: `LIGHT:ON` (默认灯带1) → tgt字段被识别为action自动回退
 - 风扇: `FAN:ON/OFF/SPEED:UP/DOWN/1~4`
-- 查询: `QUERY:TEMP/HUMI/PM25/LIGHT/ALL`
+- 自动/手动模式: `AUTO:ON`, `AUTO:OFF`, `FAN:AUTO`, `FAN:MANUAL`, `LIGHT:AUTO`, `LIGHT:MANUAL`
+- 查询: `QUERY:TEMP/HUMI/PM25/LIGHT/SMOKE/ALL`
 
 ### STM32端解析
 ```c
 cat = strtok(buf, ":\r\n");   // LIGHT / FAN / QUERY...
-tgt = strtok(NULL, ":\r\n");  // 1~4 / ALL (或兼容旧格式的action)
+tgt = strtok(NULL, ":\r\n");  // 1 / 3 / ALL (或兼容旧格式的action)
 act = strtok(NULL, ":\r\n");  // ON / OFF / COLOR / MODE
 val = strtok(NULL, ":\r\n");  // WARM / WHITE / RED...
 ```
 - `strip_id=255` → 全部灯带，遍历 FOR_EACH_STRIP 宏
 - 查询回应通过 `PLAYS:id,...` 命令触发语音播报
+- 语音/LCD/云端手动控制灯光或风扇后会进入 10 分钟手动覆盖；自动模式命令会清除覆盖并恢复自动策略。
+
+### STM32 → ASRPRO 播报
+- 单条播报: `PLAY:<id>\r\n`
+- 多条顺序播报: `PLAYS:<id>,<id>,...\r\n`
+- 人脸识别确认后，STM32 会发送动态 `PLAYS` 序列：`10003` 欢迎回家、`118/119/121` 拼接温湿度和光照、`126/127` 播报风扇和灯光已自动调节。
+- 传感器数据无效时使用 `128` 播报“环境数据正在更新”，避免播报过期或未初始化数据。
+- 自动化动作播报使用 `129~133`：自动开灯、自动关灯、自动开风扇、自动关风扇、自动调节风扇。
 
 ### ASRPRO 固件 (asrpro_code.cpp)
 - 语音 ID → `Serial1.println("LIGHT:1:ON")` 映射
-- 位于 case 1~38 的 switch 语句中
+- 位于 `ASR_CODE()` 的 switch 语句中；播放片段 ID `10003`、`100~133` 位于 `setup()` 顶部注释配置区
+
+### 自动控制触发
+- 光照 `<= light_on_lux`：自动恢复最近一次非零灯光状态。
+- 光照 `>= light_off_lux`：关闭由自动化打开的灯光。
+- 温度：`<=26℃` 关风扇，`26~28℃` 约 30%，`28~30℃` 约 50%，`>30℃` 约 80%，带约 1℃ 回差。
+- PM2.5：达到 `pm25_limit` 后自动开风扇到约 80%，低于 `pm25_limit - 10` 后解除空气质量触发。
+- MQ2：达到 `smoke_limit_ppm` 或 DO 报警后自动开风扇到 100%，低于 `smoke_limit_ppm - 50` 后解除烟雾触发。
 
 ---
 
@@ -102,4 +120,5 @@ FACE:ERR,MODEL\r\n
 ### STM32 端状态规则
 - `score >= 70` 且连续 3 次 ZENG，`face_is_zeng_detected()` 才返回 1。
 - 超过 2000ms 没收到有效帧，`face_get_online()` 和 `face_is_zeng_detected()` 都返回 0。
-- 后续语音、继电器、舵机等扩展只读取 `face` 模块状态，不在 UART 回调里直接执行动作。
+- 后续语音、灯光、风扇等扩展只读取 `face` 模块状态，不在 UART 回调里直接执行动作。
+- 连续确认识别到曾先生后，`automation.c` 负责按温度/光照调节风扇和灯光，`voice.c` 负责欢迎回家及环境播报。

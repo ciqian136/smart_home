@@ -7,9 +7,9 @@ extern TIM_HandleTypeDef htim4;               /* 共用 TIM4 */
 uint16_t dma_buffer2[TOTAL_BITS2];
 
 /* 灯带2 基础颜色（向后兼容）*/
-static uint8_t ws2812_2_base_r = 255;
-static uint8_t ws2812_2_base_g = 200;
-static uint8_t ws2812_2_base_b = 100;
+static uint8_t ws2812_2_base_r = 0;
+static uint8_t ws2812_2_base_g = 0;
+static uint8_t ws2812_2_base_b = 0;
 
 /* ── 内部函数 ─────────────────────────────────── */
 

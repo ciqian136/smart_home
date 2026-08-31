@@ -23,6 +23,7 @@ void esp32_check_cmd_timeout(void);
 void esp32_flush_reply(void);
 /** @brief ESP32 在线状态维护（MQTT PING + WiFi 检测 + 离线重连）*/
 void esp32_check_online(void);
+uint8_t esp32_get_online(void);
 /** @brief ESP32 数据发送任务（上报传感器数据到 OneNET）*/
 void esp32_run_send(void);
 /** @brief ESP32 数据接收处理任务（处理云端下发的控制指令 + OK/ERROR 检测）*/

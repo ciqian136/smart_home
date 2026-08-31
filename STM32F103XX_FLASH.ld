@@ -56,7 +56,8 @@ ENTRY(Reset_Handler)
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+/* The final two 2 KiB pages are reserved for config_store.c. */
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 504K
 }
 
 /* Highest address of the user mode stack */

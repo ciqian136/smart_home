@@ -4,7 +4,6 @@
 #include "stm32f1xx_hal_adc.h"
 #include "stm32f1xx_hal_def.h"
 #include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
 
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
@@ -23,115 +22,145 @@
 #define MQ2_PPM_A          100.0f    /* 灵敏度系数 a */
 #define MQ2_PPM_B          -2.5f     /* 灵敏度指数 b */
 
-static uint16_t *buf = NULL;
-static uint8_t *buf_index = NULL;   /* 当前窗口索引 */
-static uint16_t *g_adc = NULL;      /* 滤波后的ADC平均值 */
-static uint8_t *g_alarm = NULL;     /* 报警状态（0=正常, 1=报警）*/
-static uint8_t *g_ready = NULL;     /* 传感器预热完成标志 */
-static uint32_t *g_start = NULL;    /* 初始化时刻时间戳（ms）*/
+#define SMOKE_LOG_INTERVAL_MS       1000U
+#define SMOKE_ADC_RAIL_LOW          5U
+#define SMOKE_ADC_RAIL_HIGH         4090U
+#define SMOKE_STUCK_DELTA           2U
+#define SMOKE_STUCK_SAMPLES         20U
+#define SMOKE_MISMATCH_MARGIN_ADC   100U
+
+static uint16_t buf[WINDOW_SIZE];
+static uint8_t buf_index = 0U;      /* 当前窗口索引 */
+static uint16_t g_adc = 0U;         /* 滤波后的ADC平均值 */
+static uint8_t g_alarm = 0U;        /* 报警状态（0=正常, 1=报警）*/
+static uint8_t g_ready = 0U;        /* 传感器预热完成标志 */
+static uint32_t g_start = 0U;       /* 初始化时刻时间戳（ms）*/
+static uint8_t g_anomaly_flags = 0U;
+static uint16_t g_last_raw_adc = 0U;
+static uint8_t g_stuck_samples = 0U;
+static uint32_t g_last_log_tick = 0U;
+
+volatile uint8_t smoke_uart1_log_enabled = SMOKE_UART1_LOG_DEFAULT;
+
+#define SMOKE_LOG(...)                                      \
+  do {                                                      \
+    if (smoke_uart1_log_enabled) uart_printf(&huart1, __VA_ARGS__); \
+  } while (0)
+
+static uint16_t smoke_absdiff_u16(uint16_t a, uint16_t b)
+{
+  return a > b ? (uint16_t)(a - b) : (uint16_t)(b - a);
+}
+
+static const char *smoke_anomaly_hint(uint8_t flags)
+{
+  if (flags & (SMOKE_ANOMALY_ADC_LOW | SMOKE_ANOMALY_ADC_HIGH)) {
+    return "check power/wiring/ADC pin";
+  }
+  if (flags & SMOKE_ANOMALY_ADC_STUCK) {
+    return "check sensor power or ADC mux";
+  }
+  if (flags & SMOKE_ANOMALY_DO_ADC_MISMATCH) {
+    return "adjust MQ2 comparator pot/threshold";
+  }
+  return "ok";
+}
 
 void smoke_init(void) {
-  /* 动态分配所有需要的内存 */
-  buf = (uint16_t *)malloc(WINDOW_SIZE * sizeof(uint16_t));
-  buf_index = (uint8_t *)malloc(sizeof(uint8_t));
-  g_adc = (uint16_t *)malloc(sizeof(uint16_t));
-  g_alarm = (uint8_t *)malloc(sizeof(uint8_t));
-  g_ready = (uint8_t *)malloc(sizeof(uint8_t));
-  g_start = (uint32_t *)malloc(sizeof(uint32_t));
-
-  /* 检查内存分配是否成功 */
-  if (!buf || !buf_index || !g_adc || !g_alarm || !g_ready || !g_start) {
-    uart_printf(&huart1, "[SMOKE] malloc failed!\r\n");
-    while (1)
-      ;
-  }
-
   /* 记录初始化时间并初始化所有变量 */
-  *g_start = HAL_GetTick();   /* 记录当前时间作为预热起始 */
-  *g_ready = 0;               /* 预热未完成 */
-  *g_adc = 0;                 /* ADC初始值 */
-  *g_alarm = 0;               /* 初始无报警 */
-  *buf_index = 0;             /* 窗口索引初始为0 */
+  g_start = HAL_GetTick();    /* 记录当前时间作为预热起始 */
+  g_ready = 0U;               /* 预热未完成 */
+  g_adc = 0U;                 /* ADC初始值 */
+  g_alarm = 0U;               /* 初始无报警 */
+  g_anomaly_flags = 0U;
+  g_last_raw_adc = 0U;
+  g_stuck_samples = 0U;
+  g_last_log_tick = 0U;
+  buf_index = 0U;             /* 窗口索引初始为0 */
   for (uint8_t i = 0; i < WINDOW_SIZE; i++) {
     buf[i] = 0;               /* 清空滑动窗口 */
   }
 
-  uart_printf(&huart1, "[SMOKE] init (heap), wait %ds\r\n", PREHEAT_TIME);
+  SMOKE_LOG("[MQ2] init, wait %ds\r\n", PREHEAT_TIME);
 }
 
 void smoke_deinit(void) {
-  if (buf) {
-    free(buf);
-    buf = NULL;
-  }
-  if (buf_index) {
-    free(buf_index);
-    buf_index = NULL;
-  }
-  if (g_adc) {
-    free(g_adc);
-    g_adc = NULL;
-  }
-  if (g_alarm) {
-    free(g_alarm);
-    g_alarm = NULL;
-  }
-  if (g_ready) {
-    free(g_ready);
-    g_ready = NULL;
-  }
-  if (g_start) {
-    free(g_start);
-    g_start = NULL;
-  }
-
-  uart_printf(&huart1, "[SMOKE] deinit, memory released\r\n");
+  g_ready = 0U;
+  SMOKE_LOG("[MQ2] deinit\r\n");
 }
 
 void smoke_proc(void) {
 
   /* 预热阶段：等待传感器稳定 */
-  if (!(*g_ready)) {
-    if (HAL_GetTick() - *g_start < (uint32_t)PREHEAT_TIME * 1000)
+  if (!g_ready) {
+    if (HAL_GetTick() - g_start < (uint32_t)PREHEAT_TIME * 1000U)
       return;
-    *g_ready = 1;
-    uart_printf(&huart1, "[SMOKE] ready\r\n");
+    g_ready = 1U;
+    SMOKE_LOG("[MQ2] ready\r\n");
   }
 
   /* Smoke sensor: ADC1_IN1 / PA1, sampled on demand. */
   uint16_t val = my_adc_read_channel(ADC_CHANNEL_1);
+  uint8_t digital_alarm;
+  uint8_t analog_alarm;
   
   /* 滑动平均滤波（窗口大小=5），消除采样噪声 */
-  buf[*buf_index] = val;
-  (*buf_index)++;
-  if (*buf_index >= WINDOW_SIZE)
-    *buf_index = 0;  /* 循环索引 */
+  buf[buf_index] = val;
+  buf_index++;
+  if (buf_index >= WINDOW_SIZE)
+    buf_index = 0U;  /* 循环索引 */
 
   uint32_t sum = 0;
   for (uint8_t i = 0; i < WINDOW_SIZE; i++) {
     sum += buf[i];
   }
-  *g_adc = (uint16_t)(sum / WINDOW_SIZE);  /* 计算平均值 */
+  g_adc = (uint16_t)(sum / WINDOW_SIZE);  /* 计算平均值 */
 
   /* 报警判断：数字IO低电平触发 或 ADC值超过阈值 */
-  *g_alarm = (HAL_GPIO_ReadPin(DO_GPIO, DO_GPIO_PIN) == GPIO_PIN_RESET) ? 1 : 0;
-  if (*g_adc > ALARM_THRESHOLD)
-    *g_alarm = 1;
+  digital_alarm = (HAL_GPIO_ReadPin(DO_GPIO, DO_GPIO_PIN) == GPIO_PIN_RESET) ? 1U : 0U;
+  analog_alarm = (g_adc > ALARM_THRESHOLD) ? 1U : 0U;
+  g_alarm = (digital_alarm || analog_alarm) ? 1U : 0U;
 
- //uart_printf(&huart1,"[SMOKE] avg=%d alarm=%d\r\n", *g_adc, *g_alarm);
+  g_anomaly_flags = 0U;
+  if (val <= SMOKE_ADC_RAIL_LOW) g_anomaly_flags |= SMOKE_ANOMALY_ADC_LOW;
+  if (val >= SMOKE_ADC_RAIL_HIGH) g_anomaly_flags |= SMOKE_ANOMALY_ADC_HIGH;
+  if (smoke_absdiff_u16(val, g_last_raw_adc) <= SMOKE_STUCK_DELTA &&
+      val > SMOKE_ADC_RAIL_LOW && val < SMOKE_ADC_RAIL_HIGH) {
+    if (g_stuck_samples < 255U) g_stuck_samples++;
+  } else {
+    g_stuck_samples = 0U;
+  }
+  g_last_raw_adc = val;
+  if (g_stuck_samples >= SMOKE_STUCK_SAMPLES) {
+    g_anomaly_flags |= SMOKE_ANOMALY_ADC_STUCK;
+  }
+  if ((digital_alarm && g_adc + SMOKE_MISMATCH_MARGIN_ADC < ALARM_THRESHOLD) ||
+      (!digital_alarm && g_adc > ALARM_THRESHOLD + SMOKE_MISMATCH_MARGIN_ADC)) {
+    g_anomaly_flags |= SMOKE_ANOMALY_DO_ADC_MISMATCH;
+  }
+
+  if (smoke_uart1_log_enabled && HAL_GetTick() - g_last_log_tick >= SMOKE_LOG_INTERVAL_MS) {
+    g_last_log_tick = HAL_GetTick();
+    uart_printf(&huart1,
+                "[MQ2] raw=%u avg=%u ppm=%.1f do_alarm=%u alarm=%u anomaly=0x%02X hint=%s\r\n",
+                val, g_adc, (double)smoke_get_ppm(), digital_alarm, g_alarm,
+                g_anomaly_flags, smoke_anomaly_hint(g_anomaly_flags));
+  }
+
+ // SMOKE_LOG("[MQ2] avg=%u alarm=%u\r\n", g_adc, g_alarm);
 }
 
 /**
   * @brief  检查烟雾传感器是否已完成预热
   * @return 1=已就绪, 0=预热中
   */
-uint8_t smoke_is_ready(void) { return g_ready ? (*g_ready) : 0; }
+uint8_t smoke_is_ready(void) { return g_ready; }
 
 /**
   * @brief  获取烟雾传感器滤波后的 ADC 值
   * @return ADC平均值（未初始化时返回0）
   */
-uint16_t smoke_get_adc(void) { return g_adc ? *g_adc : 0; }
+uint16_t smoke_get_adc(void) { return g_adc; }
 
 /**
   * @brief  获取烟雾浓度（ppm），基于 MQ2 Rs/Ro 特性曲线
@@ -145,9 +174,7 @@ uint16_t smoke_get_adc(void) { return g_adc ? *g_adc : 0; }
   */
 float smoke_get_ppm(void)
 {
-    if (!g_adc) return 0.0f;
-
-    uint16_t adc = *g_adc;
+    uint16_t adc = g_adc;
     if (adc == 0 || adc >= 4095) return 0.0f;
 
     /* 1. ADC → 电压 */
@@ -171,7 +198,9 @@ float smoke_get_ppm(void)
   * @brief  获取烟雾报警状态
   * @return 1=报警中, 0=正常
   */
-uint8_t smoke_is_alarmed(void) { return g_alarm ? *g_alarm : 0; }
+uint8_t smoke_is_alarmed(void) { return g_alarm; }
+
+uint8_t smoke_get_anomaly_flags(void) { return g_anomaly_flags; }
 
 
 

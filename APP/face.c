@@ -16,6 +16,7 @@ static uint8_t face_zeng_count = 0;
 static uint8_t face_none_count = 0;
 static uint32_t face_last_frame_tick = 0;
 static uint8_t face_owner_detected_event = 0;
+static uint8_t face_welcome_event = 0;
 static uint8_t face_report_has_sent = 0;
 static uint8_t face_report_pending = 0;
 static uint8_t face_report_last_state = 0;
@@ -106,6 +107,7 @@ static void face_mark_zeng(uint8_t score)
     if (face_zeng_count >= FACE_ZENG_CONFIRM_COUNT) {
         if (!face_zeng_detected) {
             face_owner_detected_event = 1;
+            face_welcome_event = 1;
         }
         face_zeng_detected = 1;
     }
@@ -194,6 +196,7 @@ void face_init(void)
     face_none_count = 0;
     face_last_frame_tick = 0;
     face_owner_detected_event = 0;
+    face_welcome_event = 0;
     face_report_has_sent = 0;
     face_report_pending = 0;
     face_report_last_state = 0;
@@ -238,6 +241,13 @@ uint8_t face_take_owner_detected_event(void)
 {
     uint8_t event = face_owner_detected_event;
     face_owner_detected_event = 0;
+    return event;
+}
+
+uint8_t face_take_welcome_event(void)
+{
+    uint8_t event = face_welcome_event;
+    face_welcome_event = 0;
     return event;
 }
 

@@ -3,7 +3,13 @@
 
 #include "headfile.h"
 
-/** @brief 烟雾传感器初始化（分配内存 + 预热计时）*/
+#define SMOKE_UART1_LOG_DEFAULT 0U
+#define SMOKE_ANOMALY_ADC_LOW         0x01U
+#define SMOKE_ANOMALY_ADC_HIGH        0x02U
+#define SMOKE_ANOMALY_ADC_STUCK       0x04U
+#define SMOKE_ANOMALY_DO_ADC_MISMATCH 0x08U
+
+/** @brief 烟雾传感器初始化（静态内存 + 预热计时）*/
 void smoke_init(void);
 /** @brief 烟雾传感器数据处理（ADC采集 + 滤波 + 报警判断）*/
 void smoke_proc(void);
@@ -17,6 +23,10 @@ float smoke_get_ppm(void);
 uint8_t smoke_is_alarmed(void);
 /** @brief 检查传感器是否完成预热（1=就绪, 0=预热中）*/
 uint8_t smoke_is_ready(void);
+/** @brief 获取 MQ2 异常标志位，见 SMOKE_ANOMALY_* */
+uint8_t smoke_get_anomaly_flags(void);
+
+extern volatile uint8_t smoke_uart1_log_enabled;
 
 #endif
 

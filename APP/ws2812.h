@@ -5,7 +5,7 @@
 #include "tim.h"
 #include "dma.h"
 
-/* ========== 灯带1 硬件参数（48 LED, TIM4_CH1, PD12）========== */
+/* ========== 灯带1 硬件参数（室内灯, 48 LED, TIM4_CH1, PD12）========== */
 #define NUM_LEDS    48               // 灯珠数量
 #define BITS_PER_LED 24
 #define DATA_BITS   (NUM_LEDS * BITS_PER_LED)
@@ -16,8 +16,7 @@
 #define RESET_CODE  0               // 复位低电平
 
 #define RESET_US    300               // 复位低电平最小时间 (µs)，48 灯长链需 300µs
-#define T_US        1.25f             // 每个 PWM 周期时间 (µs)
-#define RESET_BITS  ((uint16_t)(RESET_US / T_US) + 1)   // 至少 40 个周期，+1 保证足够
+#define RESET_BITS  ((RESET_US * 4U / 5U) + 1U)   // 1.25us 周期，纯整数常量表达式
 
 #define TOTAL_BITS  (DATA_BITS + RESET_BITS)
 
@@ -37,7 +36,7 @@ uint8_t ws2812_get_base_b(void);
  * 统一多灯带管理层
  * ================================================================ */
 
-#define MAX_STRIPS  4
+#define MAX_STRIPS  3
 
 /** 灯带硬件发送函数指针类型 */
 typedef void (*ws2812_set_all_func_t)(uint8_t r, uint8_t g, uint8_t b);
@@ -64,6 +63,7 @@ void ws2812_strip_init(uint8_t id, uint16_t num_leds, ws2812_set_all_func_t set_
   * @note   若 (r,g,b) 与当前状态相同则跳过 DMA 传输（防抖）
   */
 void ws2812_strip_set_all(uint8_t id, uint8_t r, uint8_t g, uint8_t b);
+void ws2812_strip_set_all_force(uint8_t id, uint8_t r, uint8_t g, uint8_t b);
 
 /* ---- 状态查询 ---- */
 uint8_t  ws2812_strip_is_open(uint8_t id);
