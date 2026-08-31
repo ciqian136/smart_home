@@ -77,6 +77,128 @@ static void esp32_note_alive(void);
 static void esp32_request_reconnect(const char *reason);
 static void esp32_start_reconnect(void);
 
+#define ESP_LIGHT_TARGET_ALL      255U
+#define ESP_LIGHT_PRESET_OFF        0
+#define ESP_LIGHT_PRESET_ON         1
+#define ESP_LIGHT_PRESET_WARM       2
+#define ESP_LIGHT_PRESET_WHITE      3
+#define ESP_LIGHT_PRESET_NIGHT      4
+#define ESP_LIGHT_PRESET_READ       5
+#define ESP_LIGHT_PRESET_RED        6
+#define ESP_LIGHT_PRESET_GREEN      7
+#define ESP_LIGHT_PRESET_BLUE       8
+#define ESP_LIGHT_PRESET_CUSTOM    99
+
+typedef struct {
+  int id;
+  const char *name;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+} esp_light_preset_t;
+
+static const esp_light_preset_t light_presets[] = {
+    {ESP_LIGHT_PRESET_OFF,   "OFF",   0U,   0U,   0U},
+    {ESP_LIGHT_PRESET_ON,    "ON",    125U, 125U, 125U},
+    {ESP_LIGHT_PRESET_WARM,  "WARM",  255U, 200U, 100U},
+    {ESP_LIGHT_PRESET_WHITE, "WHITE", 255U, 255U, 255U},
+    {ESP_LIGHT_PRESET_NIGHT, "NIGHT", 12U,  10U,  5U},
+    {ESP_LIGHT_PRESET_READ,  "READ",  178U, 140U, 70U},
+    {ESP_LIGHT_PRESET_RED,   "RED",   255U, 0U,   0U},
+    {ESP_LIGHT_PRESET_GREEN, "GREEN", 0U,   255U, 0U},
+    {ESP_LIGHT_PRESET_BLUE,  "BLUE",  0U,   0U,   255U},
+};
+
+static char esp32_upper_ascii(char ch)
+{
+  return (ch >= 'a' && ch <= 'z') ? (char)(ch - ('a' - 'A')) : ch;
+}
+
+static uint8_t esp32_str_equal_ci(const char *a, const char *b)
+{
+  if (a == NULL || b == NULL) return 0U;
+  while (*a != '\0' && *b != '\0') {
+    if (esp32_upper_ascii(*a) != esp32_upper_ascii(*b)) return 0U;
+    a++;
+    b++;
+  }
+  return (*a == '\0' && *b == '\0') ? 1U : 0U;
+}
+
+static const esp_light_preset_t *esp32_find_light_preset_by_id(int preset_id)
+{
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (light_presets[i].id == preset_id) return &light_presets[i];
+  }
+  return NULL;
+}
+
+static int esp32_light_preset_id_from_name(const char *name)
+{
+  if (name == NULL || name[0] == '\0') return -1;
+
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (esp32_str_equal_ci(name, light_presets[i].name)) {
+      return light_presets[i].id;
+    }
+  }
+
+  if (esp32_str_equal_ci(name, "DEFAULT") ||
+      esp32_str_equal_ci(name, "NORMAL") ||
+      esp32_str_equal_ci(name, "DIM")) {
+    return ESP_LIGHT_PRESET_ON;
+  }
+  if (esp32_str_equal_ci(name, "CLOSE") ||
+      esp32_str_equal_ci(name, "CLOSED") ||
+      esp32_str_equal_ci(name, "SLEEP")) {
+    return ESP_LIGHT_PRESET_OFF;
+  }
+
+  return -1;
+}
+
+static uint8_t esp32_apply_light_preset_to_strip(uint8_t strip_id, int preset_id)
+{
+  const esp_light_preset_t *preset = esp32_find_light_preset_by_id(preset_id);
+  if (preset == NULL || !device_state_strip_is_active(strip_id)) return 0U;
+
+  return device_state_set_strip_rgb(strip_id, preset->r, preset->g, preset->b,
+                                    DEVICE_SOURCE_CLOUD);
+}
+
+static uint8_t esp32_apply_light_preset(uint8_t target, int preset_id)
+{
+  uint8_t applied = 0U;
+
+  if (target == ESP_LIGHT_TARGET_ALL) {
+    for (uint8_t i = 0U; i < DEVICE_STATE_STRIP_COUNT; i++) {
+      uint8_t sid = (uint8_t)(i + 1U);
+      if (esp32_apply_light_preset_to_strip(sid, preset_id)) {
+        applied = 1U;
+      }
+    }
+    return applied;
+  }
+
+  return esp32_apply_light_preset_to_strip(target, preset_id);
+}
+
+static int esp32_get_light_preset_state(uint8_t strip_id)
+{
+  uint8_t r = 0U, g = 0U, b = 0U;
+  if (!device_state_get_strip_rgb(strip_id, &r, &g, &b)) {
+    return ESP_LIGHT_PRESET_CUSTOM;
+  }
+
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (light_presets[i].r == r && light_presets[i].g == g && light_presets[i].b == b) {
+      return light_presets[i].id;
+    }
+  }
+
+  return ESP_LIGHT_PRESET_CUSTOM;
+}
+
 static void esp32_note_alive(void)
 {
   last_esp_alive_tick = HAL_GetTick();
@@ -145,7 +267,8 @@ void esp32_flush_reply(void)
 #define SEND_CASE_RGB_GROUP 7    /* 灯带 RGB 上报（轮询）*/
 #define SEND_CASE_LED       8
 #define SEND_CASE_MODE      9    /* AUTO/MANUAL + fan mode */
-#define SEND_CASE_MAX       10
+#define SEND_CASE_PRESET    10   /* 灯带预设状态上报（轮询）*/
+#define SEND_CASE_MAX       11
 
 /**
   * @brief  ESP32 数据发送任务 - 向 OneNET 分时上报传感器数据
@@ -268,6 +391,26 @@ void esp32_run_send(void) {
                      "PM25_alarm", 'b', device_state_pm25_alarm(),
                      "MQ2_alarm", 'b', device_state_smoke_alarm());
     break;
+
+  case SEND_CASE_PRESET: {
+    static uint8_t preset_report_idx = 0U;
+    uint8_t count = device_state_get_strip_count();
+
+    for (uint8_t tries = 0U; tries < count; tries++) {
+      uint8_t sid = (uint8_t)(preset_report_idx + 1U);
+      char preset_name[24];
+
+      preset_report_idx++;
+      if (preset_report_idx >= count) preset_report_idx = 0U;
+      if (!device_state_strip_is_active(sid)) continue;
+
+      snprintf(preset_name, sizeof(preset_name), "RGB%d_PRESET_STATE", sid);
+      build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
+                       preset_name, 'i', esp32_get_light_preset_state(sid));
+      break;
+    }
+    break;
+  }
   }
 
   send_case++;
@@ -1037,6 +1180,9 @@ void MQTT_Handle(char *subrecv_start)
     int temp_low_c10 = 0, temp_mid_c10 = 0, temp_high_c10 = 0;
     int light_on_lux = 0, light_off_lux = 0;
     int pm25_limit = 0, smoke_limit_ppm = 0;
+    int light_target = 0, light_preset = 0;
+    int rgb_all_preset = 0, rgb1_preset = 0, rgb2_preset = 0, rgb3_preset = 0;
+    char light_preset_name[64] = {0};
 
     /* 基础控制：LED + 风扇（2 个字段）*/
     uint8_t found[11] = {0};
@@ -1052,6 +1198,18 @@ void MQTT_Handle(char *subrecv_start)
         "light_off_lux", 'i', &light_off_lux,
         "pm25_limit", 'i', &pm25_limit,
         "smoke_limit_ppm", 'i', &smoke_limit_ppm);
+
+    /* 灯带预设控制。优先推荐 per-strip 字段；通用 light_target +
+       light_preset/light_preset_name 可用于一个下拉框控制指定灯带。 */
+    uint8_t preset_found[7] = {0};
+    parse_onenet_params(json_buf, 7, preset_found,
+        "light_target", 'i', &light_target,
+        "light_preset", 'i', &light_preset,
+        "light_preset_name", 's', light_preset_name,
+        "RGBALL_PRESET", 'i', &rgb_all_preset,
+        "RGB1_PRESET", 'i', &rgb1_preset,
+        "RGB2_PRESET", 'i', &rgb2_preset,
+        "RGB3_PRESET", 'i', &rgb3_preset);
 
     /* ── LED 控制 ──────────────────────────── */
     if (found[0]) {
@@ -1092,6 +1250,53 @@ void MQTT_Handle(char *subrecv_start)
       device_state_set_air_limits((uint16_t)(pm25_limit < 0 ? 0 : pm25_limit),
                                   (uint16_t)(smoke_limit_ppm < 0 ? 0 : smoke_limit_ppm),
                                   DEVICE_SOURCE_CLOUD);
+    }
+
+    /* ── 灯带预设：先应用预设，后面的精确 RGB 字段可覆盖预设结果 ── */
+    if (preset_found[1] || preset_found[2]) {
+      int preset_id = preset_found[1]
+                          ? light_preset
+                          : esp32_light_preset_id_from_name(light_preset_name);
+      uint8_t target = ESP_LIGHT_TARGET_ALL;
+
+      if (preset_found[0]) {
+        if (light_target == (int)ESP_LIGHT_TARGET_ALL) {
+          target = ESP_LIGHT_TARGET_ALL;
+        } else if (light_target >= 1 && light_target <= DEVICE_STATE_STRIP_COUNT) {
+          target = (uint8_t)light_target;
+        } else {
+          target = 0U;
+        }
+      }
+
+      if (preset_id >= 0 && esp32_apply_light_preset(target, preset_id)) {
+        ESP32_UART1_STATUS_PRINTF("[CTRL] light target=%d preset=%d\r\n",
+                                  preset_found[0] ? light_target : ESP_LIGHT_TARGET_ALL,
+                                  preset_id);
+      } else {
+        ESP32_UART1_STATUS_PRINTF("[CTRL] light preset invalid target=%d preset=%d name=%s\r\n",
+                                  preset_found[0] ? light_target : ESP_LIGHT_TARGET_ALL,
+                                  preset_id, light_preset_name);
+      }
+    }
+
+    if (preset_found[3]) {
+      if (esp32_apply_light_preset(ESP_LIGHT_TARGET_ALL, rgb_all_preset)) {
+        ESP32_UART1_STATUS_PRINTF("[CTRL] RGBALL_PRESET=%d\r\n", rgb_all_preset);
+      }
+    }
+    if (preset_found[4]) {
+      if (esp32_apply_light_preset_to_strip(DEVICE_STRIP_INDOOR_ID, rgb1_preset)) {
+        ESP32_UART1_STATUS_PRINTF("[CTRL] RGB1_PRESET=%d\r\n", rgb1_preset);
+      }
+    }
+    if (preset_found[5]) {
+      ESP32_UART1_STATUS_PRINTF("[CTRL] RGB2_PRESET reserved, ignored\r\n");
+    }
+    if (preset_found[6]) {
+      if (esp32_apply_light_preset_to_strip(DEVICE_STRIP_OUTDOOR_ID, rgb3_preset)) {
+        ESP32_UART1_STATUS_PRINTF("[CTRL] RGB3_PRESET=%d\r\n", rgb3_preset);
+      }
     }
 
     /* ── 灯带 RGB：1=室内, 3=室外；2=原入户通道保留但不使用 ── */

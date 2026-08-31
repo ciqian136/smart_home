@@ -56,6 +56,11 @@ b13.txt="开"\xFF\xFF\xFF
 ### 云端下发
 - `property/set` → `parse_onenet_params()` 批量解析
 - 遍历已启用灯带，逐条检查 `RGB<n>_RAD/GREEN/BLUE` 字段；`RGB2_*` 下发会被识别为保留通道并忽略
+- 灯带预设支持两类下发方式：
+  - 独立字段：`RGB1_PRESET`、`RGB3_PRESET`、`RGBALL_PRESET`
+  - 通用字段：`light_target` + `light_preset` 或 `light_preset_name`
+- 预设 ID：`0=OFF`, `1=ON`, `2=WARM`, `3=WHITE`, `4=NIGHT`, `5=READ`, `6=RED`, `7=GREEN`, `8=BLUE`, `99=CUSTOM(仅上报)`
+- 设备回传 `RGB1_PRESET_STATE`、`RGB3_PRESET_STATE`；当前 RGB 不匹配固定预设时返回 `99`。
 - 只更新下发的通道，其余保持当前值
 - 通过 `queue_set_reply()` 排队回复
 
