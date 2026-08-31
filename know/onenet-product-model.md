@@ -42,6 +42,55 @@
 
 不会主动上报 `RGB2_*`、`RGB2_PRESET_STATE` 或任何灯带4字段。ID2 是原入户灯保留通道，ID4 不存在可用硬件输出。
 
+## OneNET 上报配置速查表
+
+| Identifier | 数据类型 | 建议范围/枚举 | 补偿/换算 | 备注 |
+|------------|----------|---------------|-----------|------|
+| `test_int` | int | 0~2147483647 | 无 | 通信计数心跳 |
+| `MQ2` | float | 0~10000 ppm | `ppm = 100 * (Rs/Ro)^-2.5`，`Rs = 10k * (3.3 - Vout) / Vout`，`Vout = avg_adc * 3.3 / 4096`；`Ro` 默认 10k，需清洁空气实测校准 | 20s 预热，5 点滑动平均；固件不主动钳位上报值 |
+| `PM25` | float | 0~1000 ug/m3 | `ugm3 = max(0, (avg_adc - 200) * 3300 / 4096 / 5.0)` | `200` 是当前清洁空气 ADC 补偿基线，5 点滑动平均 |
+| `humi` | float | 0~100 % | 无线性补偿，DHT11 原始湿度值 + 校验和 | 启动等待 2s，约 2s 一次有效采样 |
+| `temp` | float | -40~80 degC | 无线性补偿，DHT11 原始温度值 + 校验和 | DHT11 实际常用范围约 0~50 degC，物模型可按固件阈值范围放宽 |
+| `light` | float | 0~65535 lux | `lux = raw / 1.2` 后做 5 点滑动平均 | 自动阈值下发限制为 1~10000 lux |
+| `fan` | int | 0~1000 | 无 | 风扇 PWM 比较值，不是百分比 |
+| `RGB1_RAD` | int | 0~255 | 无 | 室内灯 R；字段名历史拼写为 `RAD` |
+| `RGB1_GREEN` | int | 0~255 | 无 | 室内灯 G |
+| `RGB1_BLUE` | int | 0~255 | 无 | 室内灯 B |
+| `RGB3_RAD` | int | 0~255 | 无 | 室外灯 R；字段名历史拼写为 `RAD` |
+| `RGB3_GREEN` | int | 0~255 | 无 | 室外灯 G |
+| `RGB3_BLUE` | int | 0~255 | 无 | 室外灯 B |
+| `LED` | bool | true/false | 无 | 板载 LED 状态 |
+| `auto_enabled` | bool | true/false | 手动覆盖补偿：`device_state_get_auto_enabled() && !device_state_manual_override_active()` | 用户手动控制后的 10 分钟覆盖期内上报 false |
+| `fan_mode` | int | 0/1/2 | 无 | `0=停止`，`1=手动`，`2=自动` |
+| `PM25_alarm` | bool | true/false | 阈值判断：`PM25 >= pm25_limit` | 默认阈值 75 ug/m3；自动风扇释放有 `limit - 10` 回差 |
+| `MQ2_alarm` | bool | true/false | `DO低电平` 或 `avg_adc > 1000` 或 `MQ2 >= smoke_limit_ppm` | 默认阈值 300 ppm；自动风扇释放有 `limit - 50` 回差 |
+| `RGB1_PRESET_STATE` | int | 0~8,99 | 当前 RGB 与固定预设表精确匹配；不匹配则 99 | 室内灯当前预设状态 |
+| `RGB3_PRESET_STATE` | int | 0~8,99 | 当前 RGB 与固定预设表精确匹配；不匹配则 99 | 室外灯当前预设状态 |
+
+## OneNET 下发配置速查表
+
+| Identifier | 数据类型 | 范围/枚举 | 补偿/限制 | 备注 |
+|------------|----------|-----------|-----------|------|
+| `LED` | bool | true/false | 无 | 控制板载 LED |
+| `fan` | int | 0~1000 | 小于 0 按 0；大于 1000 在设备层限制为 1000 | 云端下发风扇速度会进入手动模式 |
+| `auto_enabled` | bool | true/false | true 清除手动覆盖并让风扇进入自动；false 进入手动模式 | 自动控制总开关 |
+| `fan_mode` | int | 0/1/2 | 非法值忽略 | `0=停止`，`1=手动`，`2=自动` |
+| `RGB1_RAD` / `RGB1_GREEN` / `RGB1_BLUE` | int | 0~255 | 小于 0 按 0；大于 255 按 255 | 室内灯精确 RGB |
+| `RGB3_RAD` / `RGB3_GREEN` / `RGB3_BLUE` | int | 0~255 | 小于 0 按 0；大于 255 按 255 | 室外灯精确 RGB |
+| `RGB1_PRESET` | int | 0~8 | 非法预设忽略 | 室内灯预设 |
+| `RGB3_PRESET` | int | 0~8 | 非法预设忽略 | 室外灯预设 |
+| `RGBALL_PRESET` | int | 0~8 | 非法预设忽略 | 同时设置室内灯和室外灯 |
+| `light_target` | int | 1/3/255 | 非法目标忽略；缺省按 255=全部 | 通用预设目标，`1=室内`，`3=室外`，`255=全部` |
+| `light_preset` | int | 0~8 | 优先于 `light_preset_name` | 通用数字预设 |
+| `light_preset_name` | string | OFF/ON/WARM/WHITE/NIGHT/READ/RED/GREEN/BLUE | 大小写不敏感；兼容 DEFAULT/NORMAL/DIM/CLOSE/CLOSED/SLEEP | 通用字符串预设 |
+| `temp_low_c10` | int | -400~800 | 必须满足 `low < mid < high` | 单位 0.1 degC，默认 260 |
+| `temp_mid_c10` | int | -400~800 | 必须满足 `low < mid < high` | 单位 0.1 degC，默认 280 |
+| `temp_high_c10` | int | -400~800 | 必须满足 `low < mid < high` | 单位 0.1 degC，默认 300 |
+| `light_on_lux` | int | 1~9999 | 必须小于 `light_off_lux` | 默认 120 lux |
+| `light_off_lux` | int | 2~10000 | 必须大于 `light_on_lux` | 默认 200 lux |
+| `pm25_limit` | int | 1~1000 | 非法值忽略 | 默认 75 ug/m3 |
+| `smoke_limit_ppm` | int | 1~10000 | 非法值忽略 | 默认 300 ppm |
+
 ## 必须保留的上报属性
 
 | 字段 | 类型 | 范围/枚举 | 说明 |
