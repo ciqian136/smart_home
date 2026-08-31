@@ -18,13 +18,23 @@ void ASR_CODE();
 // ============================================================
 #define RX_BUF_SIZE  256
 #define PLAY_QUEUE_DEPTH 64
+#define PLAY_WAKE_TIMEOUT_MS 45000
+#define PLAY_KEEPALIVE_LOOPS 250
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
 
+static void keep_playback_awake(void)
+{
+    set_state_enter_wakeup(PLAY_WAKE_TIMEOUT_MS);
+}
+
 static void queue_play_id(uint32_t id)
 {
-    if (id > 0) xQueueSend(play_queue, &id, 10);
+    if (id > 0 && play_queue != NULL) {
+        keep_playback_awake();
+        xQueueSend(play_queue, &id, 10);
+    }
 }
 
 /* ── 串口接收任务 ────────────────────────────────── */
@@ -53,11 +63,13 @@ static void app_uart(void *arg)
                 /* 解析 PLAY:XXXXX */
                 if (strncmp(rx_buf, "PLAY:", 5) == 0) {
                     uint32_t id = atoi(rx_buf + 5);
+                    keep_playback_awake();
                     queue_play_id(id);
                 }
                 /* 解析 PLAYS:X,Y,Z */
                 else if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
                     const char *p = rx_buf + 6;
+                    keep_playback_awake();
                     while (*p) {
                         uint32_t id = atoi(p);
                         queue_play_id(id);
@@ -81,8 +93,16 @@ static void app_play(void *arg)
     uint32_t id;
     while (1) {
         if (xQueueReceive(play_queue, &id, 0)) {
+            uint16_t keepalive_loops = 0;
+
+            keep_playback_awake();
             /* 等待当前播报完毕再播下一条 */
             while (prompt_play_by_cmd_id(id, -1, NULL, false)) {
+                keepalive_loops++;
+                if (keepalive_loops >= PLAY_KEEPALIVE_LOOPS) {
+                    keepalive_loops = 0;
+                    keep_playback_awake();
+                }
                 delay(2);
             }
         }
