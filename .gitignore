@@ -22,3 +22,11 @@ MDK-ARM/keil_rebuild*.log
 
 # Local assistant/session files
 .claude/
+.tools/
+_actr_decoded_all/
+_actr_extract/
+_decoded_managed/
+_decomp/
+_decomp2/
+_hmitype_src2/
+_wifi_patch/
