@@ -20,8 +20,8 @@ void ASR_CODE();
 #define PLAY_QUEUE_DEPTH 64
 #define PLAY_WAKE_TIMEOUT_MS 45000
 #define PLAY_KEEPALIVE_LOOPS 250
-#define PLAY_START_RETRY_LOOPS 5000
-#define PLAY_DONE_WAIT_LOOPS 15000
+#define PLAY_START_RETRY_LOOPS 50
+#define PLAY_DONE_WAIT_LOOPS 2500
 #define PLAY_VOICE_ID_MIN 10000U
 #define ASR_SERIAL1_RX_LOG_ENABLED 0
 
@@ -70,6 +70,7 @@ static bool play_prompt_id(uint32_t id)
     while (start_prompt_play(id) != 0) {
         loops++;
         if (loops >= PLAY_START_RETRY_LOOPS) {
+            resume_voice_in();
             return false;
         }
         refresh_wakeup_periodically(&keepalive_loops);
@@ -81,12 +82,15 @@ static bool play_prompt_id(uint32_t id)
     while (prompt_is_playing()) {
         loops++;
         if (loops >= PLAY_DONE_WAIT_LOOPS) {
+            prompt_stop_play();
+            resume_voice_in();
             break;
         }
         refresh_wakeup_periodically(&keepalive_loops);
         delay(2);
     }
 
+    resume_voice_in();
     return true;
 }
 
@@ -346,7 +350,7 @@ void setup()
   // --- 前缀 (ID 118~121) ---
   //{ID:118,keyword:"命令词",ASR:"前缀温度",ASRTO:"当前温度"}
   //{ID:119,keyword:"命令词",ASR:"前缀湿度",ASRTO:"当前湿度"}
-  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"PM2.5浓度"}
+  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"粉尘浓度"}
   //{ID:121,keyword:"命令词",ASR:"前缀光照",ASRTO:"当前光照"}
 
   // --- 负号 (ID 122) ---
@@ -372,7 +376,7 @@ void setup()
   //{ID:133,keyword:"命令词",ASR:"自动调节风扇",ASRTO:"风扇已自动调节"}
 
   // --- 空气质量告警 (ID 134~135) ---
-  //{ID:134,keyword:"命令词",ASR:"警告PM二点五超标",ASRTO:"警告，PM2.5浓度超标，请及时通风"}
+  //{ID:134,keyword:"命令词",ASR:"警告粉尘超标",ASRTO:"警告，粉尘浓度超标，请及时通风"}
   //{ID:135,keyword:"命令词",ASR:"警告烟雾超标",ASRTO:"警告，烟雾浓度超标，请立即处理"}
 
   // 板载 LED
