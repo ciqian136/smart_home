@@ -20,6 +20,7 @@
 #define VOICE_PLAY_CMD_SIZE 256
 #define VOICE_REPLY_DELAY_MS 1500U
 #define VOICE_MAX_SPOKEN_VALUE 9999
+#define VOICE_MAX_FRAMES_PER_SERVICE 4U
 #define FACE_WELCOME_PLAY_ID 10003U
 #define FACE_WELCOME_COOLDOWN_MS 30000U
 
@@ -58,9 +59,21 @@
 #define VID_AUTO_FAN_ON     131   /* 已自动开启风扇 */
 #define VID_AUTO_FAN_OFF    132   /* 已自动关闭风扇 */
 #define VID_AUTO_FAN_SPEED  133   /* 风扇已自动调节 */
+#define VID_PM25_ALARM      134   /* 警告，PM2.5浓度超标，请及时通风 */
+#define VID_SMOKE_ALARM     135   /* 警告，烟雾浓度超标，请立即处理 */
 
 /* ── 温度告警阈值 ── */
 #define TEMP_HIGH_THRESHOLD  30   /* 超过此值播报"温度偏高" */
+#define AIR_ALARM_REPEAT_COUNT 2U
+#define VOICE_UART1_LOG_DEFAULT 0U
+#define PM25_ALARM_CLEAR_MARGIN 10U
+#define VOICE_AIR_ALARM_PM25  0x01U
+#define VOICE_AIR_ALARM_SMOKE 0x02U
+
+#define VOICE_UART1_LOG(...)                                      \
+    do {                                                          \
+        if (VOICE_UART1_LOG_DEFAULT) uart_printf(&huart1, __VA_ARGS__); \
+    } while (0)
 
 /* 数字-中文片段映射 */
 static const uint8_t digit_vid[10] = {
@@ -76,6 +89,8 @@ static uint8_t face_welcome_sent = 0;
 static uint32_t face_welcome_last_sent_tick = 0;
 static uint8_t auto_notify_pending_mask = 0U;
 static uint32_t auto_notify_last_sent_tick = 0U;
+static uint8_t air_alarm_pending_mask = 0U;
+static uint8_t pm25_alarm_latched = 0U;
 
 static int voice_clamp_value(int value, int min_value, int max_value);
 
@@ -235,8 +250,8 @@ void voice_notify_automation(uint8_t event_mask)
     auto_notify_pending_mask |= event_mask;
 }
 
-static int voice_append_auto_notify_id(char *buf, int buf_size, int offset,
-                                       uint16_t id)
+static int voice_append_play_id(char *buf, int buf_size, int offset,
+                                uint16_t id)
 {
     int written;
 
@@ -256,17 +271,59 @@ static uint8_t voice_build_auto_notify_cmd(uint8_t mask, char *buf, int buf_size
     if (buf == NULL || buf_size <= 1 || mask == 0U) return 0U;
 
     if (mask & VOICE_AUTO_EVENT_LIGHT_ON) {
-        offset = voice_append_auto_notify_id(buf, buf_size, offset, VID_AUTO_LIGHT_ON);
+        offset = voice_append_play_id(buf, buf_size, offset, VID_AUTO_LIGHT_ON);
     }
     if (mask & VOICE_AUTO_EVENT_LIGHT_OFF) {
-        offset = voice_append_auto_notify_id(buf, buf_size, offset, VID_AUTO_LIGHT_OFF);
+        offset = voice_append_play_id(buf, buf_size, offset, VID_AUTO_LIGHT_OFF);
     }
     if (mask & VOICE_AUTO_EVENT_FAN_ON) {
-        offset = voice_append_auto_notify_id(buf, buf_size, offset, VID_AUTO_FAN_ON);
+        offset = voice_append_play_id(buf, buf_size, offset, VID_AUTO_FAN_ON);
     } else if (mask & VOICE_AUTO_EVENT_FAN_OFF) {
-        offset = voice_append_auto_notify_id(buf, buf_size, offset, VID_AUTO_FAN_OFF);
+        offset = voice_append_play_id(buf, buf_size, offset, VID_AUTO_FAN_OFF);
     } else if (mask & VOICE_AUTO_EVENT_FAN_SPEED) {
-        offset = voice_append_auto_notify_id(buf, buf_size, offset, VID_AUTO_FAN_SPEED);
+        offset = voice_append_play_id(buf, buf_size, offset, VID_AUTO_FAN_SPEED);
+    }
+
+    return (offset > 0 && offset < buf_size) ? 1U : 0U;
+}
+
+static void voice_update_pm25_alarm_events(void)
+{
+    if (device_state_pm25_valid()) {
+        uint16_t limit = device_state_get_pm25_limit();
+
+        if (limit > 0U) {
+            float pm25 = device_state_get_pm25();
+            uint16_t clear_level = limit > PM25_ALARM_CLEAR_MARGIN ?
+                                   (uint16_t)(limit - PM25_ALARM_CLEAR_MARGIN) : 0U;
+
+            if (pm25 >= (float)limit) {
+                if (!pm25_alarm_latched) {
+                    air_alarm_pending_mask |= VOICE_AIR_ALARM_PM25;
+                }
+                pm25_alarm_latched = 1U;
+            } else if (pm25 <= (float)clear_level) {
+                pm25_alarm_latched = 0U;
+            }
+        }
+    }
+}
+
+static uint8_t voice_build_air_alarm_cmd(uint8_t mask, char *buf, int buf_size)
+{
+    int offset = 0;
+
+    if (buf == NULL || buf_size <= 1 || mask == 0U) return 0U;
+
+    if (mask & VOICE_AIR_ALARM_PM25) {
+        for (uint8_t i = 0U; i < AIR_ALARM_REPEAT_COUNT; i++) {
+            offset = voice_append_play_id(buf, buf_size, offset, VID_PM25_ALARM);
+        }
+    }
+    if (mask & VOICE_AIR_ALARM_SMOKE) {
+        for (uint8_t i = 0U; i < AIR_ALARM_REPEAT_COUNT; i++) {
+            offset = voice_append_play_id(buf, buf_size, offset, VID_SMOKE_ALARM);
+        }
     }
 
     return (offset > 0 && offset < buf_size) ? 1U : 0U;
@@ -285,7 +342,7 @@ static void voice_plays_send(const char *fmt, ...)
 
     if (len <= 0 || len >= (int)sizeof(voice_pending_cmd)) {
         voice_pending_valid = 0;
-        uart_printf(&huart1, "[VOICE] PLAYS too long, drop\r\n");
+        VOICE_UART1_LOG("[VOICE] PLAYS too long, drop\r\n");
         return;
     }
 
@@ -364,6 +421,29 @@ static uint8_t voice_auto_notify_service(void)
     return 1U;
 }
 
+static uint8_t voice_pm25_alarm_service(void)
+{
+    uint8_t mask;
+    char alarm_cmd[VOICE_PLAY_CMD_SIZE];
+
+    voice_update_pm25_alarm_events();
+
+    if (voice_pending_valid || air_alarm_pending_mask == 0U) {
+        return 0U;
+    }
+
+    mask = air_alarm_pending_mask;
+    if (!voice_build_air_alarm_cmd(mask, alarm_cmd, sizeof(alarm_cmd))) {
+        air_alarm_pending_mask = 0U;
+        return 0U;
+    }
+
+    air_alarm_pending_mask = 0U;
+    /* 告警直接入 ASRPRO 队列，避免被后续查询播报覆盖。 */
+    uart_printf(&huart3, "%s\r\n", alarm_cmd);
+    return 1U;
+}
+
 static int voice_clamp_value(int value, int min_value, int max_value)
 {
     if (value < min_value) return min_value;
@@ -371,22 +451,21 @@ static int voice_clamp_value(int value, int min_value, int max_value)
     return value;
 }
 
-static void voice_take_pending_frame(char *local_buf, uint16_t local_buf_size)
+static uint8_t voice_take_pending_frame(char *local_buf, uint16_t local_buf_size)
 {
-    uint16_t copy_len;
+    uint16_t len;
 
-    if (local_buf_size == 0) return;
+    if (local_buf == NULL || local_buf_size <= 1U) return 0U;
 
-    __disable_irq();
-    copy_len = uart3_msg_len;
-    if (copy_len >= local_buf_size) {
-        copy_len = local_buf_size - 1;
+    len = my_uart3_take_frame((uint8_t *)local_buf,
+                              (uint16_t)(local_buf_size - 1U));
+    if (len == 0U) {
+        local_buf[0] = '\0';
+        return 0U;
     }
-    memcpy(local_buf, uart3_msg_buf, copy_len);
-    local_buf[copy_len] = '\0';
-    uart3_msg_len = 0;
-    uart3_msg_pending = 0;
-    __enable_irq();
+
+    local_buf[len] = '\0';
+    return 1U;
 }
 #define COLOR_WARM_R    255
 #define COLOR_WARM_G    200
@@ -409,14 +488,12 @@ static void voice_take_pending_frame(char *local_buf, uint16_t local_buf_size)
   */
 void voice_parse(void)
 {
-    if (!uart3_msg_pending) return;
-
     /* ── 立即拷贝到局部缓冲区，防止 UART 接收竞争覆盖 ── */
     char local_buf[128];
     memset(local_buf, 0, sizeof(local_buf));
-    voice_take_pending_frame(local_buf, sizeof(local_buf));
+    if (!voice_take_pending_frame(local_buf, sizeof(local_buf))) return;
 
-    uart_printf(&huart1, "[VOICE] %s\r\n", local_buf);
+    VOICE_UART1_LOG("[VOICE] %s\r\n", local_buf);
 
     /* ── 过滤 ASRPRO 模块的 echo/应答消息（[RX] 开头），不当作语音指令处理 ── */
     if (strncmp(local_buf, "[RX]", 4) == 0) {
@@ -430,11 +507,11 @@ void voice_parse(void)
     char *val  = strtok(NULL,      ":\r\n");   /* VALUE（可选）                 */
 
     /* ── 调试：打印解析结果 ── */
-    uart_printf(&huart1, "[VOICE] cat=%s tgt=%s act=%s val=%s\r\n",
-                cat ? cat : "(null)",
-                tgt ? tgt : "(null)",
-                act ? act : "(null)",
-                val ? val : "(null)");
+    VOICE_UART1_LOG("[VOICE] cat=%s tgt=%s act=%s val=%s\r\n",
+                    cat ? cat : "(null)",
+                    tgt ? tgt : "(null)",
+                    act ? act : "(null)",
+                    val ? val : "(null)");
 
     if (cat == NULL) {
         return;  /* 局部缓冲区，不需要 cleanup */
@@ -662,9 +739,9 @@ void voice_parse(void)
                 off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_TEMP_HIGH);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] temp=%.1f => 语音拼接%s\r\n",
-                        device_state_get_temperature(),
-                        v > TEMP_HIGH_THRESHOLD ? " [偏高]" : "");
+            VOICE_UART1_LOG("[QUERY] temp=%.1f => 语音拼接%s\r\n",
+                            device_state_get_temperature(),
+                            v > TEMP_HIGH_THRESHOLD ? " [偏高]" : "");
             lcd_send();
         }
         /* --- QUERY:HUMI --- */
@@ -677,7 +754,7 @@ void voice_parse(void)
             off += voice_append_number_buf(seg + off, sizeof(seg) - off, v);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] humi=%.1f => voice\r\n", device_state_get_humidity());
+            VOICE_UART1_LOG("[QUERY] humi=%.1f => voice\r\n", device_state_get_humidity());
             lcd_send();
         }
         /* --- QUERY:PM25 --- */
@@ -691,7 +768,7 @@ void voice_parse(void)
             off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_UGPM3);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] pm25=%.1f ug/m3 => voice\r\n", device_state_get_pm25());
+            VOICE_UART1_LOG("[QUERY] pm25=%.1f ug/m3 => voice\r\n", device_state_get_pm25());
             lcd_send();
         }
         /* --- QUERY:LIGHT --- */
@@ -705,20 +782,37 @@ void voice_parse(void)
             off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_LUX);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] lux=%.0f => voice\r\n", device_state_get_light());
+            VOICE_UART1_LOG("[QUERY] lux=%.0f => voice\r\n", device_state_get_light());
             lcd_send();
         }
         /* --- QUERY:SMOKE --- */
         else if (act != NULL && strcmp(act, "SMOKE") == 0) {
-            int v = (int)(device_state_get_smoke() + 0.5f);
+            float smoke_ppm;
+            uint8_t smoke_alarm;
+
+#if SMOKE_TEST_MODE
+            smoke_test_trigger_alarm();
+#endif
+            smoke_ppm = smoke_get_ppm();
+            smoke_alarm = (smoke_is_alarmed() ||
+                           smoke_ppm >= (float)device_state_get_smoke_limit_ppm()) ? 1U : 0U;
+
+            int v = (int)(smoke_ppm + 0.5f);
             v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
 
-            char seg[80];
+            char seg[VOICE_PLAY_CMD_SIZE];
             int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_SMOKE);
             off += voice_append_number_buf(seg + off, sizeof(seg) - off, v);
+            if (smoke_alarm) {
+                for (uint8_t i = 0U; i < AIR_ALARM_REPEAT_COUNT; i++) {
+                    off = voice_append_play_id(seg, sizeof(seg), off, VID_SMOKE_ALARM);
+                }
+            }
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] smoke=%.1f ppm => voice\r\n", device_state_get_smoke());
+            VOICE_UART1_LOG("[QUERY] smoke=%.1f ppm => voice%s\r\n",
+                            (double)smoke_ppm,
+                            smoke_alarm ? " [alarm]" : "");
             lcd_send();
         }
         /* --- QUERY:ALL --- */
@@ -747,9 +841,9 @@ void voice_parse(void)
             off += voice_append_number_buf(seg + off, sizeof(seg) - off, sv);
             voice_plays_send("%s", seg);
 
-            uart_printf(&huart1, "[QUERY] all t=%d h=%d pm25=%d lux=%d smoke=%d%s\r\n",
-                        tv, hv, pv, lv, sv,
-                        tv > TEMP_HIGH_THRESHOLD ? " [偏高]" : "");
+            VOICE_UART1_LOG("[QUERY] all t=%d h=%d pm25=%d lux=%d smoke=%d%s\r\n",
+                            tv, hv, pv, lv, sv,
+                            tv > TEMP_HIGH_THRESHOLD ? " [偏高]" : "");
             lcd_send();
         }
     }
@@ -765,13 +859,16 @@ void voice_parse(void)
 void voice_run_send(void)
 {
     uint8_t voice_sent;
+    uint8_t frames = 0U;
 
-    if (uart3_msg_pending) {
+    while (uart3_msg_pending && frames < VOICE_MAX_FRAMES_PER_SERVICE) {
         voice_parse();
+        frames++;
     }
 
     voice_sent = voice_plays_service();
-    if (!voice_sent && !voice_face_welcome_service()) {
+    if (!voice_sent && !voice_pm25_alarm_service() &&
+        !voice_face_welcome_service()) {
         voice_auto_notify_service();
     }
 }

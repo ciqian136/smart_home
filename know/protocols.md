@@ -96,10 +96,11 @@ val = strtok(NULL, ":\r\n");  // WARM / WHITE / RED...
 - 传感器数据无效时使用 `128` 播报“环境数据正在更新”，避免播报过期或未初始化数据。
 - 自动化动作播报使用 `129~133`：自动开灯、自动关灯、自动开风扇、自动关风扇、自动调节风扇。
 - ASRPRO 收到外部 `PLAY/PLAYS` 后会把唤醒保持时间延长到 45 秒，播放任务每约 500ms 刷新一次保活，避免人脸欢迎这类长播报中途退出唤醒态，导致剩余队列等到下次唤醒才继续播。
+- 外部播报队列按 ID 类型选择 API：`10000` 及以上的 `playid` 使用 `prompt_play_by_voice_id()`，普通命令词提示音 ID 使用 `prompt_play_by_cmd_id()`；启动失败和播放完成等待都有超时，避免单个无效 ID 卡死播放任务。
 
 ### ASRPRO 固件 (asrpro_code.cpp)
 - 语音 ID → `Serial1.println("LIGHT:1:ON")` 映射
-- 位于 `ASR_CODE()` 的 switch 语句中；播放片段 ID `10003`、`100~133` 位于 `setup()` 顶部注释配置区
+- 位于 `ASR_CODE()` 的 switch 语句中；欢迎语 `playid=10003`、播放片段命令词 ID `100~135` 位于 `setup()` 顶部注释配置区
 - 外部播报队列在 `app_uart()` 中入队，在 `app_play()` 中串行播放；长播报保活逻辑位于 `keep_playback_awake()`。
 
 ### 自动控制触发

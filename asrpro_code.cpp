@@ -8,8 +8,8 @@ uint32_t snid;
 void ASR_CODE();
 
 //{speak:小蝶-清新女声,vol:10,speed:10,platform:haohaodada}
-//{playid:10001,voice:欢迎使用语音助手，用天问五幺唤醒我。}
-//{playid:10002,voice:我退下了，用天问五幺唤醒我}
+//{playid:10001,voice:欢迎使用语音助手，用小雨小雨唤醒我。}
+//{playid:10002,voice:我退下了，用小雨小雨唤醒我}
 //{playid:10003,voice:欢迎回家，曾先生}
 
 // ============================================================
@@ -20,6 +20,10 @@ void ASR_CODE();
 #define PLAY_QUEUE_DEPTH 64
 #define PLAY_WAKE_TIMEOUT_MS 45000
 #define PLAY_KEEPALIVE_LOOPS 250
+#define PLAY_START_RETRY_LOOPS 5000
+#define PLAY_DONE_WAIT_LOOPS 15000
+#define PLAY_VOICE_ID_MIN 10000U
+#define ASR_SERIAL1_RX_LOG_ENABLED 0
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
@@ -37,6 +41,55 @@ static void queue_play_id(uint32_t id)
     }
 }
 
+static uint32_t start_prompt_play(uint32_t id)
+{
+    if (id >= PLAY_VOICE_ID_MIN) {
+        return prompt_play_by_voice_id((uint16_t)id, NULL, false);
+    }
+
+    return prompt_play_by_cmd_id((uint16_t)id, -1, NULL, false);
+}
+
+static void refresh_wakeup_periodically(uint16_t *loops)
+{
+    if (loops == NULL) return;
+
+    (*loops)++;
+    if (*loops >= PLAY_KEEPALIVE_LOOPS) {
+        *loops = 0;
+        keep_playback_awake();
+    }
+}
+
+static bool play_prompt_id(uint32_t id)
+{
+    uint16_t loops = 0;
+    uint16_t keepalive_loops = 0;
+
+    keep_playback_awake();
+    while (start_prompt_play(id) != 0) {
+        loops++;
+        if (loops >= PLAY_START_RETRY_LOOPS) {
+            return false;
+        }
+        refresh_wakeup_periodically(&keepalive_loops);
+        delay(2);
+    }
+
+    loops = 0;
+    keepalive_loops = 0;
+    while (prompt_is_playing()) {
+        loops++;
+        if (loops >= PLAY_DONE_WAIT_LOOPS) {
+            break;
+        }
+        refresh_wakeup_periodically(&keepalive_loops);
+        delay(2);
+    }
+
+    return true;
+}
+
 /* ── 串口接收任务 ────────────────────────────────── */
 
 static void app_uart(void *arg)
@@ -52,12 +105,14 @@ static void app_uart(void *arg)
                 rx_buf[idx] = '\0';
                 idx = 0;
 
-                /* 回传确认：PLAYS 很长，只确认类型，避免 STM32 侧 UART3 接收被长 echo 干扰 */
-                if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
-                    Serial1.println("[RX]PLAYS");
-                } else {
-                    Serial1.print("[RX]");
-                    Serial1.println(rx_buf);
+                if (ASR_SERIAL1_RX_LOG_ENABLED) {
+                    /* 回传确认：PLAYS 很长，只确认类型，避免 STM32 侧 UART3 接收被长 echo 干扰 */
+                    if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
+                        Serial1.println("[RX]PLAYS");
+                    } else {
+                        Serial1.print("[RX]");
+                        Serial1.println(rx_buf);
+                    }
                 }
 
                 /* 解析 PLAY:XXXXX */
@@ -93,18 +148,7 @@ static void app_play(void *arg)
     uint32_t id;
     while (1) {
         if (xQueueReceive(play_queue, &id, 0)) {
-            uint16_t keepalive_loops = 0;
-
-            keep_playback_awake();
-            /* 等待当前播报完毕再播下一条 */
-            while (prompt_play_by_cmd_id(id, -1, NULL, false)) {
-                keepalive_loops++;
-                if (keepalive_loops >= PLAY_KEEPALIVE_LOOPS) {
-                    keepalive_loops = 0;
-                    keep_playback_awake();
-                }
-                delay(2);
-            }
+            play_prompt_id(id);
         }
         delay(10);
     }
@@ -209,7 +253,7 @@ void setup()
 {
 
   // ========== 唤醒词 ==========
-  //{ID:0,keyword:"唤醒词",ASR:"天问五幺",ASRTO:"我在"}
+  //{ID:0,keyword:"唤醒词",ASR:"小雨小雨",ASRTO:"我在"}
 
   // ========== 室外灯控制（LIGHT:3，192灯珠） ==========
   //{ID:1,keyword:"命令词",ASR:"打开室外灯",ASRTO:"好的，马上打开室外灯"}
@@ -271,7 +315,7 @@ void setup()
   //{ID:54,keyword:"命令词",ASR:"风扇手动模式",ASRTO:"风扇已切换手动模式"}
   //{ID:55,keyword:"命令词",ASR:"灯光手动模式",ASRTO:"灯光已切换手动模式"}
 
-  // ====== 语音片段库（ID 100~133，prompt_play_by_cmd_id 调用）======
+  // ====== 语音片段库（ID 100~135，prompt_play_by_cmd_id 调用）======
 
   // --- 数字 0~10 (ID 100~110) ---
   //{ID:100,keyword:"命令词",ASR:"数字零",ASRTO:"零"}
@@ -326,6 +370,10 @@ void setup()
   //{ID:131,keyword:"命令词",ASR:"自动开启风扇",ASRTO:"已自动开启风扇"}
   //{ID:132,keyword:"命令词",ASR:"自动关闭风扇",ASRTO:"已自动关闭风扇"}
   //{ID:133,keyword:"命令词",ASR:"自动调节风扇",ASRTO:"风扇已自动调节"}
+
+  // --- 空气质量告警 (ID 134~135) ---
+  //{ID:134,keyword:"命令词",ASR:"警告PM二点五超标",ASRTO:"警告，PM2.5浓度超标，请及时通风"}
+  //{ID:135,keyword:"命令词",ASR:"警告烟雾超标",ASRTO:"警告，烟雾浓度超标，请立即处理"}
 
   // 板载 LED
   setPinFun(4, FIRST_FUNCTION);

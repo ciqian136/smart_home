@@ -130,11 +130,28 @@ static void device_state_load_config(const config_record_t *record)
 void device_state_init(void)
 {
     config_record_t record;
+#if SMOKE_TEST_MODE
+    uint8_t air_limits_changed = 0U;
+#endif
 
     memset(&state, 0, sizeof(state));
     config_store_init();
     config_store_load(&record);
     device_state_load_config(&record);
+
+#if SMOKE_TEST_MODE
+    if (state.pm25_limit > CONFIG_DEFAULT_PM25_LIMIT) {
+        state.pm25_limit = CONFIG_DEFAULT_PM25_LIMIT;
+        air_limits_changed = 1U;
+    }
+    if (state.smoke_limit_ppm > CONFIG_DEFAULT_SMOKE_LIMIT_PPM) {
+        state.smoke_limit_ppm = CONFIG_DEFAULT_SMOKE_LIMIT_PPM;
+        air_limits_changed = 1U;
+    }
+    if (air_limits_changed) {
+        device_state_request_save();
+    }
+#endif
 
     /* The WS2812 registry is populated by schedule_init before this function.
      * Always transmit one explicit OFF frame on boot, even when saved RGB is

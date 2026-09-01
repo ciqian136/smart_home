@@ -62,8 +62,8 @@
 | `LED` | bool | true/false | 无 | 板载 LED 状态 |
 | `auto_enabled` | bool | true/false | 手动覆盖补偿：`device_state_get_auto_enabled() && !device_state_manual_override_active()` | 用户手动控制后的 10 分钟覆盖期内上报 false |
 | `fan_mode` | int | 0/1/2 | 无 | `0=停止`，`1=手动`，`2=自动` |
-| `PM25_alarm` | bool | true/false | 阈值判断：`PM25 >= pm25_limit` | 默认阈值 75 ug/m3；自动风扇释放有 `limit - 10` 回差 |
-| `MQ2_alarm` | bool | true/false | `DO低电平` 或 `avg_adc > 1000` 或 `MQ2 >= smoke_limit_ppm` | 默认阈值 300 ppm；自动风扇释放有 `limit - 50` 回差 |
+| `PM25_alarm` | bool | true/false | 阈值判断：`PM25 >= pm25_limit` | 默认阈值 35 ug/m3；自动风扇释放有 `limit - 10` 回差 |
+| `MQ2_alarm` | bool | true/false | `DO低电平` 或 `avg_adc > 1000` 或 `MQ2 >= smoke_limit_ppm` | 默认阈值 100 ppm；自动风扇释放有 `limit - 50` 回差 |
 | `RGB1_PRESET_STATE` | int | 0~8,99 | 当前 RGB 与固定预设表精确匹配；不匹配则 99 | 室内灯当前预设状态 |
 | `RGB3_PRESET_STATE` | int | 0~8,99 | 当前 RGB 与固定预设表精确匹配；不匹配则 99 | 室外灯当前预设状态 |
 
@@ -88,8 +88,8 @@
 | `temp_high_c10` | int | -400~800 | 必须满足 `low < mid < high` | 单位 0.1 degC，默认 300 |
 | `light_on_lux` | int | 1~9999 | 必须小于 `light_off_lux` | 默认 120 lux |
 | `light_off_lux` | int | 2~10000 | 必须大于 `light_on_lux` | 默认 200 lux |
-| `pm25_limit` | int | 1~1000 | 非法值忽略 | 默认 75 ug/m3 |
-| `smoke_limit_ppm` | int | 1~10000 | 非法值忽略 | 默认 300 ppm |
+| `pm25_limit` | int | 1~1000 | 非法值忽略 | 默认 35 ug/m3 |
+| `smoke_limit_ppm` | int | 1~10000 | 非法值忽略 | 默认 100 ppm |
 
 ## 必须保留的上报属性
 
@@ -169,8 +169,8 @@
 | `temp_high_c10` | int | -400~800 | 下发 | 温度高阈值，单位 0.1 degC，默认 300 |
 | `light_on_lux` | int | 1~10000 | 下发 | 低于/等于该光照时允许自动开灯，默认 120 |
 | `light_off_lux` | int | 1~10000 | 下发 | 高于/等于该光照时自动关闭由自动化打开的灯，默认 200 |
-| `pm25_limit` | int | 1~1000 | 下发 | PM2.5 自动风扇触发阈值，默认 75 |
-| `smoke_limit_ppm` | int | 1~10000 | 下发 | MQ2 自动风扇触发阈值，默认 300 |
+| `pm25_limit` | int | 1~1000 | 下发 | PM2.5 自动风扇触发阈值，默认 35 |
+| `smoke_limit_ppm` | int | 1~10000 | 下发 | MQ2 自动风扇触发阈值，默认 100 |
 
 ## 面板建议
 

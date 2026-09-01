@@ -48,18 +48,23 @@ static task_t schedule_task_t[] = {
 
 void schedule_init(void)
 {
+    /*获取任务数量*/
     task_num = sizeof(schedule_task_t) / sizeof(task_t);
-    	/*DWT初始化用于微秒延时*/
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  DWT->CYCCNT = 0;
-  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    /*DWT初始化用于微秒延时*/
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	/*基本原件初始化*/
-  my_uart_init();
+    my_uart_init();
 	face_init();
-	face_uart1_status_report_enabled = 0U;
-	smoke_uart1_log_enabled = 1U;
+	/* UART1 only keeps face-recognition status logs enabled. */
+	face_uart1_status_report_enabled = FACE_UART1_STATUS_REPORT_DEFAULT;
+	esp32_uart1_status_report_enabled = 0U;
+	smoke_uart1_log_enabled = 0U;
+	pm25_uart1_log_enabled = 0U;
+	dht11_uart1_log_enabled = 0U;
+	bh1750_uart1_log_enabled = 0U;
 	my_adc_init();
-	uart_printf(&huart1,"[stm32]start");
 	/*各模块初始化*/
 	 /* 灯带统一初始化：1=室内48灯珠，2=原入户保留不用，3=室外192灯珠 */
 	ws2812_strip_init(DEVICE_STRIP_INDOOR_ID, 48,  ws2812_set_all);      /* TIM4_CH1 PD12 */
@@ -104,6 +109,5 @@ void schedule_run(void)
         }
     }
 }
-
 
 

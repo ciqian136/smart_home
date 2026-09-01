@@ -13,10 +13,14 @@ volatile uint16_t uart2_rx_len = 0;
 /* ReceiveToIdle writes into these work buffers; the public buffers are stable
  * snapshots consumed by the cooperative application tasks. */
 static uint8_t uart2_work_buf[sizeof(uart2_rx_buf)];
+static uint8_t uart3_work_buf[sizeof(uart3_rx_buf)];
 static uint8_t uart4_work_buf[sizeof(uart4_rx_buf)];
+static uint8_t uart5_work_buf[sizeof(uart5_rx_buf)];
 
 #define UART2_FRAME_QUEUE_DEPTH 3U
+#define UART3_FRAME_QUEUE_DEPTH 6U
 #define UART4_FRAME_QUEUE_DEPTH 4U
+#define UART5_FRAME_QUEUE_DEPTH 6U
 
 static uint8_t uart2_frame_queue[UART2_FRAME_QUEUE_DEPTH][sizeof(uart2_rx_buf)];
 static uint16_t uart2_frame_len[UART2_FRAME_QUEUE_DEPTH];
@@ -25,12 +29,26 @@ static uint8_t uart2_frame_tail = 0U;
 static uint8_t uart2_frame_count = 0U;
 static uint32_t uart2_frame_drops = 0U;
 
+static uint8_t uart3_frame_queue[UART3_FRAME_QUEUE_DEPTH][sizeof(uart3_rx_buf)];
+static uint16_t uart3_frame_len[UART3_FRAME_QUEUE_DEPTH];
+static uint8_t uart3_frame_head = 0U;
+static uint8_t uart3_frame_tail = 0U;
+static uint8_t uart3_frame_count = 0U;
+static uint32_t uart3_frame_drops = 0U;
+
 static uint8_t uart4_frame_queue[UART4_FRAME_QUEUE_DEPTH][sizeof(uart4_rx_buf)];
 static uint16_t uart4_frame_len[UART4_FRAME_QUEUE_DEPTH];
 static uint8_t uart4_frame_head = 0U;
 static uint8_t uart4_frame_tail = 0U;
 static uint8_t uart4_frame_count = 0U;
 static uint32_t uart4_frame_drops = 0U;
+
+static uint8_t uart5_frame_queue[UART5_FRAME_QUEUE_DEPTH][sizeof(uart5_rx_buf)];
+static uint16_t uart5_frame_len[UART5_FRAME_QUEUE_DEPTH];
+static uint8_t uart5_frame_head = 0U;
+static uint8_t uart5_frame_tail = 0U;
+static uint8_t uart5_frame_count = 0U;
+static uint32_t uart5_frame_drops = 0U;
 
 volatile uint8_t uart3_rx_byte = 0;
 char uart3_rx_buf[125] = {0};
@@ -71,14 +89,18 @@ void uart_printf(UART_HandleTypeDef *huart, const char *format, ...) {
 void my_uart_init(void)
 {
   uart2_frame_head = uart2_frame_tail = uart2_frame_count = 0U;
+  uart3_frame_head = uart3_frame_tail = uart3_frame_count = 0U;
   uart4_frame_head = uart4_frame_tail = uart4_frame_count = 0U;
+  uart5_frame_head = uart5_frame_tail = uart5_frame_count = 0U;
   uart2_frame_drops = 0U;
+  uart3_frame_drops = 0U;
   uart4_frame_drops = 0U;
+  uart5_frame_drops = 0U;
   HAL_UARTEx_ReceiveToIdle_IT(&huart1, (uint8_t *)uart_rx_buf,  sizeof(uart_rx_buf));
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart2_work_buf, sizeof(uart2_work_buf));
-  HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart3, uart3_work_buf, sizeof(uart3_work_buf));
   HAL_UARTEx_ReceiveToIdle_IT(&huart4, uart4_work_buf, sizeof(uart4_work_buf));
-  HAL_UARTEx_ReceiveToIdle_IT(&huart5, (uint8_t *)uart5_rx_buf, sizeof(uart5_rx_buf));
+  HAL_UARTEx_ReceiveToIdle_IT(&huart5, uart5_work_buf, sizeof(uart5_work_buf));
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
@@ -101,23 +123,19 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         memset(uart2_work_buf, 0, sizeof(uart2_work_buf));
         HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart2_work_buf, sizeof(uart2_work_buf));
     } else if (huart == &huart3) {
-        uart3_rx_len = Size;
-        if (Size < sizeof(uart3_rx_buf)) {
-            uart3_rx_buf[Size] = '\0';
+        uint16_t copy_len = Size < sizeof(uart3_work_buf) ? Size : sizeof(uart3_work_buf);
+        if (copy_len > 0U && uart3_frame_count < UART3_FRAME_QUEUE_DEPTH) {
+            memcpy(uart3_frame_queue[uart3_frame_head], uart3_work_buf, copy_len);
+            uart3_frame_len[uart3_frame_head] = copy_len;
+            uart3_frame_head = (uint8_t)((uart3_frame_head + 1U) % UART3_FRAME_QUEUE_DEPTH);
+            uart3_frame_count++;
+        } else if (copy_len > 0U) {
+            uart3_frame_drops++;
         }
-        if (!uart3_msg_pending) {
-            uint16_t copy_len = Size;
-            if (copy_len >= sizeof(uart3_msg_buf)) {
-                copy_len = sizeof(uart3_msg_buf) - 1;
-            }
-            memcpy(uart3_msg_buf, uart3_rx_buf, copy_len);
-            uart3_msg_buf[copy_len] = '\0';
-            uart3_msg_len = (uint8_t)copy_len;
-            uart3_msg_pending = 1;
-        }
-        memset(uart3_rx_buf, 0, sizeof(uart3_rx_buf));
-        uart3_rx_len = 0;
-        HAL_UARTEx_ReceiveToIdle_IT(&huart3, (uint8_t *)uart3_rx_buf, sizeof(uart3_rx_buf));
+        uart3_msg_pending = uart3_frame_count ? 1U : 0U;
+        uart3_rx_len = uart3_frame_count ? 1U : 0U;
+        memset(uart3_work_buf, 0, sizeof(uart3_work_buf));
+        HAL_UARTEx_ReceiveToIdle_IT(&huart3, uart3_work_buf, sizeof(uart3_work_buf));
     } else if (huart == &huart4) {
         uint16_t copy_len = Size < sizeof(uart4_work_buf) ? Size : sizeof(uart4_work_buf);
         if (copy_len > 0U && uart4_frame_count < UART4_FRAME_QUEUE_DEPTH) {
@@ -132,23 +150,19 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         memset(uart4_work_buf, 0, sizeof(uart4_work_buf));
         HAL_UARTEx_ReceiveToIdle_IT(&huart4, uart4_work_buf, sizeof(uart4_work_buf));
     } else if (huart == &huart5) {
-        uart5_rx_len = Size;
-        if (Size < sizeof(uart5_rx_buf)) {
-            uart5_rx_buf[Size] = '\0';
+        uint16_t copy_len = Size < sizeof(uart5_work_buf) ? Size : sizeof(uart5_work_buf);
+        if (copy_len > 0U && uart5_frame_count < UART5_FRAME_QUEUE_DEPTH) {
+            memcpy(uart5_frame_queue[uart5_frame_head], uart5_work_buf, copy_len);
+            uart5_frame_len[uart5_frame_head] = copy_len;
+            uart5_frame_head = (uint8_t)((uart5_frame_head + 1U) % UART5_FRAME_QUEUE_DEPTH);
+            uart5_frame_count++;
+        } else if (copy_len > 0U) {
+            uart5_frame_drops++;
         }
-        if (!uart5_msg_pending) {
-            uint16_t copy_len = Size;
-            if (copy_len >= sizeof(uart5_msg_buf)) {
-                copy_len = sizeof(uart5_msg_buf) - 1;
-            }
-            memcpy(uart5_msg_buf, uart5_rx_buf, copy_len);
-            uart5_msg_buf[copy_len] = '\0';
-            uart5_msg_len = (uint8_t)copy_len;
-            uart5_msg_pending = 1;
-        }
-        memset(uart5_rx_buf, 0, sizeof(uart5_rx_buf));
-        uart5_rx_len = 0;
-        HAL_UARTEx_ReceiveToIdle_IT(&huart5, (uint8_t *)uart5_rx_buf, sizeof(uart5_rx_buf));
+        uart5_msg_pending = uart5_frame_count ? 1U : 0U;
+        uart5_rx_len = uart5_frame_count ? 1U : 0U;
+        memset(uart5_work_buf, 0, sizeof(uart5_work_buf));
+        HAL_UARTEx_ReceiveToIdle_IT(&huart5, uart5_work_buf, sizeof(uart5_work_buf));
     }
 }
 
@@ -185,6 +199,35 @@ void my_uart2_clear_frames(void)
 
 uint32_t my_uart2_get_drop_count(void) { return uart2_frame_drops; }
 
+uint16_t my_uart3_take_frame(uint8_t *dst, uint16_t capacity)
+{
+    uint16_t len;
+    uint32_t primask;
+
+    if (dst == NULL || capacity == 0U) return 0U;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    if (uart3_frame_count == 0U) {
+        uart3_rx_len = 0U;
+        uart3_msg_len = 0U;
+        uart3_msg_pending = 0U;
+        if (!primask) __enable_irq();
+        return 0U;
+    }
+    len = uart3_frame_len[uart3_frame_tail];
+    if (len > capacity) len = capacity;
+    memcpy(dst, uart3_frame_queue[uart3_frame_tail], len);
+    uart3_frame_tail = (uint8_t)((uart3_frame_tail + 1U) % UART3_FRAME_QUEUE_DEPTH);
+    uart3_frame_count--;
+    uart3_rx_len = uart3_frame_count ? uart3_frame_len[uart3_frame_tail] : 0U;
+    uart3_msg_len = uart3_rx_len > UINT8_MAX ? UINT8_MAX : (uint8_t)uart3_rx_len;
+    uart3_msg_pending = uart3_frame_count ? 1U : 0U;
+    if (!primask) __enable_irq();
+    return len;
+}
+
+uint32_t my_uart3_get_drop_count(void) { return uart3_frame_drops; }
+
 uint16_t my_uart4_take_frame(uint8_t *dst, uint16_t capacity)
 {
     uint16_t len;
@@ -209,5 +252,32 @@ uint16_t my_uart4_take_frame(uint8_t *dst, uint16_t capacity)
 }
 
 uint32_t my_uart4_get_drop_count(void) { return uart4_frame_drops; }
+
+uint16_t my_uart5_take_frame(uint8_t *dst, uint16_t capacity)
+{
+    uint16_t len;
+    uint32_t primask;
+
+    if (dst == NULL || capacity == 0U) return 0U;
+    primask = __get_PRIMASK();
+    __disable_irq();
+    if (uart5_frame_count == 0U) {
+        uart5_rx_len = 0U;
+        uart5_msg_pending = 0U;
+        if (!primask) __enable_irq();
+        return 0U;
+    }
+    len = uart5_frame_len[uart5_frame_tail];
+    if (len > capacity) len = capacity;
+    memcpy(dst, uart5_frame_queue[uart5_frame_tail], len);
+    uart5_frame_tail = (uint8_t)((uart5_frame_tail + 1U) % UART5_FRAME_QUEUE_DEPTH);
+    uart5_frame_count--;
+    uart5_rx_len = uart5_frame_count ? uart5_frame_len[uart5_frame_tail] : 0U;
+    uart5_msg_pending = uart5_frame_count ? 1U : 0U;
+    if (!primask) __enable_irq();
+    return len;
+}
+
+uint32_t my_uart5_get_drop_count(void) { return uart5_frame_drops; }
 
 

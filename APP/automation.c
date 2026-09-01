@@ -8,6 +8,11 @@
 
 #define AUTO_FAN_PM25_SPEED  800U
 #define AUTO_FAN_SMOKE_SPEED 1000U
+#define FACE_TEST_DIRECT_CONTROL 1U
+#define FACE_TEST_LIGHT_R 125U
+#define FACE_TEST_LIGHT_G 125U
+#define FACE_TEST_LIGHT_B 125U
+#define FACE_TEST_FAN_SPEED 500U
 
 static uint8_t lights_restored = 0U;
 static uint8_t lights_turned_off = 0U;
@@ -89,6 +94,40 @@ static void automation_turn_off_lights(void)
     }
 }
 
+#if FACE_TEST_DIRECT_CONTROL
+static void automation_face_test_control(uint8_t *notify_mask)
+{
+    uint16_t current_speed = device_state_get_fan_speed();
+
+    if (notify_mask == NULL) return;
+
+    if (!device_state_strip_is_open(DEVICE_STRIP_INDOOR_ID)) {
+        device_state_set_strip_rgb(DEVICE_STRIP_INDOOR_ID,
+                                   FACE_TEST_LIGHT_R,
+                                   FACE_TEST_LIGHT_G,
+                                   FACE_TEST_LIGHT_B,
+                                   DEVICE_SOURCE_AUTOMATION);
+        lights_restored = device_state_strip_is_open(DEVICE_STRIP_INDOOR_ID);
+        lights_turned_off = 0U;
+        if (lights_restored) {
+            *notify_mask |= VOICE_AUTO_EVENT_LIGHT_ON;
+        }
+    }
+
+    if (current_speed == 0U) {
+        *notify_mask |= VOICE_AUTO_EVENT_FAN_ON;
+    } else if (current_speed != FACE_TEST_FAN_SPEED) {
+        *notify_mask |= VOICE_AUTO_EVENT_FAN_SPEED;
+    }
+    if (current_speed != FACE_TEST_FAN_SPEED ||
+        device_state_get_fan_mode() != DEVICE_FAN_AUTO) {
+        device_state_set_fan(FACE_TEST_FAN_SPEED, DEVICE_FAN_AUTO,
+                             DEVICE_SOURCE_AUTOMATION);
+    }
+    last_auto_fan_speed = FACE_TEST_FAN_SPEED;
+}
+#endif
+
 void automation_init(void)
 {
     lights_restored = 0U;
@@ -114,6 +153,17 @@ void automation_service(void)
     }
 
     if (!auto_enabled || override_active) return;
+
+#if FACE_TEST_DIRECT_CONTROL
+    if (owner_event) {
+        automation_face_test_control(&notify_mask);
+    }
+
+    if (notify_mask != 0U) {
+        voice_notify_automation(notify_mask);
+    }
+    return;
+#endif
 
     if (!device_state_any_strip_is_open()) {
         uint8_t should_restore_lights = 0U;

@@ -27,6 +27,8 @@ extern volatile uint8_t uart3_rx_len;    /* 串口3已接收数据长度 */
 extern char uart3_msg_buf[125];        /* 串口3已完成帧副本 */
 extern volatile uint8_t uart3_msg_len; /* 串口3已完成帧长度 */
 extern volatile uint8_t uart3_msg_pending; /* 1=有待解析语音帧 */
+uint16_t my_uart3_take_frame(uint8_t *dst, uint16_t capacity);
+uint32_t my_uart3_get_drop_count(void);
 
 /* ---- 串口4（lcd）相关变量 ---- */
 //extern volatile uint8_t uart4_rx_byte;   /* 串口4逐字节接收缓存（当前未使用）*/
@@ -41,6 +43,8 @@ extern volatile uint8_t uart5_rx_len;
 extern char uart5_msg_buf[64];
 extern volatile uint8_t uart5_msg_len;
 extern volatile uint8_t uart5_msg_pending;
+uint16_t my_uart5_take_frame(uint8_t *dst, uint16_t capacity);
+uint32_t my_uart5_get_drop_count(void);
 #endif
 
 

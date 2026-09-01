@@ -5,6 +5,7 @@
 #define FACE_ZENG_CONFIRM_COUNT     3U
 #define FACE_NONE_CONFIRM_COUNT     3U
 #define FACE_TIMEOUT_MS             2000U
+#define FACE_MAX_FRAMES_PER_SERVICE 6U
 
 volatile uint8_t face_uart1_status_report_enabled =
     FACE_UART1_STATUS_REPORT_DEFAULT;
@@ -113,31 +114,6 @@ static void face_mark_zeng(uint8_t score)
     }
 }
 
-static void face_take_pending_frame(char *local_buf, uint16_t local_buf_size)
-{
-    uint16_t copy_len;
-    uint32_t primask;
-
-    if (local_buf_size == 0) return;
-    local_buf[0] = '\0';
-
-    primask = __get_PRIMASK();
-    __disable_irq();
-    if (uart5_msg_pending) {
-        copy_len = uart5_msg_len;
-        if (copy_len >= local_buf_size) {
-            copy_len = local_buf_size - 1;
-        }
-        memcpy(local_buf, uart5_msg_buf, copy_len);
-        local_buf[copy_len] = '\0';
-        uart5_msg_pending = 0;
-        uart5_msg_len = 0;
-    }
-    if (!primask) {
-        __enable_irq();
-    }
-}
-
 static void face_trim_tail(char *buf)
 {
     uint16_t len = (uint16_t)strlen(buf);
@@ -148,6 +124,31 @@ static void face_trim_tail(char *buf)
         }
         buf[len - 1] = '\0';
         len--;
+    }
+}
+
+static void face_parse_frame(char *frame);
+
+static void face_parse_frames(char *frame)
+{
+    char *line = frame;
+
+    while (line != NULL && *line != '\0') {
+        char *next = strpbrk(line, "\r\n");
+
+        if (next != NULL) {
+            *next = '\0';
+            next++;
+            while (*next == '\r' || *next == '\n') {
+                next++;
+            }
+        }
+
+        if (strstr(line, "FACE:") != NULL) {
+            face_parse_frame(line);
+        }
+
+        line = next;
     }
 }
 
@@ -208,12 +209,16 @@ void face_proc(void)
 {
     char local_buf[64];
     uint32_t now = HAL_GetTick();
+    uint8_t frames = 0U;
 
-    if (uart5_msg_pending) {
-        face_take_pending_frame(local_buf, sizeof(local_buf));
-        if (local_buf[0] != '\0') {
-            face_parse_frame(local_buf);
-        }
+    while (frames < FACE_MAX_FRAMES_PER_SERVICE) {
+        uint16_t len = my_uart5_take_frame((uint8_t *)local_buf,
+                                           (uint16_t)(sizeof(local_buf) - 1U));
+        if (len == 0U) break;
+
+        local_buf[len] = '\0';
+        face_parse_frames(local_buf);
+        frames++;
     }
 
     if (face_online && (now - face_last_frame_tick > FACE_TIMEOUT_MS)) {

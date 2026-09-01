@@ -5,6 +5,13 @@
 
 #include "stm32f1xx_hal.h"
 
+#define HEALTH_UART1_LOG_DEFAULT 0U
+
+#define HEALTH_UART1_LOG(...)                                      \
+    do {                                                           \
+        if (HEALTH_UART1_LOG_DEFAULT) uart_printf(&huart1, __VA_ARGS__); \
+    } while (0)
+
 static volatile uint32_t task_beat_mask = 0U;
 static volatile uint32_t expected_task_mask = 0U;
 static uint32_t last_complete_tick = 0U;
@@ -15,7 +22,7 @@ void health_monitor_init(void)
     expected_task_mask = 0U;
     last_complete_tick = HAL_GetTick();
     if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET) {
-        uart_printf(&huart1, "[HEALTH] watchdog reset\r\n");
+        HEALTH_UART1_LOG("[HEALTH] watchdog reset\r\n");
         __HAL_RCC_CLEAR_RESET_FLAGS();
     }
 

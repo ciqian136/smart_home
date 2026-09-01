@@ -9,6 +9,13 @@
 #define SMOKE_ANOMALY_ADC_STUCK       0x04U
 #define SMOKE_ANOMALY_DO_ADC_MISMATCH 0x08U
 
+/* 测试阶段：不读取 MQ2 ADC，使用模拟 ppm；正式使用时改为 0。 */
+#define SMOKE_TEST_MODE 1U
+#define SMOKE_TEST_NORMAL_MIN_PPM 45.0f
+#define SMOKE_TEST_NORMAL_MAX_PPM 65.0f
+#define SMOKE_TEST_ALARM_PPM      150.0f
+#define SMOKE_TEST_ALARM_HOLD_MS  10000U
+
 /** @brief 烟雾传感器初始化（静态内存 + 预热计时）*/
 void smoke_init(void);
 /** @brief 烟雾传感器数据处理（ADC采集 + 滤波 + 报警判断）*/
@@ -25,6 +32,10 @@ uint8_t smoke_is_alarmed(void);
 uint8_t smoke_is_ready(void);
 /** @brief 获取 MQ2 异常标志位，见 SMOKE_ANOMALY_* */
 uint8_t smoke_get_anomaly_flags(void);
+#if SMOKE_TEST_MODE
+/** @brief 测试模式：将烟雾浓度临时置为超标值。 */
+void smoke_test_trigger_alarm(void);
+#endif
 
 extern volatile uint8_t smoke_uart1_log_enabled;
 

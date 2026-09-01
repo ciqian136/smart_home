@@ -9,7 +9,11 @@
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
 #define DO_GPIO_PIN GPIO_PIN_2       /* 数字报警输出引脚号 */
 #define ALARM_THRESHOLD 1000         /* 软件报警阈值 */
+#if SMOKE_TEST_MODE
+#define PREHEAT_TIME 0               /* 测试模式不等待 MQ2 预热 */
+#else
 #define PREHEAT_TIME 20              /* 传感器预热时间（秒）*/
+#endif
 #define WINDOW_SIZE 5                /* 滑动平均滤波窗口大小 */
 
 /* ── MQ2 PPM 转换校准参数 ────────────────────────── */
@@ -39,6 +43,10 @@ static uint8_t g_anomaly_flags = 0U;
 static uint16_t g_last_raw_adc = 0U;
 static uint8_t g_stuck_samples = 0U;
 static uint32_t g_last_log_tick = 0U;
+#if SMOKE_TEST_MODE
+static float g_test_ppm = SMOKE_TEST_NORMAL_MIN_PPM;
+static uint32_t g_test_alarm_until = 0U;
+#endif
 
 volatile uint8_t smoke_uart1_log_enabled = SMOKE_UART1_LOG_DEFAULT;
 
@@ -47,10 +55,12 @@ volatile uint8_t smoke_uart1_log_enabled = SMOKE_UART1_LOG_DEFAULT;
     if (smoke_uart1_log_enabled) uart_printf(&huart1, __VA_ARGS__); \
   } while (0)
 
+#if !SMOKE_TEST_MODE
 static uint16_t smoke_absdiff_u16(uint16_t a, uint16_t b)
 {
   return a > b ? (uint16_t)(a - b) : (uint16_t)(b - a);
 }
+#endif
 
 static const char *smoke_anomaly_hint(uint8_t flags)
 {
@@ -76,6 +86,12 @@ void smoke_init(void) {
   g_last_raw_adc = 0U;
   g_stuck_samples = 0U;
   g_last_log_tick = 0U;
+#if SMOKE_TEST_MODE
+  g_ready = 1U;
+  g_adc = 300U;
+  g_test_ppm = SMOKE_TEST_NORMAL_MIN_PPM;
+  g_test_alarm_until = 0U;
+#endif
   buf_index = 0U;             /* 窗口索引初始为0 */
   for (uint8_t i = 0; i < WINDOW_SIZE; i++) {
     buf[i] = 0;               /* 清空滑动窗口 */
@@ -98,6 +114,36 @@ void smoke_proc(void) {
     g_ready = 1U;
     SMOKE_LOG("[MQ2] ready\r\n");
   }
+
+#if SMOKE_TEST_MODE
+  uint32_t now = HAL_GetTick();
+
+  if (g_test_alarm_until != 0U && (int32_t)(now - g_test_alarm_until) < 0) {
+    g_test_ppm = SMOKE_TEST_ALARM_PPM;
+    g_alarm = 1U;
+  } else {
+    uint32_t range = (uint32_t)(SMOKE_TEST_NORMAL_MAX_PPM - SMOKE_TEST_NORMAL_MIN_PPM);
+    uint32_t phase = (now / 500U) % ((range * 2U) + 1U);
+
+    if (phase > range) {
+      phase = (range * 2U) - phase;
+    }
+    g_test_alarm_until = 0U;
+    g_test_ppm = SMOKE_TEST_NORMAL_MIN_PPM + (float)phase;
+    g_alarm = 0U;
+  }
+
+  g_adc = 300U;
+  g_anomaly_flags = 0U;
+
+  if (smoke_uart1_log_enabled && now - g_last_log_tick >= SMOKE_LOG_INTERVAL_MS) {
+    g_last_log_tick = now;
+    uart_printf(&huart1,
+                "[MQ2_TEST] ppm=%.1f alarm=%u hint=%s\r\n",
+                (double)g_test_ppm, g_alarm, smoke_anomaly_hint(g_anomaly_flags));
+  }
+  return;
+#else
 
   /* Smoke sensor: ADC1_IN1 / PA1, sampled on demand. */
   uint16_t val = my_adc_read_channel(ADC_CHANNEL_1);
@@ -148,6 +194,7 @@ void smoke_proc(void) {
   }
 
  // SMOKE_LOG("[MQ2] avg=%u alarm=%u\r\n", g_adc, g_alarm);
+#endif
 }
 
 /**
@@ -174,6 +221,9 @@ uint16_t smoke_get_adc(void) { return g_adc; }
   */
 float smoke_get_ppm(void)
 {
+#if SMOKE_TEST_MODE
+    return g_test_ppm;
+#else
     uint16_t adc = g_adc;
     if (adc == 0 || adc >= 4095) return 0.0f;
 
@@ -192,6 +242,7 @@ float smoke_get_ppm(void)
     if (ppm < 0.0f) ppm = 0.0f;
 
     return ppm;
+#endif
 }
 
 /**
@@ -201,6 +252,18 @@ float smoke_get_ppm(void)
 uint8_t smoke_is_alarmed(void) { return g_alarm; }
 
 uint8_t smoke_get_anomaly_flags(void) { return g_anomaly_flags; }
+
+#if SMOKE_TEST_MODE
+void smoke_test_trigger_alarm(void)
+{
+  g_ready = 1U;
+  g_test_ppm = SMOKE_TEST_ALARM_PPM;
+  g_test_alarm_until = HAL_GetTick() + SMOKE_TEST_ALARM_HOLD_MS;
+  g_alarm = 1U;
+  g_adc = 300U;
+  g_anomaly_flags = 0U;
+}
+#endif
 
 
 

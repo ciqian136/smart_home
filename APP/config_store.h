@@ -11,6 +11,8 @@
 #define CONFIG_LIGHT_MAX_LUX     10000U
 #define CONFIG_PM25_MAX          1000U
 #define CONFIG_SMOKE_MAX_PPM     10000U
+#define CONFIG_DEFAULT_PM25_LIMIT        35U
+#define CONFIG_DEFAULT_SMOKE_LIMIT_PPM   100U
 
 typedef struct {
     uint32_t magic;

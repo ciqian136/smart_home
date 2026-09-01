@@ -43,8 +43,8 @@ static void config_defaults(config_record_t *record)
     record->temp_high_c10 = 300;
     record->light_on_lux = 120U;
     record->light_off_lux = 200U;
-    record->pm25_limit = 75U;
-    record->smoke_limit_ppm = 300U;
+    record->pm25_limit = CONFIG_DEFAULT_PM25_LIMIT;
+    record->smoke_limit_ppm = CONFIG_DEFAULT_SMOKE_LIMIT_PPM;
     for (uint8_t i = 0U; i < CONFIG_STORE_STRIP_COUNT; i++) {
         record->strip_last_rgb[i][0] = 125U;
         record->strip_last_rgb[i][1] = 125U;

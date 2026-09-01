@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define FACE_UART1_STATUS_REPORT_DEFAULT 0U
+#define FACE_UART1_STATUS_REPORT_DEFAULT 1U
 #define FACE_UART1_STATUS_REPORT_INTERVAL_MS 1000U
 
 void face_init(void);
