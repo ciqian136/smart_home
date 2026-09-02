@@ -22,7 +22,7 @@
 #define VOICE_MAX_SPOKEN_VALUE 9999
 #define VOICE_MAX_FRAMES_PER_SERVICE 4U
 #define FACE_WELCOME_PLAY_ID 10003U
-#define FACE_WELCOME_COOLDOWN_MS 30000U
+#define FACE_WELCOME_COOLDOWN_MS 5000U
 
 /* ========== 语音片段 ID（与 ASRPRO setup() 中定义一致）========== */
 #define VID_ZERO     100   /* 零 */
@@ -45,26 +45,27 @@
 #define VID_LUX      117   /* 勒克斯 */
 #define VID_PRE_TEMP 118   /* 当前温度 */
 #define VID_PRE_HUMI 119   /* 当前湿度 */
-#define VID_PRE_PM25 120   /* PM2.5浓度 */
+#define VID_PRE_PM25 120   /* 粉尘浓度 */
 #define VID_PRE_LUX  121   /* 当前光照 */
 #define VID_NEG      122   /* 零下 */
 #define VID_TEMP_HIGH   123   /* 温度偏高 */
 #define VID_TEMP_NORMAL 124   /* 温度正常 */
 #define VID_PRE_SMOKE  125   /* 烟雾浓度 */
-#define VID_FACE_FAN_AUTO   126   /* 已为您调节风扇到合适挡位 */
-#define VID_FACE_LIGHT_AUTO 127   /* 已为您调节室内灯光到合适亮度 */
+#define VID_FACE_FAN_AUTO   126   /* 已为您打开风扇 */
+#define VID_FACE_LIGHT_AUTO 127   /* 已为您打开室内灯 */
 #define VID_ENV_UPDATING    128   /* 环境数据正在更新 */
 #define VID_AUTO_LIGHT_ON   129   /* 已自动开启灯光 */
 #define VID_AUTO_LIGHT_OFF  130   /* 已自动关闭灯光 */
 #define VID_AUTO_FAN_ON     131   /* 已自动开启风扇 */
 #define VID_AUTO_FAN_OFF    132   /* 已自动关闭风扇 */
 #define VID_AUTO_FAN_SPEED  133   /* 风扇已自动调节 */
-#define VID_PM25_ALARM      134   /* 警告，PM2.5浓度超标，请及时通风 */
+#define VID_PM25_ALARM      134   /* 警告，粉尘浓度超标，请及时通风 */
 #define VID_SMOKE_ALARM     135   /* 警告，烟雾浓度超标，请立即处理 */
 
 /* ── 温度告警阈值 ── */
 #define TEMP_HIGH_THRESHOLD  30   /* 超过此值播报"温度偏高" */
 #define AIR_ALARM_REPEAT_COUNT 2U
+#define PM25_ALARM_REPEAT_INTERVAL_MS 10000UL
 #define VOICE_UART1_LOG_DEFAULT 0U
 #define PM25_ALARM_CLEAR_MARGIN 10U
 #define VOICE_AIR_ALARM_PM25  0x01U
@@ -87,10 +88,12 @@ static uint8_t voice_pending_valid = 0;
 static uint8_t face_welcome_pending = 0;
 static uint8_t face_welcome_sent = 0;
 static uint32_t face_welcome_last_sent_tick = 0;
+static uint8_t face_welcome_last_seq = 0;
 static uint8_t auto_notify_pending_mask = 0U;
 static uint32_t auto_notify_last_sent_tick = 0U;
 static uint8_t air_alarm_pending_mask = 0U;
 static uint8_t pm25_alarm_latched = 0U;
+static uint32_t pm25_alarm_last_sent_tick = 0U;
 
 static int voice_clamp_value(int value, int min_value, int max_value);
 
@@ -291,19 +294,24 @@ static void voice_update_pm25_alarm_events(void)
 {
     if (device_state_pm25_valid()) {
         uint16_t limit = device_state_get_pm25_limit();
+        uint32_t now = HAL_GetTick();
 
         if (limit > 0U) {
             float pm25 = device_state_get_pm25();
             uint16_t clear_level = limit > PM25_ALARM_CLEAR_MARGIN ?
                                    (uint16_t)(limit - PM25_ALARM_CLEAR_MARGIN) : 0U;
 
-            if (pm25 >= (float)limit) {
-                if (!pm25_alarm_latched) {
+            if (device_state_pm25_alarm()) {
+                if (!pm25_alarm_latched ||
+                    pm25_alarm_last_sent_tick == 0U ||
+                    now - pm25_alarm_last_sent_tick >= PM25_ALARM_REPEAT_INTERVAL_MS) {
                     air_alarm_pending_mask |= VOICE_AIR_ALARM_PM25;
                 }
                 pm25_alarm_latched = 1U;
             } else if (pm25 <= (float)clear_level) {
                 pm25_alarm_latched = 0U;
+                pm25_alarm_last_sent_tick = 0U;
+                air_alarm_pending_mask &= (uint8_t)~VOICE_AIR_ALARM_PM25;
             }
         }
     }
@@ -366,9 +374,11 @@ static uint8_t voice_face_welcome_service(void)
 
     if (face_take_welcome_event()) {
         /*
-         * 识别状态已经确认后只接收一次事件。冷却期间再次识别直接丢弃，
-         * 不延迟到冷却结束后补播，避免人脸已经离开时仍然播报欢迎语。
+         * 持续识别到人脸期间事件会重复产生（face.c 不再只在上升沿触发一次），
+         * 播报频率由本冷却时间控制：冷却期内事件直接丢弃，
+         * 冷却结束后下一条事件恢复播报。
          */
+        face_welcome_last_seq = face_get_event_seq();
         if (!face_welcome_sent ||
             now - face_welcome_last_sent_tick >= FACE_WELCOME_COOLDOWN_MS) {
             face_welcome_pending = 1;
@@ -393,6 +403,21 @@ static uint8_t voice_face_welcome_service(void)
     face_welcome_sent = 1;
     face_welcome_last_sent_tick = HAL_GetTick();
     return 1U;
+}
+
+uint8_t voice_face_welcome_pending(void)
+{
+    return face_welcome_pending;
+}
+
+uint8_t voice_face_welcome_sent(void)
+{
+    return face_welcome_sent;
+}
+
+uint8_t voice_face_welcome_event_gen(void)
+{
+    return face_welcome_last_seq;
 }
 
 static uint8_t voice_auto_notify_service(void)
@@ -428,7 +453,8 @@ static uint8_t voice_pm25_alarm_service(void)
 
     voice_update_pm25_alarm_events();
 
-    if (voice_pending_valid || air_alarm_pending_mask == 0U) {
+    /* 告警优先级高于普通延迟播报：不等待 voice_pending_cmd，直接发往 ASRPRO 队列 */
+    if (air_alarm_pending_mask == 0U) {
         return 0U;
     }
 
@@ -441,6 +467,9 @@ static uint8_t voice_pm25_alarm_service(void)
     air_alarm_pending_mask = 0U;
     /* 告警直接入 ASRPRO 队列，避免被后续查询播报覆盖。 */
     uart_printf(&huart3, "%s\r\n", alarm_cmd);
+    if (mask & VOICE_AIR_ALARM_PM25) {
+        pm25_alarm_last_sent_tick = HAL_GetTick();
+    }
     return 1U;
 }
 
@@ -759,16 +788,29 @@ void voice_parse(void)
         }
         /* --- QUERY:PM25 --- */
         else if (act != NULL && strcmp(act, "PM25") == 0) {
-            int v = (int)(device_state_get_pm25() + 0.5f);
-            v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
+            if (!device_state_pm25_valid()) {
+                voice_plays_send("PLAYS:%d", VID_ENV_UPDATING);
+                VOICE_UART1_LOG("[QUERY] pm25 invalid => updating\r\n");
+            } else {
+                int v = (int)(device_state_get_pm25() + 0.5f);
+                uint8_t pm25_alarm = device_state_pm25_alarm();
+                v = voice_clamp_value(v, 0, VOICE_MAX_SPOKEN_VALUE);
 
-            char seg[80];
-            int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_PM25);
-            off += voice_append_number_buf(seg + off, sizeof(seg) - off, v);
-            off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_UGPM3);
-            voice_plays_send("%s", seg);
+                char seg[VOICE_PLAY_CMD_SIZE];
+                int off = snprintf(seg, sizeof(seg), "PLAYS:%d", VID_PRE_PM25);
+                off += voice_append_number_buf(seg + off, sizeof(seg) - off, v);
+                off += snprintf(seg + off, sizeof(seg) - off, ",%d", VID_UGPM3);
+                if (pm25_alarm) {
+                    for (uint8_t i = 0U; i < AIR_ALARM_REPEAT_COUNT; i++) {
+                        off = voice_append_play_id(seg, sizeof(seg), off, VID_PM25_ALARM);
+                    }
+                }
+                voice_plays_send("%s", seg);
 
-            VOICE_UART1_LOG("[QUERY] pm25=%.1f ug/m3 => voice\r\n", device_state_get_pm25());
+                VOICE_UART1_LOG("[QUERY] pm25=%.1f ug/m3 => voice%s\r\n",
+                                device_state_get_pm25(),
+                                pm25_alarm ? " [alarm]" : "");
+            }
             lcd_send();
         }
         /* --- QUERY:LIGHT --- */
@@ -866,9 +908,11 @@ void voice_run_send(void)
         frames++;
     }
 
-    voice_sent = voice_plays_service();
-    if (!voice_sent && !voice_pm25_alarm_service() &&
-        !voice_face_welcome_service()) {
-        voice_auto_notify_service();
+    /* 空气质量告警优先：先处理告警，避免被普通延迟播报挤掉 */
+    if (!voice_pm25_alarm_service()) {
+        voice_sent = voice_plays_service();
+        if (!voice_sent && !voice_face_welcome_service()) {
+            voice_auto_notify_service();
+        }
     }
 }

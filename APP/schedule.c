@@ -2,7 +2,6 @@
 #include "automation.h"
 #include "config_store.h"
 #include "device_state.h"
-#include "health_monitor.h"
 #include "PM25.h"
 #include "dht11.h"
 #include "esp32.h"
@@ -18,7 +17,6 @@ typedef struct {
     void (*task_func)(void);
     uint32_t rate_ms;
     uint32_t last_run;
-    uint8_t health_id;
 } task_t;
 
 uint8_t task_num;
@@ -30,20 +28,19 @@ void test_proc(void)
 /* 调度任务表 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},       
-    {esp32_init_nonblock, 20, 0, 0},  /* 非阻塞初始化状态机 */
-    {face_proc, 20, 0, 1},            /* OpenART face result parser */
-    {device_state_service, 50, 0, 2},
-    {automation_service, 50, 0, 3},
-    {esp32_run_send, 100, 0, 4},
-    {smoke_proc, 300, 0, 5},
-    {PM25_proc, 300, 0, 6},
-    {bh1750_proc, 300, 0, 7},
-	{voice_run_send, 10, 0, 8},
-    {DHT11_proc, 300, 0, 9},
-    {lcd_recv, 10, 0, 10},
-    {lcd_send, 100, 0, 11},
-    {esp32_check_online, 500, 0, 12},
-    {health_monitor_service, 1000, 0, 13},
+    {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机 */
+    {face_proc, 20, 0},            /* OpenART face result parser */
+    {device_state_service, 50, 0},
+    {automation_service, 50, 0},
+    {esp32_run_send, 1000, 0},
+    {smoke_proc, 300, 0},
+    {PM25_proc, 300, 0},
+    {bh1750_proc, 300, 0},
+	{voice_run_send, 10, 0},
+    {DHT11_proc, 300, 0},
+    {lcd_recv, 10, 0},
+    {lcd_send, 100, 0},
+    {esp32_check_online, 10000, 0},
 };
 
 void schedule_init(void)
@@ -78,9 +75,6 @@ void schedule_init(void)
     config_store_init();
     device_state_init();
     automation_init();
-    health_monitor_init();
-    /* IDs 0..12 are real work tasks; ID 13 is the monitor service itself. */
-    health_monitor_set_expected_mask((1UL << 13U) - 1UL);
 }
 
 void schedule_run(void)
@@ -105,9 +99,6 @@ void schedule_run(void)
         {
            schedule_task_t[i].last_run = now_time;  /* 更新上次执行时间 */
            schedule_task_t[i].task_func();           /* 执行任务函数 */
-           health_monitor_task_beat(schedule_task_t[i].health_id);
         }
     }
 }
-
-

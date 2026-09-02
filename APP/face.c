@@ -2,7 +2,7 @@
 #include "my_uart.h"
 
 #define FACE_SCORE_THRESHOLD        70U
-#define FACE_ZENG_CONFIRM_COUNT     3U
+#define FACE_ZENG_CONFIRM_COUNT     1U
 #define FACE_NONE_CONFIRM_COUNT     3U
 #define FACE_TIMEOUT_MS             2000U
 #define FACE_MAX_FRAMES_PER_SERVICE 6U
@@ -18,6 +18,7 @@ static uint8_t face_none_count = 0;
 static uint32_t face_last_frame_tick = 0;
 static uint8_t face_owner_detected_event = 0;
 static uint8_t face_welcome_event = 0;
+static uint8_t face_event_seq = 0;
 static uint8_t face_report_has_sent = 0;
 static uint8_t face_report_pending = 0;
 static uint8_t face_report_last_state = 0;
@@ -106,10 +107,13 @@ static void face_mark_zeng(uint8_t score)
     }
 
     if (face_zeng_count >= FACE_ZENG_CONFIRM_COUNT) {
-        if (!face_zeng_detected) {
-            face_owner_detected_event = 1;
-            face_welcome_event = 1;
-        }
+        /*
+         * 持续识别到人脸的每个合格帧都重新产生事件（不再只在上升沿触发一次）。
+         * 播报/动作频率由 voice.c 的欢迎冷却时间控制，automation.c 的动作保持幂等。
+         */
+        face_event_seq++;
+        face_owner_detected_event = 1;
+        face_welcome_event = 1;
         face_zeng_detected = 1;
     }
 }
@@ -198,6 +202,7 @@ void face_init(void)
     face_last_frame_tick = 0;
     face_owner_detected_event = 0;
     face_welcome_event = 0;
+    face_event_seq = 0;
     face_report_has_sent = 0;
     face_report_pending = 0;
     face_report_last_state = 0;
@@ -264,4 +269,9 @@ uint8_t face_get_score(void)
 uint8_t face_get_online(void)
 {
     return face_online;
+}
+
+uint8_t face_get_event_seq(void)
+{
+    return face_event_seq;
 }

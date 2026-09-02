@@ -6,7 +6,7 @@
 #include "dma.h"
 
 /* ========== 灯带1 硬件参数（室内灯, 48 LED, TIM4_CH1, PD12）========== */
-#define NUM_LEDS    48               // 灯珠数量
+#define NUM_LEDS     192             // 灯珠数量
 #define BITS_PER_LED 24
 #define DATA_BITS   (NUM_LEDS * BITS_PER_LED)
 

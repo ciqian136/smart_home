@@ -20,6 +20,8 @@ static uint32_t last_face_seen_tick = 0U;
 static uint16_t last_auto_fan_speed = 0xFFFFU;
 static uint8_t pm25_auto_active = 0U;
 static uint8_t smoke_auto_active = 0U;
+static uint8_t face_action_pending = 0U;
+static uint8_t face_action_welcome_gen = 0U;
 
 static uint16_t automation_fan_speed(float temperature, uint16_t previous_speed)
 {
@@ -95,11 +97,9 @@ static void automation_turn_off_lights(void)
 }
 
 #if FACE_TEST_DIRECT_CONTROL
-static void automation_face_test_control(uint8_t *notify_mask)
+static void automation_face_test_control(void)
 {
     uint16_t current_speed = device_state_get_fan_speed();
-
-    if (notify_mask == NULL) return;
 
     if (!device_state_strip_is_open(DEVICE_STRIP_INDOOR_ID)) {
         device_state_set_strip_rgb(DEVICE_STRIP_INDOOR_ID,
@@ -109,16 +109,8 @@ static void automation_face_test_control(uint8_t *notify_mask)
                                    DEVICE_SOURCE_AUTOMATION);
         lights_restored = device_state_strip_is_open(DEVICE_STRIP_INDOOR_ID);
         lights_turned_off = 0U;
-        if (lights_restored) {
-            *notify_mask |= VOICE_AUTO_EVENT_LIGHT_ON;
-        }
     }
 
-    if (current_speed == 0U) {
-        *notify_mask |= VOICE_AUTO_EVENT_FAN_ON;
-    } else if (current_speed != FACE_TEST_FAN_SPEED) {
-        *notify_mask |= VOICE_AUTO_EVENT_FAN_SPEED;
-    }
     if (current_speed != FACE_TEST_FAN_SPEED ||
         device_state_get_fan_mode() != DEVICE_FAN_AUTO) {
         device_state_set_fan(FACE_TEST_FAN_SPEED, DEVICE_FAN_AUTO,
@@ -136,6 +128,8 @@ void automation_init(void)
     last_auto_fan_speed = 0xFFFFU;
     pm25_auto_active = 0U;
     smoke_auto_active = 0U;
+    face_action_pending = 0U;
+    face_action_welcome_gen = 0U;
 }
 
 void automation_service(void)
@@ -152,18 +146,33 @@ void automation_service(void)
         lights_turned_off = 0U;
     }
 
-    if (!auto_enabled || override_active) return;
-
 #if FACE_TEST_DIRECT_CONTROL
+    /* 人脸确认后先等欢迎播报事件被 voice 处理（开始播报或按冷却丢弃），
+       再执行开灯/开风扇。无论温度、湿度、光照如何，都强制打开室内灯和风扇。 */
     if (owner_event) {
-        automation_face_test_control(&notify_mask);
+        face_action_pending = 1U;
+        face_action_welcome_gen = face_get_event_seq();
     }
 
-    if (notify_mask != 0U) {
-        voice_notify_automation(notify_mask);
+    if (face_action_pending &&
+        voice_face_welcome_event_gen() == face_action_welcome_gen &&
+        !voice_face_welcome_pending() &&
+        voice_face_welcome_sent()) {
+        automation_face_test_control();
+        face_action_pending = 0U;
     }
-    return;
 #endif
+
+    /* 按需求：除人脸识别自动开启灯光/风扇外，不再执行任何其他自动化逻辑。
+       风扇和灯光只允许 app/云端、LCD、语音手动控制。
+       欢迎播报已包含“已为您打开风扇/室内灯”，这里不再额外播报自动通知。 */
+    return;
+
+    /* 以下常规自动化代码保留但已禁用，不再执行 */
+    /* 人脸直接控制可能已把模式切回自动，重新读取最新状态 */
+    auto_enabled = device_state_get_auto_enabled();
+    override_active = device_state_manual_override_active();
+    if (!auto_enabled || override_active) return;
 
     if (!device_state_any_strip_is_open()) {
         uint8_t should_restore_lights = 0U;
@@ -195,7 +204,7 @@ void automation_service(void)
     }
 
     if (!recognized && lights_restored && last_face_seen_tick != 0U &&
-        now - last_face_seen_tick >= 30000UL && !lights_turned_off &&
+        now - last_face_seen_tick >= 10000UL && !lights_turned_off &&
         (!device_state_light_valid() ||
          device_state_get_light() >= (float)device_state_get_light_on_lux())) {
         automation_turn_off_lights();

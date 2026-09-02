@@ -47,7 +47,7 @@ b13.txt="开"\xFF\xFF\xFF
 - 非阻塞初始化状态机 (`esp32_init_nonblock`)：ATE0 → AT+RST → CWMODE → CWJAP → MQTT → SUB
 
 ### OneNET 协议
-- 服务器: `mqtts.heclouds.com:1883`
+- 服务器: `mqtt.heclouds.com:1883`，MQTT 使用 TCP（`AT+MQTTUSERCFG` scheme=0）
 - 上报主题: `$sys/{PID}/{DEV}/thing/property/post`
 - 订阅: `post/reply` + `property/set`
 - JSON 格式: `{"id":"123","version":"1.0","params":{"temp":{"value":25.5}}}`
@@ -76,7 +76,7 @@ CATEGORY:TARGET:ACTION:VALUE\r\n
 - 兼容旧格式: `LIGHT:ON` (默认灯带1) → tgt字段被识别为action自动回退
 - 风扇: `FAN:ON/OFF/SPEED:UP/DOWN/1~4`
 - 自动/手动模式: `AUTO:ON`, `AUTO:OFF`, `FAN:AUTO`, `FAN:MANUAL`, `LIGHT:AUTO`, `LIGHT:MANUAL`
-- 查询: `QUERY:TEMP/HUMI/PM25/LIGHT/SMOKE/ALL`
+- 查询: `QUERY:TEMP/HUMI/PM25/LIGHT/SMOKE/ALL`；ASRPRO 中“空气质量”和“粉尘浓度”都映射到 `QUERY:PM25`。
 
 ### STM32端解析
 ```c
@@ -92,17 +92,19 @@ val = strtok(NULL, ":\r\n");  // WARM / WHITE / RED...
 ### STM32 → ASRPRO 播报
 - 单条播报: `PLAY:<id>\r\n`
 - 多条顺序播报: `PLAYS:<id>,<id>,...\r\n`
-- 人脸识别确认后，STM32 会发送动态 `PLAYS` 序列：`10003` 欢迎回家、`118/119/121` 拼接温湿度和光照、`126/127` 播报风扇和灯光已自动调节。
+- 人脸识别确认后，STM32 会发送动态 `PLAYS` 序列：`10003` 欢迎回家、`118/119/121` 拼接温湿度和光照、`126/127` 播报“已为您打开风扇”和“已为您打开室内灯”。
 - 传感器数据无效时使用 `128` 播报“环境数据正在更新”，避免播报过期或未初始化数据。
 - 自动化动作播报使用 `129~133`：自动开灯、自动关灯、自动开风扇、自动关风扇、自动调节风扇。
+- 粉尘查询使用 `120` 播报“粉尘浓度”并拼接数值；若当前值超过 `pm25_limit`，查询结果后追加两次 `134` 粉尘超标告警。
+- 粉尘浓度后台超标也会自动发送 `134` 告警，保持超标时每约 10 秒再次提醒，低于 `pm25_limit - 10` 后解除；告警发送优先级高于普通延迟播报，避免被查询/自动通知挤掉。
 - ASRPRO 收到外部 `PLAY/PLAYS` 后会把唤醒保持时间延长到 45 秒，播放任务每约 500ms 刷新一次保活，避免人脸欢迎这类长播报中途退出唤醒态，导致剩余队列等到下次唤醒才继续播。
-- 外部播报队列按 ID 类型选择 API：`10000` 及以上的 `playid` 使用 `prompt_play_by_voice_id()`，普通命令词提示音 ID 使用 `prompt_play_by_cmd_id()`；启动失败快速跳过，播放完成等待约 5 秒超时，超时时主动停止提示音播放，并在失败/超时/正常结束后恢复语音输入，避免单个无效 ID 卡死播放任务。
+- 外部播报队列按 ID 类型选择 API：`10000` 及以上的 `playid` 使用 `prompt_play_by_voice_id()`，普通命令词提示音 ID 使用 `prompt_play_by_cmd_id()`；启动失败快速跳过，播放完成等待约 5 秒超时，超时时主动停止提示音播放。`resume_voice_in()` 只在整批 `PLAYS` 队列清空且批量接收结束后调用一次，不在每一条之间恢复，避免长欢迎播报被拆散或中途抢占语音输入。
 
 ### ASRPRO 固件 (asrpro_code.cpp)
 - 语音 ID → `Serial1.println("LIGHT:1:ON")` 映射
 - 位于 `ASR_CODE()` 的 switch 语句中；欢迎语 `playid=10003`、播放片段命令词 ID `100~135` 位于 `setup()` 顶部注释配置区
 - `ASR`、`ASRTO` 和 `voice` 生成文本保持纯中文，避免 ASRPRO 因英文或阿拉伯数字无法识别/播报；例如空气质量播报使用“粉尘浓度”，不写作 `PM2.5`。
-- 外部播报队列在 `app_uart()` 中入队，在 `app_play()` 中串行播放；长播报保活逻辑位于 `keep_playback_awake()`。
+- 外部播报队列在 `app_uart()` 中入队，在 `app_play()` 中串行播放；`app_uart()` 每轮会尽量读完串口缓冲，避免 9600 波特率下长 `PLAYS` 丢字节，并在解析 `PLAYS` 时置位批量接收标志，防止播放任务提前恢复语音输入；长播报保活逻辑位于 `keep_playback_awake()`。
 
 ### 自动控制触发
 - 光照 `<= light_on_lux`：自动恢复最近一次非零灯光状态。
@@ -127,7 +129,7 @@ FACE:ERR,MODEL\r\n
 - STM32 仍兼容旧的 `FACE:OWNER,<score>` 帧，但 OpenART 新版本只发送 `FACE:ZENG,<score>`。
 
 ### STM32 端状态规则
-- `score >= 70` 且连续 3 次 ZENG，`face_is_zeng_detected()` 才返回 1。
+- `score >= 70` 且收到 1 次 ZENG，`face_is_zeng_detected()` 即返回 1。
 - 超过 2000ms 没收到有效帧，`face_get_online()` 和 `face_is_zeng_detected()` 都返回 0。
 - 后续语音、灯光、风扇等扩展只读取 `face` 模块状态，不在 UART 回调里直接执行动作。
-- 连续确认识别到曾先生后，`automation.c` 负责按温度/光照调节风扇和灯光，`voice.c` 负责欢迎回家及环境播报。
+- 确认识别到曾先生后，`voice.c` 先发送欢迎回家及环境播报，随后 `automation.c` 执行“打开室内灯/打开风扇”的回家动作；无论温度、湿度、光照如何都强制开启。除人脸识别自动开启外，不执行任何其他自动化逻辑，风扇和灯光只允许 app/云端、LCD、语音手动控制。

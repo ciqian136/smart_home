@@ -15,6 +15,7 @@ void ASR_CODE();
 // ============================================================
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
 //  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
+//  多条播报整批播完后才恢复语音输入，避免长欢迎语被拆散
 // ============================================================
 #define RX_BUF_SIZE  256
 #define PLAY_QUEUE_DEPTH 64
@@ -27,6 +28,7 @@ void ASR_CODE();
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
+static volatile uint8_t plays_batch_receiving = 0;
 
 static void keep_playback_awake(void)
 {
@@ -65,12 +67,16 @@ static bool play_prompt_id(uint32_t id)
 {
     uint16_t loops = 0;
     uint16_t keepalive_loops = 0;
+    bool resume_after;
 
     keep_playback_awake();
+    /* 整批 PLAYS 未播完前不恢复语音输入，避免长欢迎播报被拆散或卡住后续语音命令 */
     while (start_prompt_play(id) != 0) {
         loops++;
         if (loops >= PLAY_START_RETRY_LOOPS) {
-            resume_voice_in();
+            resume_after = (uxQueueMessagesWaiting(play_queue) == 0U &&
+                            !plays_batch_receiving);
+            if (resume_after) resume_voice_in();
             return false;
         }
         refresh_wakeup_periodically(&keepalive_loops);
@@ -83,14 +89,18 @@ static bool play_prompt_id(uint32_t id)
         loops++;
         if (loops >= PLAY_DONE_WAIT_LOOPS) {
             prompt_stop_play();
-            resume_voice_in();
-            break;
+            resume_after = (uxQueueMessagesWaiting(play_queue) == 0U &&
+                            !plays_batch_receiving);
+            if (resume_after) resume_voice_in();
+            return true;
         }
         refresh_wakeup_periodically(&keepalive_loops);
         delay(2);
     }
 
-    resume_voice_in();
+    resume_after = (uxQueueMessagesWaiting(play_queue) == 0U &&
+                    !plays_batch_receiving);
+    if (resume_after) resume_voice_in();
     return true;
 }
 
@@ -100,7 +110,8 @@ static void app_uart(void *arg)
 {
     int idx = 0;
     while (1) {
-        if (Serial1.available() > 0) {
+        /* 一次尽量把串口缓冲里的数据读完，避免 9600 波特率下长 PLAYS 丢字节 */
+        while (Serial1.available() > 0) {
             char c = Serial1.read();
 
             if (c == '\n') {
@@ -129,18 +140,20 @@ static void app_uart(void *arg)
                 else if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
                     const char *p = rx_buf + 6;
                     keep_playback_awake();
+                    plays_batch_receiving = 1;
                     while (*p) {
                         uint32_t id = atoi(p);
                         queue_play_id(id);
                         while (*p && *p != ',') p++;
                         if (*p == ',') p++;
                     }
+                    plays_batch_receiving = 0;
                 }
             } else {
                 if (idx < RX_BUF_SIZE - 1) rx_buf[idx++] = c;
             }
         }
-        delay(2);
+        delay(1);
     }
     vTaskDelete(NULL);
 }
@@ -216,7 +229,8 @@ void ASR_CODE(){
     // ========== 环境查询（发送指令后立即返回，播报由 app_play 任务异步完成）==========
     case 24:  Serial1.println("QUERY:TEMP");   break;
     case 25:  Serial1.println("QUERY:HUMI");   break;
-    case 26:  Serial1.println("QUERY:PM25");   break;
+    case 26:
+    case 56:  Serial1.println("QUERY:PM25");   break;
     case 27:  Serial1.println("QUERY:LIGHT");  break;
     case 28:  Serial1.println("QUERY:ALL");    break;
     case 49:  Serial1.println("QUERY:SMOKE");  break;
@@ -234,6 +248,7 @@ void ASR_CODE(){
 }
 
 void hardware_init(){
+  plays_batch_receiving = 0;
   play_queue = xQueueCreate(PLAY_QUEUE_DEPTH, sizeof(uint32_t));
 
   // Serial1: GPIO2=TX, GPIO3=RX
@@ -310,6 +325,7 @@ void setup()
   //{ID:27,keyword:"命令词",ASR:"光照强度",ASRTO:"正在查询光照"}
   //{ID:28,keyword:"命令词",ASR:"全部环境信息",ASRTO:"正在查询环境信息"}
   //{ID:49,keyword:"命令词",ASR:"烟雾浓度",ASRTO:"正在查询烟雾浓度"}
+  //{ID:56,keyword:"命令词",ASR:"粉尘浓度",ASRTO:"正在查询粉尘浓度"}
 
   // ========== 自动控制 ==========
   //{ID:50,keyword:"命令词",ASR:"开启自动控制",ASRTO:"已切换为自动控制模式"}
@@ -364,8 +380,8 @@ void setup()
   //{ID:125,keyword:"命令词",ASR:"前缀烟雾",ASRTO:"烟雾浓度"}
 
   // --- 人脸联动播报 (ID 126~128) ---
-  //{ID:126,keyword:"命令词",ASR:"前缀风扇已调节",ASRTO:"已为您调节风扇到合适挡位"}
-  //{ID:127,keyword:"命令词",ASR:"前缀灯光已调节",ASRTO:"已为您调节室内灯光到合适亮度"}
+  //{ID:126,keyword:"命令词",ASR:"前缀风扇已打开",ASRTO:"已为您打开风扇"}
+  //{ID:127,keyword:"命令词",ASR:"前缀灯光已打开",ASRTO:"已为您打开室内灯"}
   //{ID:128,keyword:"命令词",ASR:"前缀环境更新",ASRTO:"环境数据正在更新"}
 
   // --- 自动化动作播报 (ID 129~133) ---

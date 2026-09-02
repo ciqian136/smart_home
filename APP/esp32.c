@@ -1,9 +1,13 @@
 #include "esp32.h"
 #include "device_state.h"
 
+#include "json_parser.h"
 #include "my_uart.h"
-#include <string.h>
+
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
 引脚定义
@@ -16,7 +20,7 @@ ESP32:串口1:TX:7
 #define WIFI_SSID "iQOO Neo"
 #define WIFI_PASSWORD "88888888"
 
-#define MQTT_SERVER "mqtts.heclouds.com"
+#define MQTT_SERVER "mqtt.heclouds.com"
 #define MQTT_PORT 1883
 
 #define PRODUCT_ID "zs8Fz7juvp"
@@ -36,15 +40,16 @@ ESP32:串口1:TX:7
 #define AT_CMD_TIMEOUT_MS      5000U   /* AT 指令超时（5s），超时自动解除 busy */
 #define ESP_FAIL_COOLDOWN_MS  30000U   /* 初始化失败后冷却时间（30s），避免频繁重试 */
 #define ESP_RST_WAIT_MS        3000U   /* AT+RST 后等待复位 */
-#define ESP_CHECK_INTERVAL_MS  10000U  /* 每 10s 检查一次连接状态 */
 #define MQTT_PING_INTERVAL_MS  30000U  /* 每 30s 发送一次 MQTT PING */
 #define ESP_RUNTIME_TIMEOUT_RECONNECTS 3U
 #define ESP_RECONNECT_MIN_INTERVAL_MS  3000U
 #define ESP_NO_ALIVE_RECONNECT_MS      120000U
 
+#define ESP32_UART1_STATUS_REPORT_DEFAULT 0U
+
 volatile uint8_t esp32_rx_pending = 0;
-volatile uint8_t at_cmd_busy       = 0;   /* 1=AT 指令执行中，禁止发送新命令 */
-volatile uint8_t esp32_initialized = 0;   /* 1=非阻塞初始化已完成 */
+static volatile uint8_t at_cmd_busy       = 0;   /* 1=AT 指令执行中，禁止发送新命令 */
+static volatile uint8_t esp32_initialized = 0;   /* 1=非阻塞初始化已完成 */
 volatile uint8_t esp32_uart1_status_report_enabled =
     ESP32_UART1_STATUS_REPORT_DEFAULT;
 
@@ -59,23 +64,19 @@ volatile uint8_t esp32_uart1_status_report_enabled =
 static uint32_t at_cmd_start_tick = 0;      /* 发送 AT 指令时的系统 tick */
 static uint8_t  at_cmd_timeout_logged = 0;  /* 防止超时日志重复刷屏 */
 static uint8_t  esp32_got_ok = 0;           /* recv 检测到 OK，通知 init 状态机 */
+static uint8_t  esp32_mqtt_connected = 0;   /* recv 检测到 +MQTTCONNECTED，确认 MQTT 已连上 */
 
 /* ── set_reply 回复 ────────────────────────────── */
 static char pending_reply_msg_id[16] = {0};
-volatile uint8_t need_send_reply = 0;
+static volatile uint8_t need_send_reply = 0;
 
 /* ── 在线检测计时 ──────────────────────────────── */
-static uint32_t last_esp_check_tick  = 0;
 static uint32_t last_mqtt_ping_tick  = 0;
 static uint8_t  esp_offline_flag     = 0;
 static uint8_t  esp_reconnect_requested = 0;
 static uint8_t  esp_runtime_timeout_count = 0;
 static uint32_t last_esp_alive_tick = 0;
 static uint32_t last_reconnect_tick = 0;
-
-static void esp32_note_alive(void);
-static void esp32_request_reconnect(const char *reason);
-static void esp32_start_reconnect(void);
 
 #define ESP_LIGHT_TARGET_ALL      255U
 #define ESP_LIGHT_PRESET_OFF        0
@@ -109,118 +110,26 @@ static const esp_light_preset_t light_presets[] = {
     {ESP_LIGHT_PRESET_BLUE,  "BLUE",  0U,   0U,   255U},
 };
 
-static char esp32_upper_ascii(char ch)
-{
-  return (ch >= 'a' && ch <= 'z') ? (char)(ch - ('a' - 'A')) : ch;
-}
-
-static uint8_t esp32_str_equal_ci(const char *a, const char *b)
-{
-  if (a == NULL || b == NULL) return 0U;
-  while (*a != '\0' && *b != '\0') {
-    if (esp32_upper_ascii(*a) != esp32_upper_ascii(*b)) return 0U;
-    a++;
-    b++;
-  }
-  return (*a == '\0' && *b == '\0') ? 1U : 0U;
-}
-
-static const esp_light_preset_t *esp32_find_light_preset_by_id(int preset_id)
-{
-  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
-    if (light_presets[i].id == preset_id) return &light_presets[i];
-  }
-  return NULL;
-}
-
-static int esp32_light_preset_id_from_name(const char *name)
-{
-  if (name == NULL || name[0] == '\0') return -1;
-
-  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
-    if (esp32_str_equal_ci(name, light_presets[i].name)) {
-      return light_presets[i].id;
-    }
-  }
-
-  if (esp32_str_equal_ci(name, "DEFAULT") ||
-      esp32_str_equal_ci(name, "NORMAL") ||
-      esp32_str_equal_ci(name, "DIM")) {
-    return ESP_LIGHT_PRESET_ON;
-  }
-  if (esp32_str_equal_ci(name, "CLOSE") ||
-      esp32_str_equal_ci(name, "CLOSED") ||
-      esp32_str_equal_ci(name, "SLEEP")) {
-    return ESP_LIGHT_PRESET_OFF;
-  }
-
-  return -1;
-}
-
-static uint8_t esp32_apply_light_preset_to_strip(uint8_t strip_id, int preset_id)
-{
-  const esp_light_preset_t *preset = esp32_find_light_preset_by_id(preset_id);
-  if (preset == NULL || !device_state_strip_is_active(strip_id)) return 0U;
-
-  return device_state_set_strip_rgb(strip_id, preset->r, preset->g, preset->b,
-                                    DEVICE_SOURCE_CLOUD);
-}
-
-static uint8_t esp32_apply_light_preset(uint8_t target, int preset_id)
-{
-  uint8_t applied = 0U;
-
-  if (target == ESP_LIGHT_TARGET_ALL) {
-    for (uint8_t i = 0U; i < DEVICE_STATE_STRIP_COUNT; i++) {
-      uint8_t sid = (uint8_t)(i + 1U);
-      if (esp32_apply_light_preset_to_strip(sid, preset_id)) {
-        applied = 1U;
-      }
-    }
-    return applied;
-  }
-
-  return esp32_apply_light_preset_to_strip(target, preset_id);
-}
-
-static int esp32_get_light_preset_state(uint8_t strip_id)
-{
-  uint8_t r = 0U, g = 0U, b = 0U;
-  if (!device_state_get_strip_rgb(strip_id, &r, &g, &b)) {
-    return ESP_LIGHT_PRESET_CUSTOM;
-  }
-
-  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
-    if (light_presets[i].r == r && light_presets[i].g == g && light_presets[i].b == b) {
-      return light_presets[i].id;
-    }
-  }
-
-  return ESP_LIGHT_PRESET_CUSTOM;
-}
-
-static void esp32_note_alive(void)
-{
-  last_esp_alive_tick = HAL_GetTick();
-  esp_runtime_timeout_count = 0U;
-}
-
-static void esp32_request_reconnect(const char *reason)
-{
-  if (!esp_reconnect_requested) {
-    ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect requested: %s\r\n",
-                              reason ? reason : "unknown");
-  }
-  esp_reconnect_requested = 1U;
-  esp_offline_flag = 1U;
-}
-
-static void queue_set_reply(const char *msg_id)
-{
-  if (msg_id == NULL || msg_id[0] == '\0') return;
-  strncpy(pending_reply_msg_id, msg_id, sizeof(pending_reply_msg_id) - 1);
-  need_send_reply = 1;
-}
+static char esp32_upper_ascii(char ch);
+static uint8_t esp32_str_equal_ci(const char *a, const char *b);
+static const esp_light_preset_t *esp32_find_light_preset_by_id(int preset_id);
+static int esp32_light_preset_id_from_name(const char *name);
+static uint8_t esp32_apply_light_preset_to_strip(uint8_t strip_id, int preset_id);
+static uint8_t esp32_apply_light_preset(uint8_t target, int preset_id);
+static int esp32_get_light_preset_state(uint8_t strip_id);
+static void esp32_note_alive(void);
+static void esp32_request_reconnect(const char *reason);
+static void queue_set_reply(const char *msg_id);
+static void buf_consume(char *buf, uint16_t *len, uint16_t consumed);
+static void esp32_start_reconnect(void);
+static uint8_t check_uart2_response(const char *expected);
+static void build_onenet_cmd(char *outbuf, const char *topic,
+                             const char *msg_id, uint8_t param_count, ...);
+static int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
+                                    char *expected_resp, uint32_t time_out_ms,
+                                    uint8_t max_retries);
+static void MQTT_Handle(char *subrecv_start);
+static void TIME_Handle(char *timerecv_start);
 
 /**
   * @brief  发送待回复的 set_reply（独立于数据上报）
@@ -273,7 +182,7 @@ void esp32_flush_reply(void)
 /**
   * @brief  ESP32 数据发送任务 - 向 OneNET 分时上报传感器数据
   *         每次调用只发送一个属性组（~50ms），切换 case 顺序轮询
-  *         完整一轮 11 个 case，每 1s 发送一次（10→1 降频），总间隔约 11s
+  *         调度器每 1s 调用一次，完整一轮 11 个 case，总间隔约 11s
   */
 void esp32_run_send(void) {
 
@@ -283,11 +192,6 @@ void esp32_run_send(void) {
   if (esp_reconnect_requested) return;
   if (!esp32_initialized) return;
   if (at_cmd_busy) return;
-
-  /* 降频：每 10 次调用只发送 1 次（1s 间隔），减少 UART 碰撞 */
-  static uint8_t skip = 0;
-  if (++skip < 10) return;
-  skip = 0;
 
   static uint32_t test_int = 0;
   static uint8_t  send_case = 0;
@@ -461,20 +365,6 @@ void esp32_check_cmd_timeout(void)
   }
 }
 
-/* 辅助：从缓冲区移除已处理的前缀数据 */
-static void buf_consume(char *buf, uint16_t *len, uint16_t consumed)
-{
-  if (consumed >= *len) {
-    *len = 0;
-    buf[0] = '\0';
-  } else {
-    uint16_t remaining = *len - consumed;
-    memmove(buf, buf + consumed, remaining);
-    *len = remaining;
-    buf[remaining] = '\0';
-  }
-}
-
 /**
   * @brief  ESP32 数据接收处理任务 - 处理 ESP32 返回的所有数据
   *         1. 清理 OK/ERROR/WIFI/MQTT 等纯状态行（避免堆积）
@@ -551,11 +441,13 @@ void esp32_run_recv(void) {
       } else if (strstr(p, "MQTTDISCONNECTED") != NULL) {
         is_status = 1;
         if (esp32_initialized) esp32_request_reconnect("MQTT disconnected");
+          esp32_mqtt_connected = 0;
       } else if (strncmp(p, "+MQTTPING:", 10) == 0 ||
                  strstr(p, "MQTTCONNECTED") != NULL) {
         is_status = 1;
         at_cmd_busy = 0;
         at_cmd_timeout_logged = 0;
+          esp32_mqtt_connected = 1;
         esp32_note_alive();
       } else if (strncmp(p, "+MQTT", 5) == 0 && strstr(p, "+MQTTSUBRECV:") == NULL) {
         is_status = 1;
@@ -657,52 +549,6 @@ typedef struct {
 } esp_init_ctx_t;
 
 static esp_init_ctx_t init_ctx = {ESP_INIT_IDLE, 0, 0, 0, {0}};
-
-static void esp32_start_reconnect(void)
-{
-  uint32_t now = HAL_GetTick();
-
-  if (last_reconnect_tick != 0U &&
-      now - last_reconnect_tick < ESP_RECONNECT_MIN_INTERVAL_MS) {
-    return;
-  }
-
-  last_reconnect_tick = now;
-  esp32_initialized = 0;
-  esp_reconnect_requested = 0U;
-  esp_offline_flag = 0U;
-  at_cmd_busy = 0U;
-  at_cmd_timeout_logged = 0U;
-  esp32_got_ok = 0U;
-  esp_runtime_timeout_count = 0U;
-  init_ctx.state = ESP_INIT_IDLE;
-  init_ctx.retry_count = 0U;
-  init_ctx.start_time = 0U;
-  init_ctx.timeout_ms = 0U;
-  memset(init_ctx.cmd_buf, 0, sizeof(init_ctx.cmd_buf));
-  memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
-  uart2_rx_len = 0U;
-  esp32_rx_pending = 0U;
-  my_uart2_clear_frames();
-  last_esp_check_tick = now;
-  last_mqtt_ping_tick = now;
-
-  ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect start\r\n");
-}
-
-/* 快速检查 uart2 接收缓冲区是否包含期望字符串，找到后清空 */
-static uint8_t check_uart2_response(const char *expected)
-{
-  if (uart2_rx_len > 0 && strstr(uart2_rx_buf, expected) != NULL) {
-    at_cmd_busy = 0;
-    at_cmd_timeout_logged = 0;
-    esp32_note_alive();
-    memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
-    uart2_rx_len = 0;
-    return 1;
-  }
-  return 0;
-}
 
 /**
   * @brief  ESP32 非阻塞初始化（每轮调用一次，无阻塞延时）
@@ -840,7 +686,7 @@ void esp32_init_nonblock(void)
     at_cmd_timeout_logged = 0;
     esp32_got_ok = 0;
     sprintf(init_ctx.cmd_buf,
-            "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
+            "AT+MQTTUSERCFG=0,0,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
             DEVICE_NAME, PRODUCT_ID, MQTT_TOKEN);
     uart_printf(&huart2, "%s", init_ctx.cmd_buf);
     init_ctx.start_time = HAL_GetTick();
@@ -863,6 +709,7 @@ void esp32_init_nonblock(void)
     at_cmd_busy = 1;
     at_cmd_timeout_logged = 0;
     esp32_got_ok = 0;
+      esp32_mqtt_connected = 0;
     sprintf(init_ctx.cmd_buf, "AT+MQTTCONN=0,\"%s\",%d,1\r\n", MQTT_SERVER, MQTT_PORT);
     uart_printf(&huart2, "%s", init_ctx.cmd_buf);
     init_ctx.start_time = HAL_GetTick();
@@ -871,8 +718,10 @@ void esp32_init_nonblock(void)
     break;
   case ESP_INIT_MQTTCONN_WAIT:
     if (esp32_got_ok || check_uart2_response("OK")) {
+        if (esp32_mqtt_connected) {
       ESP32_UART1_STATUS_PRINTF("[ESP32] init: MQTT connected\r\n");
       init_ctx.state = ESP_INIT_SUB_POST_REPLY;
+        }
     } else if (HAL_GetTick() - init_ctx.start_time > init_ctx.timeout_ms) {
       at_cmd_busy = 0;  /* 超时清除 busy */
       if (++init_ctx.retry_count >= 3) init_ctx.state = ESP_INIT_FAIL;
@@ -947,7 +796,7 @@ void esp32_init_nonblock(void)
 /**
   * @brief  ESP32 在线状态维护
   *         - 每 30s 发送 AT+MQTTPING 保持连接
-  *         - 每 10s 发送 AT+CWSTATE? 检测 WiFi 状态
+  *         - 调度器每 10s 调用一次并发送 AT+CWSTATE? 检测 WiFi 状态
   *         - 检测到离线后触发重新初始化
   */
 void esp32_check_online(void)
@@ -980,21 +829,19 @@ void esp32_check_online(void)
     }
   }
 
-  /* WiFi 状态查询: 每 10s */
-  if (now - last_esp_check_tick >= ESP_CHECK_INTERVAL_MS) {
-    last_esp_check_tick = now;
-    if (!at_cmd_busy) {
-      uart_printf(&huart2, "AT+CWSTATE?\r\n");
-      at_cmd_busy = 1;
-      at_cmd_start_tick = now;
-      at_cmd_timeout_logged = 0;
-    }
+  /* WiFi 状态查询: 由 10s 调度周期控制 */
+  if (!at_cmd_busy) {
+    uart_printf(&huart2, "AT+CWSTATE?\r\n");
+    at_cmd_busy = 1;
+    at_cmd_start_tick = now;
+    at_cmd_timeout_logged = 0;
   }
 }
 
 uint8_t esp32_get_online(void)
 {
-  return (esp32_initialized && !esp_reconnect_requested && !esp_offline_flag) ? 1U : 0U;
+  return (esp32_initialized && esp32_mqtt_connected &&
+          !esp_reconnect_requested && !esp_offline_flag) ? 1U : 0U;
 }
 
 /**
@@ -1012,7 +859,7 @@ void esp32_init(void) {
   ret += send_cmd_wait_resp_it(&huart2, "AT+CWMODE=1\r\n", "OK", 2000, 3);
   sprintf(cmd_buf, "AT+CWJAP=\"%s\",\"%s\"\r\n", WIFI_SSID, WIFI_PASSWORD);
   ret += send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 10000, 3);
-  sprintf(cmd_buf, "AT+MQTTUSERCFG=0,1,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
+  sprintf(cmd_buf, "AT+MQTTUSERCFG=0,0,\"%s\",\"%s\",\"%s\",0,0,\"\"\r\n",
           DEVICE_NAME, PRODUCT_ID, MQTT_TOKEN);
   ret += send_cmd_wait_resp_it(&huart2, cmd_buf, "OK", 8000, 3);
   sprintf(cmd_buf, "AT+MQTTCONN=0,\"%s\",%d,1\r\n", MQTT_SERVER, MQTT_PORT);
@@ -1033,6 +880,191 @@ void esp32_init(void) {
     /* esp32_initialized 保持 0，非阻塞 init 会接管 */
   }
 }
+
+/* 将 ASCII 小写字母转换为大写，用于协议字段的不区分大小写比较。 */
+static char esp32_upper_ascii(char ch)
+{
+  return (ch >= 'a' && ch <= 'z') ? (char)(ch - ('a' - 'A')) : ch;
+}
+
+/* 比较两个字符串是否相等，忽略 ASCII 字母大小写。 */
+static uint8_t esp32_str_equal_ci(const char *a, const char *b)
+{
+  if (a == NULL || b == NULL) return 0U;
+  while (*a != '\0' && *b != '\0') {
+    if (esp32_upper_ascii(*a) != esp32_upper_ascii(*b)) return 0U;
+    a++;
+    b++;
+  }
+  return (*a == '\0' && *b == '\0') ? 1U : 0U;
+}
+
+/* 根据预设 ID 查找灯带 RGB 预设表。 */
+static const esp_light_preset_t *esp32_find_light_preset_by_id(int preset_id)
+{
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (light_presets[i].id == preset_id) return &light_presets[i];
+  }
+  return NULL;
+}
+
+/* 将云端下发的预设名称转换为内部灯带预设 ID。 */
+static int esp32_light_preset_id_from_name(const char *name)
+{
+  if (name == NULL || name[0] == '\0') return -1;
+
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (esp32_str_equal_ci(name, light_presets[i].name)) {
+      return light_presets[i].id;
+    }
+  }
+
+  if (esp32_str_equal_ci(name, "DEFAULT") ||
+      esp32_str_equal_ci(name, "NORMAL") ||
+      esp32_str_equal_ci(name, "DIM")) {
+    return ESP_LIGHT_PRESET_ON;
+  }
+  if (esp32_str_equal_ci(name, "CLOSE") ||
+      esp32_str_equal_ci(name, "CLOSED") ||
+      esp32_str_equal_ci(name, "SLEEP")) {
+    return ESP_LIGHT_PRESET_OFF;
+  }
+
+  return -1;
+}
+
+/* 将指定灯带设置为某个 RGB 预设，保留无效/停用灯带不处理。 */
+static uint8_t esp32_apply_light_preset_to_strip(uint8_t strip_id, int preset_id)
+{
+  const esp_light_preset_t *preset = esp32_find_light_preset_by_id(preset_id);
+  if (preset == NULL || !device_state_strip_is_active(strip_id)) return 0U;
+
+  return device_state_set_strip_rgb(strip_id, preset->r, preset->g, preset->b,
+                                    DEVICE_SOURCE_CLOUD);
+}
+
+/* 按目标灯带应用 RGB 预设，target=255 时同时应用到所有有效灯带。 */
+static uint8_t esp32_apply_light_preset(uint8_t target, int preset_id)
+{
+  uint8_t applied = 0U;
+
+  if (target == ESP_LIGHT_TARGET_ALL) {
+    for (uint8_t i = 0U; i < DEVICE_STATE_STRIP_COUNT; i++) {
+      uint8_t sid = (uint8_t)(i + 1U);
+      if (esp32_apply_light_preset_to_strip(sid, preset_id)) {
+        applied = 1U;
+      }
+    }
+    return applied;
+  }
+
+  return esp32_apply_light_preset_to_strip(target, preset_id);
+}
+
+/* 根据当前灯带 RGB 值反查预设 ID，无法匹配时返回自定义状态。 */
+static int esp32_get_light_preset_state(uint8_t strip_id)
+{
+  uint8_t r = 0U, g = 0U, b = 0U;
+  if (!device_state_get_strip_rgb(strip_id, &r, &g, &b)) {
+    return ESP_LIGHT_PRESET_CUSTOM;
+  }
+
+  for (uint8_t i = 0U; i < sizeof(light_presets) / sizeof(light_presets[0]); i++) {
+    if (light_presets[i].r == r && light_presets[i].g == g && light_presets[i].b == b) {
+      return light_presets[i].id;
+    }
+  }
+
+  return ESP_LIGHT_PRESET_CUSTOM;
+}
+
+/* 记录 ESP32 最近一次有效响应时间，并清零运行期超时计数。 */
+static void esp32_note_alive(void)
+{
+  last_esp_alive_tick = HAL_GetTick();
+  esp_runtime_timeout_count = 0U;
+}
+
+/* 标记需要重连，并按需输出一次重连原因。 */
+static void esp32_request_reconnect(const char *reason)
+{
+  if (!esp_reconnect_requested) {
+    ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect requested: %s\r\n",
+                              reason ? reason : "unknown");
+  }
+  esp_reconnect_requested = 1U;
+  esp_offline_flag = 1U;
+}
+
+/* 缓存 property/set 的 msg_id，等待发送 set_reply 成功响应。 */
+static void queue_set_reply(const char *msg_id)
+{
+  if (msg_id == NULL || msg_id[0] == '\0') return;
+  strncpy(pending_reply_msg_id, msg_id, sizeof(pending_reply_msg_id) - 1);
+  need_send_reply = 1;
+}
+
+/* 从 UART 解析缓冲区移除已经处理过的前缀数据。 */
+static void buf_consume(char *buf, uint16_t *len, uint16_t consumed)
+{
+  if (consumed >= *len) {
+    *len = 0;
+    buf[0] = '\0';
+  } else {
+    uint16_t remaining = *len - consumed;
+    memmove(buf, buf + consumed, remaining);
+    *len = remaining;
+    buf[remaining] = '\0';
+  }
+}
+
+/* 重置 ESP32 运行状态和初始化状态机，准备从头重连。 */
+static void esp32_start_reconnect(void)
+{
+  uint32_t now = HAL_GetTick();
+
+  if (last_reconnect_tick != 0U &&
+      now - last_reconnect_tick < ESP_RECONNECT_MIN_INTERVAL_MS) {
+    return;
+  }
+
+  last_reconnect_tick = now;
+  esp32_initialized = 0;
+  esp_reconnect_requested = 0U;
+  esp_offline_flag = 0U;
+  at_cmd_busy = 0U;
+  at_cmd_timeout_logged = 0U;
+  esp32_got_ok = 0U;
+  esp32_mqtt_connected = 0U;
+  esp_runtime_timeout_count = 0U;
+  init_ctx.state = ESP_INIT_IDLE;
+  init_ctx.retry_count = 0U;
+  init_ctx.start_time = 0U;
+  init_ctx.timeout_ms = 0U;
+  memset(init_ctx.cmd_buf, 0, sizeof(init_ctx.cmd_buf));
+  memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
+  uart2_rx_len = 0U;
+  esp32_rx_pending = 0U;
+  my_uart2_clear_frames();
+  last_mqtt_ping_tick = now;
+
+  ESP32_UART1_STATUS_PRINTF("[ESP32] reconnect start\r\n");
+}
+
+/* 检查 UART2 缓冲区是否出现期望响应，命中后清空缓冲区并释放 busy。 */
+static uint8_t check_uart2_response(const char *expected)
+{
+  if (uart2_rx_len > 0 && strstr(uart2_rx_buf, expected) != NULL) {
+    at_cmd_busy = 0;
+    at_cmd_timeout_logged = 0;
+    esp32_note_alive();
+    memset(uart2_rx_buf, 0, sizeof(uart2_rx_buf));
+    uart2_rx_len = 0;
+    return 1;
+  }
+  return 0;
+}
+
 /**
   * @brief  发送 AT 指令并等待期望响应（带超时和重试机制，阻塞式）
   * @param huart         串口句柄指针
@@ -1042,9 +1074,9 @@ void esp32_init(void) {
   * @param max_retries   最大重试次数
   * @return 0=成功收到期望响应, -1=重试后仍失败
   */
-int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
-                             char *expected_resp, uint32_t time_out_ms,
-                             uint8_t max_retries) {
+static int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
+                                    char *expected_resp, uint32_t time_out_ms,
+                                    uint8_t max_retries) {
   uint8_t retry_count = 0;
   uint32_t start_time = 0;
   while (retry_count < max_retries) {
@@ -1086,8 +1118,8 @@ int8_t send_cmd_wait_resp_it(UART_HandleTypeDef *huart, char *cmd,
   *                     type='b' → int (0=false, 非0=true),
   *                     type='s' → char*
   */
-void build_onenet_cmd(char *outbuf, const char *topic, const char *msg_id,
-                      uint8_t param_count, ...) {
+static void build_onenet_cmd(char *outbuf, const char *topic, const char *msg_id,
+                             uint8_t param_count, ...) {
   static char payload[512];
   memset(payload, 0, sizeof(payload));
   int offset = 0; /* 当前已写入 payload 的字符偏移量 */
@@ -1134,8 +1166,8 @@ void build_onenet_cmd(char *outbuf, const char *topic, const char *msg_id,
   sprintf(outbuf, "AT+MQTTPUB=0,\"%s\",\"%s\",0,0\r\n", topic, payload);
 }
 
-
-void MQTT_Handle(char *subrecv_start)
+/* 解析 OneNET 订阅消息，并按 topic 分发属性上报响应或云端控制指令。 */
+static void MQTT_Handle(char *subrecv_start)
 {
   /* 检查是否收到完整的 JSON 帧（以 "}\r\n" 结尾）*/
   if (strstr(subrecv_start, "}\r\n") == NULL) {
@@ -1357,9 +1389,12 @@ void MQTT_Handle(char *subrecv_start)
   }
 
 }
+
 static char ntp_time_str[64] = {0};          // 存放时间字符串（64字节足够）
 volatile static uint8_t ntp_updated = 0;    // 时间更新标志
-void TIME_Handle(char *timerecv_start)
+
+/* 提取 ESP32 返回的 NTP 时间字符串，保存到本地缓存并标记已更新。 */
+static void TIME_Handle(char *timerecv_start)
 {
   // 跳过前缀 "+CIPSNTPTIME:"
     char *p = timerecv_start + strlen("+CIPSNTPTIME:");

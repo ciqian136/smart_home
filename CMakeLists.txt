@@ -64,7 +64,6 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/APP/config_store.c
     ${CMAKE_CURRENT_SOURCE_DIR}/APP/device_state.c
     ${CMAKE_CURRENT_SOURCE_DIR}/APP/automation.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/APP/health_monitor.c
 )
 
 # Add include paths

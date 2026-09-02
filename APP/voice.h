@@ -12,5 +12,8 @@
 void voice_run_send(void);
 void voice_parse(void);
 void voice_notify_automation(uint8_t event_mask);
+uint8_t voice_face_welcome_pending(void);
+uint8_t voice_face_welcome_sent(void);
+uint8_t voice_face_welcome_event_gen(void);
 
 #endif

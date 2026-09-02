@@ -102,13 +102,15 @@ int main(void)
   MX_USART3_UART_Init();
   MX_UART5_Init();
   /* USER CODE BEGIN 2 */
+  /*所有任务初始化*/
 	schedule_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
-	 schedule_run();
+  /*任务轮询调度*/
+	schedule_run();
 
 		
     /* USER CODE END WHILE */

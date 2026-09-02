@@ -30,7 +30,6 @@ APP/            应用层 (用户代码)
   device_state.c 统一设备状态与配置落盘入口
   automation.c  人脸、温度和光照自动化策略
   config_store.c 内部 Flash 双槽位配置保存
-  health_monitor.c 任务心跳与可选 IWDG 喂狗
 asrpro_code.cpp  ASRPRO 语音模块固件 (独立芯片)
 ```
 
@@ -74,9 +73,9 @@ asrpro_code.cpp  ASRPRO 语音模块固件 (独立芯片)
 |------|------|
 | 10ms | voice_run_send, lcd_recv |
 | 20ms | esp32_init_nonblock, face_proc |
-| 100ms | esp32_run_send (降频 10:1 → 1s/条) |
+| 1000ms | esp32_run_send (1s/条) |
 | 300ms | smoke_proc, PM25_proc, bh1750_proc, DHT11_proc |
-| 500ms | esp32_check_online |
+| 10000ms | esp32_check_online |
 | 1000ms | lcd_send |
 
 每轮主循环也执行 `esp32_run_recv()` (rx_pending 触发)、`esp32_check_cmd_timeout()`、`esp32_flush_reply()`。
@@ -93,7 +92,7 @@ asrpro_code.cpp  ASRPRO 语音模块固件 (独立芯片)
 - 图像采集、模型训练和推理都在 OpenART 上完成，STM32 不做图像处理。
 - 第一版只识别用户本人，OpenART 通过 UART5 向 STM32 发送 `FACE:*` 文本帧。
 - `face.c` 只维护控制标志位：在线状态、是否稳定识别到主人、最近置信度。
-- `automation.c` 消费人脸确认事件：无手动覆盖且自动化开启时，按温度档位调节风扇，按光照阈值恢复最近一次灯带状态。
-- `voice.c` 消费独立欢迎事件：向 ASRPRO 发送 `PLAYS` 队列，播报“欢迎回家曾先生”、实时温湿度、风扇调节、实时光照和灯光调节结果。
-- 欢迎播报冷却时间为 30 秒；传感器无有效数据时播报“环境数据正在更新”。
+- `automation.c` 消费人脸确认事件：等 `voice.c` 处理欢迎播报后，再执行“打开室内灯/打开风扇”的回家动作；无论温度、湿度、光照如何都强制开启。除人脸识别自动开启外，不执行任何其他自动化逻辑。
+- `voice.c` 消费独立欢迎事件：向 ASRPRO 发送 `PLAYS` 队列，播报“欢迎回家曾先生”、实时温湿度、已为您打开风扇、实时光照和已为您打开室内灯。
+- 欢迎播报冷却时间为 5 秒；持续识别到人脸期间按冷却周期重复播报（face.c 不再只在识别上升沿触发一次事件）；风扇和灯光只允许 app/云端、LCD、语音手动控制，人脸离开后不会自动关闭；传感器无有效数据时播报“环境数据正在更新”。
 - 后续语音、灯光、风扇等动作应读取 `face` 模块状态，不要直接在 `face.c` 内驱动执行器。
