@@ -3,6 +3,7 @@ mx.scratch
 !.settings
 
 # MDK-ARM build artifacts
+MDK-ARM/smart_home/
 MDK-ARM/**/*.o
 MDK-ARM/**/*.crf
 MDK-ARM/**/*.d
@@ -11,6 +12,7 @@ MDK-ARM/**/*.hex
 MDK-ARM/**/*.htm
 MDK-ARM/**/*.lnp
 MDK-ARM/**/*.map
+MDK-ARM/**/*.lst
 MDK-ARM/**/*.build_log.htm
 MDK-ARM/**/*.dep
 
