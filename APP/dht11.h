@@ -5,10 +5,14 @@
 #include "stm32f1xx_hal.h"
 #include <stdint.h>
 
+#define DHT11_READ_OK    0U
+#define DHT11_READ_ERROR 1U
+#define DHT11_READ_BUSY  2U
+
 void DHT11_init(void);
+/** @brief 非阻塞起始信号读取；返回 DHT11_READ_BUSY 时需稍后再次调用 */
 uint8_t DHT11_ReadData(float *temp, float *humi);
 void DHT11_proc(void);
-uint8_t DHT11_is_ready(void);
 float DHT11_get_temp(void);
 float DHT11_get_humi(void);
 #endif

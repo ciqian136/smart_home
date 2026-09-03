@@ -111,7 +111,8 @@ int main(void)
 	my_adc_init();
 	uart_printf(&huart1,"[stm32]start");
 	/*各模块初始化*/
-	 ws2812_set_all(0, 0, 0);
+	 ws2812_set_all(0, 0, 0);  /* 初始关闭 */
+	 ws2812_2_set_all(0, 0, 0);  /* 灯带2 初始关闭 */
 	 smoke_init();
    DHT11_init();
    PM25_init();

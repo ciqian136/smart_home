@@ -22,16 +22,32 @@ Dialog DLL:      TCM.DLL V1.53.0.0
  
 <h2>Project:</h2>
 C:\Users\oqgt3\Desktop\smart_home\smart_home\MDK-ARM\smart_home.uvprojx
-Project File Date:  07/05/2026
+Project File Date:  07/07/2026
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'E:\keil\ARM\ARMCC\Bin'
 Build target 'smart_home'
 compiling lcd.c...
+compiling ws2812.c...
+..\APP\ws2812.c(7): warning:  #550-D: variable "ws2812_cur_r"  was set but never used
+  static uint8_t ws2812_cur_r = 0;
+..\APP\ws2812.c(8): warning:  #550-D: variable "ws2812_cur_g"  was set but never used
+  static uint8_t ws2812_cur_g = 0;
+..\APP\ws2812.c(9): warning:  #550-D: variable "ws2812_cur_b"  was set but never used
+  static uint8_t ws2812_cur_b = 0;
+..\APP\ws2812.c: 3 warnings, 0 errors
+compiling ws2812_2.c...
+..\APP\ws2812_2.c(10): warning:  #550-D: variable "ws2812_2_cur_r"  was set but never used
+  static uint8_t ws2812_2_cur_r = 0;
+..\APP\ws2812_2.c(11): warning:  #550-D: variable "ws2812_2_cur_g"  was set but never used
+  static uint8_t ws2812_2_cur_g = 0;
+..\APP\ws2812_2.c(12): warning:  #550-D: variable "ws2812_2_cur_b"  was set but never used
+  static uint8_t ws2812_2_cur_b = 0;
+..\APP\ws2812_2.c: 3 warnings, 0 errors
 linking...
-Program Size: Code=31116 RO-data=620 RW-data=236 ZI-data=8364  
+Program Size: Code=39604 RO-data=1080 RW-data=300 ZI-data=19012  
 FromELF: creating hex file...
-"smart_home\smart_home.axf" - 0 Error(s), 0 Warning(s).
+"smart_home\smart_home.axf" - 0 Error(s), 6 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -44,7 +60,7 @@ Package Vendor: Keil
   C:\Users\oqgt3\AppData\Local\Arm\Packs\Keil\STM32F1xx_DFP\2.3.0\Device\Include
 
 <h2>Collection of Component Files used:</h2>
-Build Time Elapsed:  00:00:02
+Build Time Elapsed:  00:00:03
 </pre>
 </body>
 </html>

@@ -4,20 +4,21 @@
 #include "my_uart.h"
 #include "stm32f1xx_hal_i2c.h"
 #include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 
 /* 引用 I2C 句柄 */
 extern I2C_HandleTypeDef hi2c1;
 
-/* 引脚和参数宏定义 */
-#define WINDOW_SIZE 5                /* 滑动平均滤波窗口大小 */
+#define BH1750_I2C_TIMEOUT_MS      20U
+#define BH1750_MEASURE_WAIT_MS    180U
 
-/* 所有数据均通过堆内存指针访问 */
-static float *buf = NULL;            /* 滑动窗口缓冲区 */
-static uint8_t *buf_index = NULL;    /* 当前窗口索引 */
-static float *g_lux = NULL;          /* 滤波后的光照平均值 */
-static float *g_raw_lux = NULL;      /* 原始光照值 */
+typedef enum {
+    BH1750_STATE_READY = 0,
+    BH1750_STATE_WAIT_MEASURE
+} bh1750_state_t;
+
+static float g_lux = 0.0f;                 /* 最近一次光照值 */
+static bh1750_state_t g_state = BH1750_STATE_READY;
+static uint32_t g_next_read_tick = 0U;     /* 重新进入测量模式后的最早读取时间 */
 
 static void I2C_Reset(I2C_HandleTypeDef *hi2c)
 {
@@ -31,22 +32,38 @@ static void I2C_Reset(I2C_HandleTypeDef *hi2c)
 
 static HAL_StatusTypeDef BH1750_SendCommand(I2C_HandleTypeDef *hi2c, uint8_t cmd)
 {
-    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(hi2c, BH1750_ADDR, &cmd, 1, 100);
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(hi2c, BH1750_ADDR, &cmd, 1, BH1750_I2C_TIMEOUT_MS);
     if (ret != HAL_OK) {
         I2C_Reset(hi2c);
     }
     return ret;
 }
 
+static void bh1750_start_measure_wait(void)
+{
+    g_state = BH1750_STATE_WAIT_MEASURE;
+    g_next_read_tick = HAL_GetTick() + BH1750_MEASURE_WAIT_MS;
+}
+
+static void bh1750_recover_i2c(void)
+{
+    I2C_Reset(&hi2c1);
+    (void)BH1750_SendCommand(&hi2c1, BH1750_CONT_H_MODE);
+    bh1750_start_measure_wait();
+}
+
+static uint8_t bh1750_wait_elapsed(void)
+{
+    return ((int32_t)(HAL_GetTick() - g_next_read_tick) >= 0) ? 1U : 0U;
+}
+
 static float bh1750_read_raw(void)
 {
     uint8_t buf[2] = {0};
 
-    HAL_StatusTypeDef ret = HAL_I2C_Master_Receive(&hi2c1, BH1750_ADDR, buf, 2, 100);
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Receive(&hi2c1, BH1750_ADDR, buf, 2, BH1750_I2C_TIMEOUT_MS);
     if (ret != HAL_OK) {
-        I2C_Reset(&hi2c1);
-        BH1750_SendCommand(&hi2c1, BH1750_CONT_H_MODE);
-        HAL_Delay(180);
+        bh1750_recover_i2c();
         return -1.00f;
     }
 
@@ -56,24 +73,10 @@ static float bh1750_read_raw(void)
 
 void bh1750_init(void)
 {
-    /* 动态分配所有需要的内存 */
-    buf = (float *)malloc(WINDOW_SIZE * sizeof(float));
-    buf_index = (uint8_t *)malloc(sizeof(uint8_t));
-    g_lux = (float *)malloc(sizeof(float));
-    g_raw_lux = (float *)malloc(sizeof(float));
-
-    if (!buf || !buf_index || !g_lux || !g_raw_lux) {
-        uart_printf(&huart1, "[BH1750] malloc failed!\r\n");
-        while (1);
-    }
-
     /* 初始化变量 */
-    *g_lux = 0.00f;
-    *g_raw_lux = 0.00f;
-    *buf_index = 0;
-    for (uint8_t i = 0; i < WINDOW_SIZE; i++) {
-        buf[i] = 0.00f;
-    }
+    g_lux = 0.00f;
+    g_state = BH1750_STATE_READY;
+    g_next_read_tick = 0U;
 
     /* 配置传感器 */
     BH1750_SendCommand(&hi2c1, BH1750_POWER_ON);
@@ -81,63 +84,48 @@ void bh1750_init(void)
     BH1750_SendCommand(&hi2c1, BH1750_RESET);
     HAL_Delay(10);
     BH1750_SendCommand(&hi2c1, BH1750_CONT_H_MODE);
-    HAL_Delay(180);
+    bh1750_start_measure_wait();
 
-    uart_printf(&huart1, "[BH1750] init, wait 180ms\r\n");
+    uart_printf(&huart1, "[BH1750] init, measure wait nonblock\r\n");
 }
 
 void bh1750_deinit(void)
 {
-    if (buf)       { free(buf);       buf = NULL;       }
-    if (buf_index) { free(buf_index); buf_index = NULL; }
-    if (g_lux)     { free(g_lux);     g_lux = NULL;     }
-    if (g_raw_lux) { free(g_raw_lux); g_raw_lux = NULL; }
+    g_lux = 0.00f;
+    g_state = BH1750_STATE_READY;
+    g_next_read_tick = 0U;
 
-    uart_printf(&huart1, "[BH1750] deinit, memory released\r\n");
+    uart_printf(&huart1, "[BH1750] deinit\r\n");
 }
 
 void bh1750_proc(void)
 {
+    if (g_state == BH1750_STATE_WAIT_MEASURE) {
+        if (!bh1750_wait_elapsed()) {
+            return;
+        }
+        g_state = BH1750_STATE_READY;
+    }
+
     /* 读取原始光照值 */
     float val = bh1750_read_raw();
-    *g_raw_lux = val;
 
-    /* 如果读取失败，跳过本次滤波 */
+    /* 如果读取失败，保留上一次有效值并标记无效。 */
     if (val < 0.00f) {
         uart_printf(&huart1, "[BH1750] read failed\r\n");
         return;
     }
 
-    /* 滑动平均滤波（窗口大小=5）*/
-    buf[*buf_index] = val;
-    (*buf_index)++;
-    if (*buf_index >= WINDOW_SIZE) {
-        *buf_index = 0;
-    }
+    g_lux = val;
 
-    float sum = 0.00f;
-    for (uint8_t i = 0; i < WINDOW_SIZE; i++) {
-        sum += buf[i];
-    }
-    *g_lux = sum / WINDOW_SIZE;
-
-    //uart_printf(&huart1,"[BH1750] raw=%.2f avg=%.2f\r\n", val, *g_lux);
+    //uart_printf(&huart1,"[BH1750] lux=%.2f\r\n", g_lux);
 }
 
 /**
-  * @brief  获取滤波后的光照值
-  * @return 光照平均值（lux），未初始化时返回 0.0f
+  * @brief  获取最近一次光照值
+  * @return 光照值（lux），未初始化时返回 0.0f
   */
 float bh1750_get_lux(void)
 {
-    return g_lux ? *g_lux : 0.00f;
-}
-
-/**
-  * @brief  获取原始光照值（未经滤波）
-  * @return 原始光照值（lux），未初始化时返回 0.0f
-  */
-float bh1750_get_raw_lux(void)
-{
-    return g_raw_lux ? *g_raw_lux : 0.00f;
+    return g_lux;
 }

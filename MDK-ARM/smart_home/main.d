@@ -57,3 +57,4 @@ smart_home\main.o: ../APP/lcd.h
 smart_home\main.o: ../APP/DHT11.h
 smart_home\main.o: ../APP/fan.h
 smart_home\main.o: ../APP/ws2812.h
+smart_home\main.o: ../APP/ws2812_2.h

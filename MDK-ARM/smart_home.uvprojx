@@ -1137,6 +1137,16 @@
               <FileType>5</FileType>
               <FilePath>..\APP\ws2812.h</FilePath>
             </File>
+            <File>
+              <FileName>ws2812_2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\ws2812_2.c</FilePath>
+            </File>
+            <File>
+              <FileName>ws2812_2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\ws2812_2.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

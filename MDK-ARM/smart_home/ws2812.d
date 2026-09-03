@@ -57,4 +57,5 @@ smart_home\ws2812.o: ..\APP\lcd.h
 smart_home\ws2812.o: ..\APP\DHT11.h
 smart_home\ws2812.o: ..\APP\fan.h
 smart_home\ws2812.o: ..\APP\ws2812.h
+smart_home\ws2812.o: ..\APP\ws2812_2.h
 smart_home\ws2812.o: ../Core/Inc/tim.h

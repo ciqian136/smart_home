@@ -16,13 +16,11 @@
 #define BH1750_ONE_L_MODE     0x23   // 单次低分辨率模式
 /** @brief 光照传感器初始化 */
 void bh1750_init(void);
-/** @brief 光照传感器数据处理（读取 + 滤波）*/
+/** @brief 光照传感器数据处理（读取当前值）*/
 void bh1750_proc(void);
-/** @brief 光照传感器反初始化（释放内存）*/
+/** @brief 光照传感器反初始化 */
 void bh1750_deinit(void);
-/** @brief 获取滤波后的光照值（lux）*/
+/** @brief 获取最近一次光照值（lux）*/
 float bh1750_get_lux(void);
-/** @brief 获取原始光照值（lux，未经滤波）*/
-float bh1750_get_raw_lux(void);
 
 #endif
