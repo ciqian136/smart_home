@@ -23,6 +23,7 @@
 #include "my_uart.h"
 #include "smoke.h"
 #include "my_adc.h"
+#include "board_led.h"
 #include "PM25.h"
 #include "BH1750.h"
 #include "voice.h"

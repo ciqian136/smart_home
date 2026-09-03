@@ -1,4 +1,5 @@
 #include "ws2812_2.h"
+#include "my_uart.h"
 #include <stdint.h>
 
 extern DMA_HandleTypeDef hdma_tim4_ch2;       /* DMA1_Channel4, TIM4_CH2 compare */
@@ -6,10 +7,17 @@ extern TIM_HandleTypeDef htim4;               /* 共用 TIM4 */
 
 uint16_t dma_buffer2[TOTAL_BITS2];
 
-/* 灯带2颜色状态 */
-static uint8_t ws2812_2_cur_r = 0;
-static uint8_t ws2812_2_cur_g = 0;
-static uint8_t ws2812_2_cur_b = 0;
+/* 调试时改为 1，正常使用保持 0 */
+#define WS2812_2_DEBUG 0
+#define WS2812_2_DEBUG_INTERVAL_MS 1000U
+
+#if WS2812_2_DEBUG
+#define WS2812_2_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define WS2812_2_DEBUG_PRINTF(...) ((void)0)
+#endif
+
+/* 灯带2基础颜色 */
 static uint8_t ws2812_2_base_r = 255;
 static uint8_t ws2812_2_base_g = 200;
 static uint8_t ws2812_2_base_b = 100;
@@ -85,9 +93,11 @@ static void ws2812_2_send(uint8_t *colors, uint16_t len)
 
 void ws2812_2_set_all(uint8_t red, uint8_t green, uint8_t blue)
 {
-    ws2812_2_cur_r = red;
-    ws2812_2_cur_g = green;
-    ws2812_2_cur_b = blue;
+#if WS2812_2_DEBUG
+    static uint32_t debug_last_tick = 0U;
+    static uint8_t debug_has_printed = 0U;
+#endif
+
     ws2812_2_base_r = red;
     ws2812_2_base_g = green;
     ws2812_2_base_b = blue;
@@ -99,6 +109,19 @@ void ws2812_2_set_all(uint8_t red, uint8_t green, uint8_t blue)
         color_data[i * 3 + 2] = blue;
     }
     ws2812_2_send(color_data, NUM_LEDS2);
+
+#if WS2812_2_DEBUG
+    uint32_t now = HAL_GetTick();
+    if (!debug_has_printed || now - debug_last_tick >= WS2812_2_DEBUG_INTERVAL_MS) {
+        debug_has_printed = 1U;
+        debug_last_tick = now;
+        WS2812_2_DEBUG_PRINTF("[WS2812_2] r=%u g=%u b=%u open=%u\r\n",
+                              (unsigned int)ws2812_2_base_r,
+                              (unsigned int)ws2812_2_base_g,
+                              (unsigned int)ws2812_2_base_b,
+                              (unsigned int)ws2812_2_is_open());
+    }
+#endif
 }
 
 /* ── 状态查询 ─────────────────────────────────── */

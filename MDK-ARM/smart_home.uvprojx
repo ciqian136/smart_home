@@ -1018,6 +1018,16 @@
               <FilePath>..\APP\headfile.h</FilePath>
             </File>
             <File>
+              <FileName>board_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\board_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>board_led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\board_led.h</FilePath>
+            </File>
+            <File>
               <FileName>schedule.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\schedule.c</FilePath>
@@ -1036,6 +1046,16 @@
               <FileName>my_uart.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\my_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>ring_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\ring_queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>ring_queue.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\ring_queue.h</FilePath>
             </File>
             <File>
               <FileName>smoke.c</FileName>

@@ -11,6 +11,16 @@ extern I2C_HandleTypeDef hi2c1;
 #define BH1750_I2C_TIMEOUT_MS      20U
 #define BH1750_MEASURE_WAIT_MS    180U
 
+/* 调试时改为 1，正常使用保持 0 */
+#define BH1750_DEBUG 0
+#define BH1750_DEBUG_INTERVAL_MS 1000U
+
+#if BH1750_DEBUG
+#define BH1750_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define BH1750_DEBUG_PRINTF(...) ((void)0)
+#endif
+
 typedef enum {
     BH1750_STATE_READY = 0,
     BH1750_STATE_WAIT_MEASURE
@@ -86,7 +96,7 @@ void bh1750_init(void)
     BH1750_SendCommand(&hi2c1, BH1750_CONT_H_MODE);
     bh1750_start_measure_wait();
 
-    uart_printf(&huart1, "[BH1750] init, measure wait nonblock\r\n");
+    BH1750_DEBUG_PRINTF("[BH1750] init, measure wait nonblock\r\n");
 }
 
 void bh1750_deinit(void)
@@ -95,11 +105,15 @@ void bh1750_deinit(void)
     g_state = BH1750_STATE_READY;
     g_next_read_tick = 0U;
 
-    uart_printf(&huart1, "[BH1750] deinit\r\n");
+    BH1750_DEBUG_PRINTF("[BH1750] deinit\r\n");
 }
 
 void bh1750_proc(void)
 {
+#if BH1750_DEBUG
+    static uint32_t debug_last_tick = 0U;
+#endif
+
     if (g_state == BH1750_STATE_WAIT_MEASURE) {
         if (!bh1750_wait_elapsed()) {
             return;
@@ -112,13 +126,21 @@ void bh1750_proc(void)
 
     /* 如果读取失败，保留上一次有效值并标记无效。 */
     if (val < 0.00f) {
-        uart_printf(&huart1, "[BH1750] read failed\r\n");
+        BH1750_DEBUG_PRINTF("[BH1750] read failed\r\n");
         return;
     }
 
     g_lux = val;
 
-    //uart_printf(&huart1,"[BH1750] lux=%.2f\r\n", g_lux);
+#if BH1750_DEBUG
+    uint32_t now = HAL_GetTick();
+    if (now - debug_last_tick >= BH1750_DEBUG_INTERVAL_MS) {
+        debug_last_tick = now;
+        BH1750_DEBUG_PRINTF("[BH1750] lux=%.1f state=%u\r\n",
+                            (double)g_lux,
+                            (unsigned int)g_state);
+    }
+#endif
 }
 
 /**

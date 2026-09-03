@@ -45,8 +45,22 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-     ${CMAKE_CURRENT_SOURCE_DIR}/APP/esp32.c
-     ${CMAKE_CURRENT_SOURCE_DIR}/APP/schedule.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/BH1750.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/board_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/PM25.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/dht11.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/esp32.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/fan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/json_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/lcd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/my_adc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/my_uart.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/ring_queue.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/schedule.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/smoke.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/voice.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/ws2812.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/APP/ws2812_2.c
 )
 
 # Add include paths
@@ -58,6 +72,11 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+)
+
+# Enable float formatting for printf/vsnprintf when using newlib-nano.
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    -u _printf_float
 )
 
 # Remove wrong libob.a library dependency when using cpp files

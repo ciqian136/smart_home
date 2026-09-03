@@ -7,12 +7,23 @@
  */
 
 #include "fan.h"
+#include "my_uart.h"
 
 #define FAN_CHANNEL    TIM_CHANNEL_3
 #define FAN_TIM        htim4
 #define FAN_MAX        1000
 #define FAN_TIM_ARR    89          /* TIM4 ARR，与 WS2812 共享 */
 #define FAN_SPEED_STEP 200         /* 加减速步进值 */
+
+/* 调试时改为 1，正常使用保持 0 */
+#define FAN_DEBUG 0
+#define FAN_DEBUG_INTERVAL_MS 1000U
+
+#if FAN_DEBUG
+#define FAN_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define FAN_DEBUG_PRINTF(...) ((void)0)
+#endif
 
 extern TIM_HandleTypeDef htim4;
 
@@ -39,12 +50,29 @@ void fan_init(void)
   */
 void fan_set(uint16_t val)
 {
+#if FAN_DEBUG
+    static uint32_t debug_last_tick = 0U;
+    static uint8_t debug_has_printed = 0U;
+#endif
+
     if (val > FAN_MAX) val = FAN_MAX;
     fan_cur_speed = val;
 
     /* API 0~1000 线性映射到 CCR 89~0（PWM 模式2：低 CCR = 高占空比）*/
     uint16_t ccr = FAN_TIM_ARR - (uint32_t)val * FAN_TIM_ARR / FAN_MAX;
     __HAL_TIM_SET_COMPARE(&FAN_TIM, FAN_CHANNEL, ccr);
+
+#if FAN_DEBUG
+    uint32_t now = HAL_GetTick();
+    if (!debug_has_printed || now - debug_last_tick >= FAN_DEBUG_INTERVAL_MS) {
+        debug_has_printed = 1U;
+        debug_last_tick = now;
+        FAN_DEBUG_PRINTF("[FAN] speed=%u ccr=%u open=%u\r\n",
+                         (unsigned int)fan_cur_speed,
+                         (unsigned int)ccr,
+                         (unsigned int)fan_is_open());
+    }
+#endif
 }
 
 /**

@@ -8,9 +8,19 @@
 
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
 #define DO_GPIO_PIN GPIO_PIN_2       /* 数字报警输出引脚号 */
-#define ALARM_THRESHOLD 1000         /* 软件报警阈值 */
+#define ALARM_THRESHOLD 300          /* 软件报警阈值 */
 #define PREHEAT_TIME 20              /* 传感器预热时间（秒）*/
 #define SMOKE_ADC_CHANNEL ADC_CHANNEL_1
+
+/* 调试时改为 1，正常使用保持 0 */
+#define SMOKE_DEBUG 0
+#define SMOKE_DEBUG_INTERVAL_MS 1000U
+
+#if SMOKE_DEBUG
+#define SMOKE_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define SMOKE_DEBUG_PRINTF(...) ((void)0)
+#endif
 
 /* ── MQ2 PPM 转换校准参数 ────────────────────────── */
 #define MQ2_RL_KOHM       10.0f      /* 模块负载电阻（kΩ），典型值 10kΩ */
@@ -34,7 +44,7 @@ void smoke_init(void) {
   g_adc = 0U;                 /* ADC初始值 */
   g_alarm = 0U;               /* 初始无报警 */
 
-  uart_printf(&huart1, "[SMOKE] init, wait %ds\r\n", PREHEAT_TIME);
+  SMOKE_DEBUG_PRINTF("[SMOKE] init, wait %ds\r\n", PREHEAT_TIME);
 }
 
 void smoke_deinit(void) {
@@ -42,17 +52,30 @@ void smoke_deinit(void) {
   g_alarm = 0U;
   g_ready = 0U;
 
-  uart_printf(&huart1, "[SMOKE] deinit\r\n");
+  SMOKE_DEBUG_PRINTF("[SMOKE] deinit\r\n");
 }
 
 void smoke_proc(void) {
+  uint32_t now = HAL_GetTick();
+#if SMOKE_DEBUG
+  static uint32_t debug_last_tick = 0U;
+#endif
 
   /* 预热阶段：等待传感器稳定 */
   if (!g_ready) {
-    if (HAL_GetTick() - g_start < (uint32_t)PREHEAT_TIME * 1000U)
+    if (now - g_start < (uint32_t)PREHEAT_TIME * 1000U) {
+#if SMOKE_DEBUG
+      if (now - debug_last_tick >= SMOKE_DEBUG_INTERVAL_MS) {
+        uint32_t elapsed_s = (now - g_start) / 1000U;
+        uint32_t remain_s = ((uint32_t)PREHEAT_TIME > elapsed_s) ? ((uint32_t)PREHEAT_TIME - elapsed_s) : 0U;
+        debug_last_tick = now;
+        SMOKE_DEBUG_PRINTF("[SMOKE] preheat remain=%lus\r\n", (unsigned long)remain_s);
+      }
+#endif
       return;
+    }
     g_ready = 1U;
-    uart_printf(&huart1, "[SMOKE] ready\r\n");
+    SMOKE_DEBUG_PRINTF("[SMOKE] ready\r\n");
   }
 
   /* 烟雾传感器 AO 接 ADC1_IN1 / PA1，按通道同步采样。 */
@@ -64,7 +87,16 @@ void smoke_proc(void) {
   if (g_adc > ALARM_THRESHOLD)
     g_alarm = 1U;
 
- //uart_printf(&huart1,"[SMOKE] adc=%d alarm=%d\r\n", g_adc, g_alarm);
+#if SMOKE_DEBUG
+  if (now - debug_last_tick >= SMOKE_DEBUG_INTERVAL_MS) {
+    debug_last_tick = now;
+    SMOKE_DEBUG_PRINTF("[SMOKE] adc=%u ppm=%.1f alarm=%u ready=%u\r\n",
+                       (unsigned int)g_adc,
+                       (double)smoke_get_ppm(),
+                       (unsigned int)g_alarm,
+                       (unsigned int)g_ready);
+  }
+#endif
 }
 
 /**
@@ -116,7 +148,6 @@ float smoke_get_ppm(void)
   * @return 1=报警中, 0=正常
   */
 uint8_t smoke_is_alarmed(void) { return g_alarm; }
-
 
 
 

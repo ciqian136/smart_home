@@ -3,6 +3,10 @@ extern "C"{ void * __dso_handle = 0 ;}
 #include "setup.h"
 #include "HardwareSerial.h"
 #include "myLib/asr_event.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 uint32_t snid;
 void ASR_CODE();
@@ -15,18 +19,147 @@ void ASR_CODE();
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
 //  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
 // ============================================================
-#define RX_BUF_SIZE  128   /* ALL 查询最长 ~71 字节，128 留足余量 */
+#define RX_BUF_SIZE  256
+#define PLAY_QUEUE_DEPTH 64
+#define PLAY_ID_MIN 1U
+#define PLAY_ID_MAX 130U
+#define PLAY_WAKE_TIMEOUT_MS 45000U
+#define PLAY_START_RETRY_LOOPS 50U
+#define PLAY_DONE_WAIT_LOOPS 2500U
+#define PLAY_KEEPALIVE_LOOPS 250U
+#define ASR_SERIAL1_RX_LOG_ENABLED 0
+#define ASR_BOARD_LED_PIN 4
+#define ASR_BOARD_LED_ON_LEVEL 1
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
+static bool board_led_on = false;
+
+static void board_led_set(bool on)
+{
+    board_led_on = on;
+    digitalWrite(ASR_BOARD_LED_PIN,
+                 on ? ASR_BOARD_LED_ON_LEVEL : !ASR_BOARD_LED_ON_LEVEL);
+}
+
+static void board_led_toggle(void)
+{
+    board_led_set(!board_led_on);
+}
+
+static bool play_id_valid(uint32_t id)
+{
+    return (id >= PLAY_ID_MIN && id <= PLAY_ID_MAX);
+}
+
+static void keep_playback_awake(void)
+{
+    set_state_enter_wakeup(PLAY_WAKE_TIMEOUT_MS);
+}
+
+static void refresh_wakeup_periodically(uint16_t *loops)
+{
+    if (loops == NULL) return;
+
+    (*loops)++;
+    if (*loops >= PLAY_KEEPALIVE_LOOPS) {
+        *loops = 0;
+        keep_playback_awake();
+    }
+}
+
+static void queue_play_id(uint32_t id)
+{
+    if (play_queue == NULL || !play_id_valid(id)) return;
+
+    keep_playback_awake();
+    (void)xQueueSend(play_queue, &id, 10);
+}
+
+static void queue_play_list(const char *p)
+{
+    while (p != NULL && *p != '\0') {
+        char *end = NULL;
+        uint32_t id = (uint32_t)strtoul(p, &end, 10);
+
+        if (end == p) break;
+        queue_play_id(id);
+
+        p = end;
+        while (*p == ',' || *p == ' ') p++;
+    }
+}
+
+static void log_received_line(const char *line)
+{
+#if ASR_SERIAL1_RX_LOG_ENABLED
+    static char log_buf[RX_BUF_SIZE + 5];
+
+    if (line == NULL) return;
+    if (strncmp(line, "PLAYS:", 6) == 0) {
+        Serial1.println("[RX]PLAYS");
+    } else {
+        snprintf(log_buf, sizeof(log_buf), "[RX]%s", line);
+        Serial1.println(log_buf);
+    }
+#else
+    (void)line;
+#endif
+}
+
+static void handle_received_line(const char *line)
+{
+    if (line == NULL || line[0] == '\0') return;
+
+    log_received_line(line);
+
+    if (strncmp(line, "PLAY:", 5) == 0) {
+        queue_play_id((uint32_t)strtoul(line + 5, NULL, 10));
+    }
+    else if (strncmp(line, "PLAYS:", 6) == 0) {
+        queue_play_list(line + 6);
+    }
+}
+
+static bool play_prompt_id(uint32_t id)
+{
+    uint16_t loops = 0;
+    uint16_t keepalive_loops = 0;
+
+    if (!play_id_valid(id)) return false;
+
+    keep_playback_awake();
+    while (prompt_play_by_cmd_id((uint16_t)id, -1, NULL, false)) {
+        loops++;
+        if (loops >= PLAY_START_RETRY_LOOPS) return false;
+        refresh_wakeup_periodically(&keepalive_loops);
+        delay(2);
+    }
+
+    loops = 0;
+    keepalive_loops = 0;
+    while (prompt_is_playing()) {
+        loops++;
+        if (loops >= PLAY_DONE_WAIT_LOOPS) {
+            prompt_stop_play();
+            break;
+        }
+        refresh_wakeup_periodically(&keepalive_loops);
+        delay(2);
+    }
+
+    return true;
+}
 
 /* ── 串口接收任务 ────────────────────────────────── */
 
 static void app_uart(void *arg)
 {
     int idx = 0;
+    bool overflowed = false;
+
     while (1) {
-        if (Serial1.available() > 0) {
+        while (Serial1.available() > 0) {
             char c = Serial1.read();
 
             if (c == '\n') {
@@ -35,30 +168,19 @@ static void app_uart(void *arg)
                 rx_buf[idx] = '\0';
                 idx = 0;
 
-                /* 回传确认 */
-                Serial1.print("[RX]");
-                Serial1.println(rx_buf);
-
-                /* 解析 PLAY:XXXXX */
-                if (strncmp(rx_buf, "PLAY:", 5) == 0) {
-                    uint32_t id = atoi(rx_buf + 5);
-                    if (id > 0) xQueueSend(play_queue, &id, 0);
+                if (!overflowed) {
+                    handle_received_line(rx_buf);
                 }
-                /* 解析 PLAYS:X,Y,Z */
-                else if (strncmp(rx_buf, "PLAYS:", 6) == 0) {
-                    const char *p = rx_buf + 6;
-                    while (*p) {
-                        uint32_t id = atoi(p);
-                        if (id > 0) xQueueSend(play_queue, &id, 0);
-                        while (*p && *p != ',') p++;
-                        if (*p == ',') p++;
-                    }
-                }
+                overflowed = false;
             } else {
-                if (idx < RX_BUF_SIZE - 1) rx_buf[idx++] = c;
+                if (idx < RX_BUF_SIZE - 1) {
+                    rx_buf[idx++] = c;
+                } else {
+                    overflowed = true;
+                }
             }
         }
-        delay(2);
+        delay(1);
     }
     vTaskDelete(NULL);
 }
@@ -70,10 +192,7 @@ static void app_play(void *arg)
     uint32_t id;
     while (1) {
         if (xQueueReceive(play_queue, &id, 0)) {
-            /* 等待当前播报完毕再播下一条 */
-            while (prompt_play_by_cmd_id(id, -1, NULL, false)) {
-                delay(2);
-            }
+            (void)play_prompt_id(id);
         }
         delay(10);
     }
@@ -113,8 +232,9 @@ void ASR_CODE(){
     case 21:  Serial1.println("FAN:SPEED:4");    break;
 
     // ========== 测试 LED ==========
-    case 22:  Serial1.println("LED:ON");         break;
-    case 23:  Serial1.println("LED:OFF");        break;
+    case 22:  board_led_set(true);  Serial1.println("LED:ON");     break;
+    case 23:  board_led_set(false); Serial1.println("LED:OFF");    break;
+    case 40:  board_led_toggle();   Serial1.println("LED:TOGGLE"); break;
 
     // ========== 灯带2控制（192灯珠，PD13）==========
     case 29:  Serial1.println("LIGHT2:ON");          break;
@@ -131,16 +251,17 @@ void ASR_CODE(){
     // ========== 环境查询（发送指令后立即返回，播报由 app_play 任务异步完成）==========
     case 24:  Serial1.println("QUERY:TEMP");   break;
     case 25:  Serial1.println("QUERY:HUMI");   break;
-    case 26:  Serial1.println("QUERY:PM25");   break;
+    case 26:  Serial1.println("QUERY:DUST");   break;
     case 27:  Serial1.println("QUERY:LIGHT");  break;
     case 28:  Serial1.println("QUERY:ALL");    break;
+    case 39:  Serial1.println("QUERY:SMOKE");  break;
 
     default: break;
   }
 }
 
 void hardware_init(){
-  play_queue = xQueueCreate(32, 4);  /* 队列深度 32，ALL 查询最多 ~22 个片段 */
+  play_queue = xQueueCreate(PLAY_QUEUE_DEPTH, sizeof(uint32_t));
 
   // Serial1: GPIO2=TX, GPIO3=RX
   setPinFun(2, FORTH_FUNCTION);
@@ -148,8 +269,9 @@ void hardware_init(){
   Serial1.begin(9600);
 
   // 板载 LED
-  setPinFun(4, FIRST_FUNCTION);
-  pinMode(4, output);
+  setPinFun(ASR_BOARD_LED_PIN, FIRST_FUNCTION);
+  pinMode(ASR_BOARD_LED_PIN, output);
+  board_led_set(false);
 
   vol_set(3);
 
@@ -203,13 +325,15 @@ void setup()
   // ========== 测试 LED ==========
   //{ID:22,keyword:"命令词",ASR:"打开指示灯",ASRTO:"好的，已打开"}
   //{ID:23,keyword:"命令词",ASR:"关闭指示灯",ASRTO:"好的，已关闭"}
+  //{ID:40,keyword:"命令词",ASR:"切换指示灯",ASRTO:"好的，已切换"}
 
   // ========== 环境查询 ==========
   //{ID:24,keyword:"命令词",ASR:"当前温度",ASRTO:"正在查询温度"}
   //{ID:25,keyword:"命令词",ASR:"当前湿度",ASRTO:"正在查询湿度"}
-  //{ID:26,keyword:"命令词",ASR:"空气质量",ASRTO:"正在查询空气质量"}
+  //{ID:26,keyword:"命令词",ASR:"粉尘浓度",ASRTO:"正在查询粉尘浓度"}
   //{ID:27,keyword:"命令词",ASR:"光照强度",ASRTO:"正在查询光照"}
   //{ID:28,keyword:"命令词",ASR:"全部环境信息",ASRTO:"正在查询环境信息"}
+  //{ID:39,keyword:"命令词",ASR:"烟雾浓度",ASRTO:"正在查询烟雾浓度"}
 
   // ====== 语音片段库（ID 100~122，prompt_play_by_cmd_id 调用）======
 
@@ -242,7 +366,7 @@ void setup()
   // --- 前缀 (ID 118~121) ---
   //{ID:118,keyword:"命令词",ASR:"前缀温度",ASRTO:"当前温度"}
   //{ID:119,keyword:"命令词",ASR:"前缀湿度",ASRTO:"当前湿度"}
-  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"PM2.5浓度"}
+  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"当前粉尘浓度"}
   //{ID:121,keyword:"命令词",ASR:"前缀光照",ASRTO:"当前光照"}
 
   // --- 负号 (ID 122) ---
@@ -252,7 +376,16 @@ void setup()
   //{ID:123,keyword:"命令词",ASR:"警告高温",ASRTO:"温度偏高"}
   //{ID:124,keyword:"命令词",ASR:"温度正常",ASRTO:"温度正常"}
 
+  // --- 联动播报预留 (ID 125~130) ---
+  //{ID:125,keyword:"命令词",ASR:"前缀烟雾",ASRTO:"当前烟雾浓度"}
+  //{ID:126,keyword:"命令词",ASR:"单位皮皮艾姆",ASRTO:"皮皮艾姆"}
+  //{ID:127,keyword:"命令词",ASR:"警告烟雾",ASRTO:"警告，烟雾浓度过高"}
+  //{ID:128,keyword:"命令词",ASR:"警告粉尘",ASRTO:"警告，粉尘浓度过高"}
+  //{ID:129,keyword:"命令词",ASR:"识别人脸",ASRTO:"识别到人脸"}
+  //{ID:130,keyword:"命令词",ASR:"陌生人员",ASRTO:"未识别人员"}
+
   // 板载 LED
-  setPinFun(4, FIRST_FUNCTION);
-  pinMode(4, output);
+  setPinFun(ASR_BOARD_LED_PIN, FIRST_FUNCTION);
+  pinMode(ASR_BOARD_LED_PIN, output);
+  board_led_set(false);
 }

@@ -1,6 +1,7 @@
 /* PM2.5 传感器配置 */
 #include "PM25.h"
 #include "my_adc.h"
+#include "my_uart.h"
 
 #include "stm32f1xx_hal_adc.h"
 #include "stm32f1xx_hal_gpio.h"
@@ -12,6 +13,16 @@
 #define PM25_CLEAN_AIR_ADC 200.0f
 #define PM25_ADC_TO_MV (3300.0f / 4096.0f)
 #define PM25_SENSITIVITY_MV_PER_UGM3 5.0f
+
+/* 调试时改为 1，正常使用保持 0 */
+#define PM25_DEBUG 0
+#define PM25_DEBUG_INTERVAL_MS 1000U
+
+#if PM25_DEBUG
+#define PM25_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define PM25_DEBUG_PRINTF(...) ((void)0)
+#endif
 
 static uint16_t g_adc = 0U;        /* 最近一次ADC值 */
 static uint8_t  g_ready = 0U;      /* 最近一次采样是否有效 */
@@ -43,19 +54,23 @@ void PM25_init(void)
 
     /* 点亮传感器LED，开始工作 */
     HAL_GPIO_WritePin(LED_GPIO, LED_GPIO_PIN, GPIO_PIN_SET);  
-    uart_printf(&huart1, "[PM25] inited\r\n");
+    PM25_DEBUG_PRINTF("[PM25] inited\r\n");
 }
 
 void PM25_deinit(void)
 {
     g_adc = 0U;
     g_ready = 0U;
-    uart_printf(&huart1, "[PM25] deinit\r\n");
+    PM25_DEBUG_PRINTF("[PM25] deinit\r\n");
 }
 
 
 void PM25_proc(void)
 {
+#if PM25_DEBUG
+    static uint32_t debug_last_tick = 0U;
+#endif
+
     /* LED 关闭时先切到 PA4 并丢弃一次，降低 ADC 通道切换残留影响。 */
     (void)my_adc_read_channel(PM25_ADC_CHANNEL);
 
@@ -74,7 +89,18 @@ void PM25_proc(void)
     g_adc = val;
     g_ready = 1U;
 
-//uart_printf(&huart1, "[PM25] adc=%d\r\n", g_adc);
+#if PM25_DEBUG
+    uint32_t now = HAL_GetTick();
+    if (now - debug_last_tick >= PM25_DEBUG_INTERVAL_MS) {
+        float mv = (float)g_adc * PM25_ADC_TO_MV;
+        debug_last_tick = now;
+        PM25_DEBUG_PRINTF("[PM25] adc=%u mv=%.1f ugm3=%.1f ready=%u\r\n",
+                          (unsigned int)g_adc,
+                          (double)mv,
+                          (double)PM25_get_ugm3(),
+                          (unsigned int)g_ready);
+    }
+#endif
 
 }
 
@@ -102,5 +128,3 @@ float PM25_get_ugm3(void)
 
     return ugm3;
 }
-
-

@@ -1,3 +1,34 @@
 build
 mx.scratch
 !.settings
+
+# MDK-ARM build artifacts
+MDK-ARM/smart_home/
+MDK-ARM/**/*.o
+MDK-ARM/**/*.crf
+MDK-ARM/**/*.d
+MDK-ARM/**/*.axf
+MDK-ARM/**/*.hex
+MDK-ARM/**/*.htm
+MDK-ARM/**/*.lnp
+MDK-ARM/**/*.map
+MDK-ARM/**/*.lst
+MDK-ARM/**/*.build_log.htm
+MDK-ARM/**/*.dep
+
+# MDK user-specific files
+MDK-ARM/**/*.uvguix.*
+MDK-ARM/JLinkLog.txt
+MDK-ARM/JLinkSettings.ini
+MDK-ARM/keil_rebuild*.log
+
+# Local assistant/session files
+.claude/
+.tools/
+_actr_decoded_all/
+_actr_extract/
+_decoded_managed/
+_decomp/
+_decomp2/
+_hmitype_src2/
+_wifi_patch/

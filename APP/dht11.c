@@ -8,6 +8,17 @@
 #define DHT11_SAMPLE_INTERVAL_MS 2000U
 #define DHT11_STARTUP_WAIT_MS    2000U
 #define DHT11_START_SIGNAL_MS    20U
+
+/* 调试时改为 1，正常使用保持 0 */
+#define DHT11_DEBUG 0
+#define DHT11_DEBUG_INTERVAL_MS 1000U
+
+#if DHT11_DEBUG
+#define DHT11_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define DHT11_DEBUG_PRINTF(...) ((void)0)
+#endif
+
 #define DHT11_DQ_LOW()     HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, GPIO_PIN_RESET)
 #define DHT11_DQ_HIGH()    HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, GPIO_PIN_SET)
 #define DHT11_DQ_READ()    HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)
@@ -90,7 +101,7 @@ static uint8_t DHT11_ReadByte(uint8_t *value) {
     for (uint8_t i = 0; i < 8U; i++) {
         // 等待低电平结束（DHT11 会保持 50us 低电平）
         if (DHT11_WaitWhile(GPIO_PIN_RESET, 100U)) {
-            uart_printf(&huart1, "[DHT11] bit low timeout\r\n");
+            DHT11_DEBUG_PRINTF("[DHT11] bit low timeout\r\n");
             return 1U;
         }
 
@@ -100,7 +111,7 @@ static uint8_t DHT11_ReadByte(uint8_t *value) {
         }
 
         if (DHT11_WaitWhile(GPIO_PIN_SET, 100U)) {
-            uart_printf(&huart1, "[DHT11] bit high timeout\r\n");
+            DHT11_DEBUG_PRINTF("[DHT11] bit high timeout\r\n");
             return 1U;
         }
     }
@@ -147,7 +158,7 @@ uint8_t DHT11_ReadData(float *temp, float *humi) {
     }
 
     if ((uint8_t)(buf[0] + buf[1] + buf[2] + buf[3]) != buf[4]) {
-        uart_printf(&huart1, "[DHT11] checksum fail\r\n");
+        DHT11_DEBUG_PRINTF("[DHT11] checksum fail\r\n");
         return DHT11_READ_ERROR;
     }
 
@@ -163,6 +174,9 @@ void DHT11_proc(void)
 {
     uint32_t now_time = HAL_GetTick();
     uint8_t ret;
+#if DHT11_DEBUG
+    static uint32_t debug_last_tick = 0U;
+#endif
 
     if (now_time - g_start_tick < DHT11_STARTUP_WAIT_MS) {
         return;
@@ -181,10 +195,20 @@ void DHT11_proc(void)
     g_last_sample_tick = now_time;
     if (ret == DHT11_READ_OK) {
         g_ready = 1U;
-        //uart_printf(&huart1, "temp = %.2f humi = %.2f\r\n", g_temp, g_humi);
     } else {
         g_ready = 0U;
     }
+
+#if DHT11_DEBUG
+    if (now_time - debug_last_tick >= DHT11_DEBUG_INTERVAL_MS) {
+        debug_last_tick = now_time;
+        DHT11_DEBUG_PRINTF("[DHT11] ret=%u temp=%.1f humi=%.1f ready=%u\r\n",
+                           (unsigned int)ret,
+                           (double)g_temp,
+                           (double)g_humi,
+                           (unsigned int)g_ready);
+    }
+#endif
 }
 
 float DHT11_get_temp(void)
@@ -196,4 +220,3 @@ float DHT11_get_humi(void)
 {
     return g_humi;
 }
-
