@@ -47,4 +47,5 @@ cmake --fresh --preset Debug
 
 - `docs/USAGE.md`：烧录、运行、调试和辅助模块使用说明。
 - `docs/HARDWARE.md`：当前硬件连接、外设分配和注意事项。
+- `docs/PROTOCOLS.md`：USART / UART 通信格式、帧结构和 OneNET 属性说明。
 - `docs/KNOWN_ISSUES.md`：已知问题、限制和后续排查建议。

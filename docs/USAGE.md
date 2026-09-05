@@ -61,10 +61,12 @@ UART1 是下载和调试串口，业务输出应保持由调试宏控制。
 - USART1：下载 / 调试日志。
 - USART2：ESP32 AT 指令通信。
 - USART3：ASRPRO 语音模块通信。
-- UART4：USART HMI 屏幕通信。
+- UART4：USART HMI 屏幕通信，当前波特率为 9600。
 - UART5：OpenART 人脸识别模块通信。
 
 UART 接收和发送均通过 `APP/my_uart.c` 的环形队列封装，发送使用中断方式，减少阻塞和丢包风险。常用发送接口仍为 `uart_printf()`。
+
+各串口的完整帧格式、文本协议和 OneNET 属性格式见 `docs/PROTOCOLS.md`。
 
 ## ASRPRO 使用
 
@@ -95,7 +97,7 @@ STM32 回传语音播报协议：
 
 - STM32 向 HMI 写文本控件：`t0.txt="25.5"` 后跟 `FF FF FF`。
 - HMI 向 STM32 发 RGB 控制帧：`55 AA 04 ID R G B 0D 0A`。
-- HMI 向 STM32 发风扇控制帧：`55 AA 05 speed 0D 0A`。
+- HMI 向 STM32 发风扇控制帧：`55 AA 05 H L 0D 0A`，代码兼容大小端速度值。
 - HMI 查询 RGB / 风扇状态后，STM32 会回写控件值，避免页面状态不同步。
 
 ## OpenART 使用

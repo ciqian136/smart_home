@@ -16,19 +16,21 @@
 | USART1 | 下载 / 调试 | PA9 TX、PA10 RX | 115200 | 调试日志默认由各模块 DEBUG 宏控制 |
 | USART2 | ESP32 | PA2 TX、PA3 RX | 115200 | AT 指令、OneNET MQTT |
 | USART3 | ASRPRO | PB10 TX、PB11 RX | 9600 | 语音命令和播报控制 |
-| UART4 | USART HMI | PC10 TX、PC11 RX | 115200 | HMI 数据显示和触摸控制 |
+| UART4 | USART HMI | PC10 TX、PC11 RX | 9600 | HMI 数据显示和触摸控制 |
 | UART5 | OpenART | PC12 TX、PD2 RX | 115200 | 人脸识别结果输入 |
+
+具体通信帧格式见 `docs/PROTOCOLS.md`。
 
 ## ADC 与传感器
 
 | 模块 | STM32 资源 | 说明 |
 | --- | --- | --- |
-| MQ-2 烟雾 | PA1 / ADC1_IN1 | 当前上传和播报 ADC 原始值；数字报警脚使用 PA2 读取低电平报警 |
+| MQ-2 烟雾 | PA1 / ADC1_IN1（AO），PC2 / GPIO_Input（DO 可选） | 当前上传和播报 ADC 原始值；代码中烟雾 ADC 读取 PA1，PC2 仅用于低电平数字报警辅助判断 |
 | PM2.5 | PA4 / ADC1_IN4，PA6 控制采样 LED | 当前上传和播报 ADC 原始值 |
 | DHT11 | PA7 单总线 | 读取温度和湿度，内部使用非阻塞起始等待状态 |
 | BH1750 | PB6 SCL、PB7 SDA / I2C1 | 光照强度，测量等待用状态机处理 |
 
-注意：PA2 同时是 USART2 TX 和烟雾模块数字报警脚在代码注释中的历史配置，需要以当前实际硬件连线和 `.ioc` 为准。如果数字报警脚没有实际接入，可主要使用 PA1 ADC 原始值判断烟雾状态。
+注意：烟雾模拟量 AO 当前按实际接线配置在 PA1 / ADC1_IN1；PA2 是 USART2_TX，用于 ESP32，不再作为烟雾输入。若烟雾 DO 没有实际接入，可主要使用 PA1 ADC 原始值判断烟雾状态。
 
 ## 灯光与执行器
 
@@ -56,7 +58,7 @@
 - 使用 `lcd/test.HMI` 工程。
 - HMI 页面通过 `printh` / `prints` 发送二进制帧到 STM32。
 - RGB 控制帧建议使用 `55 AA 04 ID R G B 0D 0A`。
-- 风扇控制帧建议使用 `55 AA 05 speed 0D 0A`。
+- 风扇控制帧建议使用 `55 AA 05 H L 0D 0A`。
 - 页面初始化或查询时通过 `55 AA 07 ID 0D 0A` / `55 AA 08 0D 0A` 获取 STM32 当前状态。
 
 ## ASRPRO 语音模块
