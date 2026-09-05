@@ -18,21 +18,26 @@ void ASR_CODE();
 // ============================================================
 //  Serial1 (GPIO2=TX, GPIO3=RX) 9600bps，FreeRTOS 任务驱动
 //  协议: PLAY:XXXXX\r\n 单条播报 / PLAYS:X,Y,Z\r\n 多条顺序播报
+//  外部播报只负责播放队列，不主动进入唤醒接收窗口，避免无人唤醒时播报退出提示
 // ============================================================
 #define RX_BUF_SIZE  256
 #define PLAY_QUEUE_DEPTH 64
-#define PLAY_ID_MIN 1U
-#define PLAY_ID_MAX 130U
-#define PLAY_WAKE_TIMEOUT_MS 45000U
-#define PLAY_START_RETRY_LOOPS 50U
+#define PLAY_CMD_ID_MIN 1U
+#define PLAY_CMD_ID_MAX 130U
+#define PLAY_VOICE_ID_MIN 10000U
+#define PLAY_VOICE_ID_MAX 65535U
+#define PLAY_START_RETRY_LOOPS 500U
 #define PLAY_DONE_WAIT_LOOPS 2500U
-#define PLAY_KEEPALIVE_LOOPS 250U
+#define ASR_WAKE_TIMEOUT_MS 30000U
+#define ASR_QUERY_WAKE_TIMEOUT_MS 30000U
 #define ASR_SERIAL1_RX_LOG_ENABLED 0
 #define ASR_BOARD_LED_PIN 4
 #define ASR_BOARD_LED_ON_LEVEL 1
 
 static char rx_buf[RX_BUF_SIZE];
 static QueueHandle_t play_queue = NULL;
+static volatile uint8_t plays_batch_receiving = 0U;
+static volatile uint8_t play_task_busy = 0U;
 static bool board_led_on = false;
 
 static void board_led_set(bool on)
@@ -49,35 +54,54 @@ static void board_led_toggle(void)
 
 static bool play_id_valid(uint32_t id)
 {
-    return (id >= PLAY_ID_MIN && id <= PLAY_ID_MAX);
-}
-
-static void keep_playback_awake(void)
-{
-    set_state_enter_wakeup(PLAY_WAKE_TIMEOUT_MS);
-}
-
-static void refresh_wakeup_periodically(uint16_t *loops)
-{
-    if (loops == NULL) return;
-
-    (*loops)++;
-    if (*loops >= PLAY_KEEPALIVE_LOOPS) {
-        *loops = 0;
-        keep_playback_awake();
-    }
+    return ((id >= PLAY_CMD_ID_MIN && id <= PLAY_CMD_ID_MAX) ||
+            (id >= PLAY_VOICE_ID_MIN && id <= PLAY_VOICE_ID_MAX));
 }
 
 static void queue_play_id(uint32_t id)
 {
     if (play_queue == NULL || !play_id_valid(id)) return;
 
-    keep_playback_awake();
     (void)xQueueSend(play_queue, &id, 10);
+}
+
+static uint32_t start_prompt_play(uint32_t id)
+{
+    if (id >= PLAY_VOICE_ID_MIN) {
+        return prompt_play_by_voice_id((uint16_t)id, NULL, false);
+    }
+
+    return prompt_play_by_cmd_id((uint16_t)id, -1, NULL, false);
+}
+
+static void notify_play_busy(void)
+{
+    if (!play_task_busy) {
+        play_task_busy = 1U;
+        Serial1.println("VOICE:BUSY");
+    }
+}
+
+static void notify_play_idle_if_needed(void)
+{
+    if (play_queue == NULL) return;
+
+    if (play_task_busy && uxQueueMessagesWaiting(play_queue) == 0U && !plays_batch_receiving) {
+        play_task_busy = 0U;
+        Serial1.println("VOICE:IDLE");
+    }
+}
+
+static bool asr_is_query_cmd(uint32_t id)
+{
+    return (id == 24U || id == 25U || id == 26U ||
+            id == 27U || id == 28U || id == 39U);
 }
 
 static void queue_play_list(const char *p)
 {
+    plays_batch_receiving = 1U;
+
     while (p != NULL && *p != '\0') {
         char *end = NULL;
         uint32_t id = (uint32_t)strtoul(p, &end, 10);
@@ -88,6 +112,8 @@ static void queue_play_list(const char *p)
         p = end;
         while (*p == ',' || *p == ' ') p++;
     }
+
+    plays_batch_receiving = 0U;
 }
 
 static void log_received_line(const char *line)
@@ -124,27 +150,25 @@ static void handle_received_line(const char *line)
 static bool play_prompt_id(uint32_t id)
 {
     uint16_t loops = 0;
-    uint16_t keepalive_loops = 0;
 
     if (!play_id_valid(id)) return false;
 
-    keep_playback_awake();
-    while (prompt_play_by_cmd_id((uint16_t)id, -1, NULL, false)) {
+    /* 外部 PLAY/PLAYS 不主动 set_state_enter_wakeup，避免无人唤醒时触发“我退下了”。 */
+    while (start_prompt_play(id) != 0U) {
         loops++;
-        if (loops >= PLAY_START_RETRY_LOOPS) return false;
-        refresh_wakeup_periodically(&keepalive_loops);
-        delay(2);
+        if (loops >= PLAY_START_RETRY_LOOPS) {
+            return false;
+        }
+        delay(10);
     }
 
     loops = 0;
-    keepalive_loops = 0;
     while (prompt_is_playing()) {
         loops++;
         if (loops >= PLAY_DONE_WAIT_LOOPS) {
             prompt_stop_play();
             break;
         }
-        refresh_wakeup_periodically(&keepalive_loops);
         delay(2);
     }
 
@@ -192,8 +216,10 @@ static void app_play(void *arg)
     uint32_t id;
     while (1) {
         if (xQueueReceive(play_queue, &id, 0)) {
+            notify_play_busy();
             (void)play_prompt_id(id);
         }
+        notify_play_idle_if_needed();
         delay(10);
     }
     vTaskDelete(NULL);
@@ -201,12 +227,11 @@ static void app_play(void *arg)
 
 
 void ASR_CODE(){
-  // 唤醒超时 30 秒（ALL 查询播报需 10~20 秒，留足余量）
-  // 非 ALL 查询时恢复短超时
-  if (snid == 28)
-      set_state_enter_wakeup(30000);
-  else
-      set_state_enter_wakeup(10000);
+  // 只有唤醒词和查询命令保留等待窗口；控制命令执行后不主动触发退出提示
+  if (snid == 0)
+      set_state_enter_wakeup(ASR_WAKE_TIMEOUT_MS);
+  else if (asr_is_query_cmd(snid))
+      set_state_enter_wakeup(ASR_QUERY_WAKE_TIMEOUT_MS);
 
   switch (snid) {
     // ========== 灯带控制 ==========
@@ -261,6 +286,8 @@ void ASR_CODE(){
 }
 
 void hardware_init(){
+  plays_batch_receiving = 0U;
+  play_task_busy = 0U;
   play_queue = xQueueCreate(PLAY_QUEUE_DEPTH, sizeof(uint32_t));
 
   // Serial1: GPIO2=TX, GPIO3=RX
@@ -330,10 +357,10 @@ void setup()
   // ========== 环境查询 ==========
   //{ID:24,keyword:"命令词",ASR:"当前温度",ASRTO:"正在查询温度"}
   //{ID:25,keyword:"命令词",ASR:"当前湿度",ASRTO:"正在查询湿度"}
-  //{ID:26,keyword:"命令词",ASR:"粉尘浓度",ASRTO:"正在查询粉尘浓度"}
+  //{ID:26,keyword:"命令词",ASR:"粉尘浓度",ASRTO:"正在查询粉尘数值"}
   //{ID:27,keyword:"命令词",ASR:"光照强度",ASRTO:"正在查询光照"}
   //{ID:28,keyword:"命令词",ASR:"全部环境信息",ASRTO:"正在查询环境信息"}
-  //{ID:39,keyword:"命令词",ASR:"烟雾浓度",ASRTO:"正在查询烟雾浓度"}
+  //{ID:39,keyword:"命令词",ASR:"烟雾浓度",ASRTO:"正在查询烟雾数值"}
 
   // ====== 语音片段库（ID 100~122，prompt_play_by_cmd_id 调用）======
 
@@ -357,16 +384,15 @@ void setup()
   // --- 小数点 (ID 113) ---
   //{ID:113,keyword:"命令词",ASR:"单位点",ASRTO:"点"}
 
-  // --- 单位 (ID 114~117) ---
+  // --- 单位 (ID 114~115/117) ---
   //{ID:114,keyword:"命令词",ASR:"单位度",ASRTO:"度"}
   //{ID:115,keyword:"命令词",ASR:"单位百分之",ASRTO:"百分之"}
-  //{ID:116,keyword:"命令词",ASR:"单位微克",ASRTO:"微克每立方米"}
   //{ID:117,keyword:"命令词",ASR:"单位勒克斯",ASRTO:"勒克斯"}
 
   // --- 前缀 (ID 118~121) ---
   //{ID:118,keyword:"命令词",ASR:"前缀温度",ASRTO:"当前温度"}
   //{ID:119,keyword:"命令词",ASR:"前缀湿度",ASRTO:"当前湿度"}
-  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"当前粉尘浓度"}
+  //{ID:120,keyword:"命令词",ASR:"前缀粉尘",ASRTO:"当前粉尘数值"}
   //{ID:121,keyword:"命令词",ASR:"前缀光照",ASRTO:"当前光照"}
 
   // --- 负号 (ID 122) ---
@@ -377,10 +403,9 @@ void setup()
   //{ID:124,keyword:"命令词",ASR:"温度正常",ASRTO:"温度正常"}
 
   // --- 联动播报预留 (ID 125~130) ---
-  //{ID:125,keyword:"命令词",ASR:"前缀烟雾",ASRTO:"当前烟雾浓度"}
-  //{ID:126,keyword:"命令词",ASR:"单位皮皮艾姆",ASRTO:"皮皮艾姆"}
-  //{ID:127,keyword:"命令词",ASR:"警告烟雾",ASRTO:"警告，烟雾浓度过高"}
-  //{ID:128,keyword:"命令词",ASR:"警告粉尘",ASRTO:"警告，粉尘浓度过高"}
+  //{ID:125,keyword:"命令词",ASR:"前缀烟雾",ASRTO:"当前烟雾数值"}
+  //{ID:127,keyword:"命令词",ASR:"警告烟雾",ASRTO:"警告，烟雾数值过高"}
+  //{ID:128,keyword:"命令词",ASR:"警告粉尘",ASRTO:"警告，粉尘数值过高"}
   //{ID:129,keyword:"命令词",ASR:"识别人脸",ASRTO:"识别到人脸"}
   //{ID:130,keyword:"命令词",ASR:"陌生人员",ASRTO:"未识别人员"}
 

@@ -10,9 +10,7 @@
 #define LED_GPIO GPIOA
 #define LED_GPIO_PIN GPIO_PIN_6
 #define PM25_ADC_CHANNEL ADC_CHANNEL_4
-#define PM25_CLEAN_AIR_ADC 200.0f
 #define PM25_ADC_TO_MV (3300.0f / 4096.0f)
-#define PM25_SENSITIVITY_MV_PER_UGM3 5.0f
 
 /* 调试时改为 1，正常使用保持 0 */
 #define PM25_DEBUG 0
@@ -94,10 +92,9 @@ void PM25_proc(void)
     if (now - debug_last_tick >= PM25_DEBUG_INTERVAL_MS) {
         float mv = (float)g_adc * PM25_ADC_TO_MV;
         debug_last_tick = now;
-        PM25_DEBUG_PRINTF("[PM25] adc=%u mv=%.1f ugm3=%.1f ready=%u\r\n",
+        PM25_DEBUG_PRINTF("[PM25] adc=%u mv=%.1f ready=%u\r\n",
                           (unsigned int)g_adc,
                           (double)mv,
-                          (double)PM25_get_ugm3(),
                           (unsigned int)g_ready);
     }
 #endif
@@ -106,25 +103,3 @@ void PM25_proc(void)
 
 
 uint16_t PM25_get_adc(void) { return g_adc; }
-
-/**
-  * @brief  获取 PM2.5 浓度（µg/m³）
-  * @note   基于 Sharp GP2Y1014AU0F 传感器特性曲线
-  *         当前硬件先按 ADC 空气基线 PM25_CLEAN_AIR_ADC 做零点扣除，
-  *         后续实测清洁空气稳定值后只需要调整该宏。
-  * @return PM2.5 浓度（µg/m³），无效时返回 0
-  */
-float PM25_get_ugm3(void)
-{
-    uint16_t adc = g_adc;
-    if (adc == 0) return 0.0f;
-
-    /* 当前硬件空气基线按 ADC counts 配置。 */
-    float signal_adc = (float)adc - PM25_CLEAN_AIR_ADC;
-    float ugm3 = (signal_adc * PM25_ADC_TO_MV) / PM25_SENSITIVITY_MV_PER_UGM3;
-
-    /* 负值截断为 0 */
-    if (ugm3 < 0.0f) ugm3 = 0.0f;
-
-    return ugm3;
-}

@@ -22,11 +22,16 @@
 #define VOICE_CAT_QUERY   "QUERY"
 #define VOICE_RX_LINE_SIZE 125U
 #define VOICE_ALARM_REPEAT_MS 10000U
-#define VOICE_PM25_ALARM_THRESHOLD_UGM3 35.0f
-#define VOICE_PM25_ALARM_CLEAR_UGM3 25.0f
+#define VOICE_BG_AFTER_CMD_DELAY_MS 1000U
+#define VOICE_BG_GAP_MS 2500U
+#define VOICE_QUERY_REPLY_GAP_MS 3000U
+#define VOICE_QUERY_ALL_REPLY_GAP_MS 8000U
+#define VOICE_ASR_BUSY_GUARD_MS 7000U
+#define VOICE_PM25_ALARM_THRESHOLD_ADC 420U
+#define VOICE_PM25_ALARM_CLEAR_ADC 355U
 
 /* 调试时改为 1，正常使用保持 0 */
-#define VOICE_DEBUG 1
+#define VOICE_DEBUG 0
 #define VOICE_DEBUG_INTERVAL_MS 1000U
 
 #if VOICE_DEBUG
@@ -52,21 +57,18 @@
 #define VID_POINT    113   /* 点 */
 #define VID_DEGREE   114   /* 度 */
 #define VID_PERCENT  115   /* 百分之 */
-#define VID_UGPM3    116   /* 微克每立方米 */
 #define VID_LUX      117   /* 勒克斯 */
 #define VID_PRE_TEMP 118   /* 当前温度 */
 #define VID_PRE_HUMI 119   /* 当前湿度 */
-#define VID_PRE_DUST 120   /* 当前粉尘浓度 */
+#define VID_PRE_DUST 120   /* 当前粉尘数值 */
 #define VID_PRE_LUX  121   /* 当前光照 */
 #define VID_NEG      122   /* 零下 */
 #define VID_TEMP_HIGH   123   /* 温度偏高 */
 #define VID_TEMP_NORMAL 124   /* 温度正常 */
-#define VID_PRE_SMOKE   125   /* 当前烟雾浓度 */
-#define VID_PPM         126   /* 皮皮艾姆 */
-#define VID_ALARM_SMOKE 127   /* 警告，烟雾浓度过高 */
-#define VID_ALARM_DUST  128   /* 警告，粉尘浓度过高 */
-#define VID_FACE_KNOWN  129   /* 识别到人脸 */
-#define VID_FACE_UNKNOWN 130  /* 未识别人员 */
+#define VID_PRE_SMOKE   125   /* 当前烟雾数值 */
+#define VID_ALARM_SMOKE 127   /* 警告，烟雾数值过高 */
+#define VID_ALARM_DUST  128   /* 警告，粉尘数值过高 */
+#define VID_FACE_ZENG   129   /* 识别到人脸 */
 
 /* ── 温度告警阈值 ── */
 #define TEMP_HIGH_THRESHOLD  30   /* 超过此值播报"温度偏高" */
@@ -81,6 +83,60 @@ static uint8_t smoke_alarm_latched = 0U;
 static uint32_t smoke_alarm_last_tick = 0U;
 static uint8_t dust_alarm_latched = 0U;
 static uint32_t dust_alarm_last_tick = 0U;
+static uint8_t face_zeng_pending = 0U;
+static uint32_t voice_last_command_tick = 0U;
+static uint8_t voice_asr_busy = 0U;
+static uint32_t voice_asr_busy_until_tick = 0U;
+static uint32_t voice_next_background_tick = 0U;
+
+static uint8_t voice_tick_reached(uint32_t tick)
+{
+    return ((int32_t)(HAL_GetTick() - tick) >= 0) ? 1U : 0U;
+}
+
+static void voice_hold_background(uint32_t delay_ms)
+{
+    voice_next_background_tick = HAL_GetTick() + delay_ms;
+}
+
+static void voice_note_asr_busy(void)
+{
+    voice_asr_busy = 1U;
+    voice_asr_busy_until_tick = HAL_GetTick() + VOICE_ASR_BUSY_GUARD_MS;
+}
+
+static void voice_note_asr_idle(void)
+{
+    voice_asr_busy = 0U;
+    voice_asr_busy_until_tick = 0U;
+}
+
+static uint8_t voice_asr_can_accept_background(void)
+{
+    if (!voice_asr_busy) {
+        return 1U;
+    }
+
+    if (voice_tick_reached(voice_asr_busy_until_tick)) {
+        voice_note_asr_idle();
+        return 1U;
+    }
+
+    return 0U;
+}
+
+static uint8_t voice_background_can_send(void)
+{
+    if (HAL_GetTick() - voice_last_command_tick < VOICE_BG_AFTER_CMD_DELAY_MS) {
+        return 0U;
+    }
+
+    if (!voice_tick_reached(voice_next_background_tick)) {
+        return 0U;
+    }
+
+    return voice_asr_can_accept_background();
+}
 
 /**
   * @brief  将一个整数分解为中文语音片段，追加到 PLAYS 命令
@@ -188,6 +244,17 @@ void voice_parse(void)
     if (cat == NULL || act == NULL) {
         goto cleanup;
     }
+
+    if (strcmp(cat, "VOICE") == 0) {
+        if (strcmp(act, "BUSY") == 0) {
+            voice_note_asr_busy();
+        } else if (strcmp(act, "IDLE") == 0) {
+            voice_note_asr_idle();
+        }
+        goto cleanup;
+    }
+
+    voice_last_command_tick = HAL_GetTick();
 
     /* ================================================ */
     /*  一、灯带控制  LIGHT                              */
@@ -336,6 +403,7 @@ void voice_parse(void)
                 uart_printf(&huart3, ",%d", VID_TEMP_HIGH);
 
             uart_printf(&huart3, "\r\n");
+            voice_hold_background(VOICE_QUERY_REPLY_GAP_MS);
             VOICE_DEBUG_PRINTF("[QUERY] temp=%.1f => voice%s\r\n",
                                (double)temp,
                                temp > TEMP_HIGH_THRESHOLD ? " [high]" : "");
@@ -349,27 +417,28 @@ void voice_parse(void)
             uart_printf(&huart3, "PLAYS:%d,%d", VID_PRE_HUMI, VID_PERCENT);
             voice_append_fixed1(&huart3, humi);
             uart_printf(&huart3, "\r\n");
+            voice_hold_background(VOICE_QUERY_REPLY_GAP_MS);
             VOICE_DEBUG_PRINTF("[QUERY] humi=%.1f => voice\r\n", (double)humi);
             lcd_send();
         }
         /* --- QUERY:DUST / QUERY:PM25 --- */
         else if (strcmp(act, "DUST") == 0 || strcmp(act, "PM25") == 0) {
-            float dust = PM25_get_ugm3();
-            if (dust < 0.0f) dust = 0.0f;
+            uint16_t dust_adc = PM25_get_adc();
             uart_printf(&huart3, "PLAYS:%d", VID_PRE_DUST);
-            voice_append_fixed1(&huart3, dust);
-            uart_printf(&huart3, ",%d\r\n", VID_UGPM3);
-            VOICE_DEBUG_PRINTF("[QUERY] dust=%.1f ug/m3 => voice\r\n", (double)dust);
+            voice_append_number(&huart3, dust_adc);
+            uart_printf(&huart3, "\r\n");
+            voice_hold_background(VOICE_QUERY_REPLY_GAP_MS);
+            VOICE_DEBUG_PRINTF("[QUERY] dust_adc=%u => voice\r\n", (unsigned int)dust_adc);
             lcd_send();
         }
         /* --- QUERY:SMOKE --- */
         else if (strcmp(act, "SMOKE") == 0) {
-            float smoke = smoke_get_ppm();
-            if (smoke < 0.0f) smoke = 0.0f;
+            uint16_t smoke_adc = smoke_get_adc();
             uart_printf(&huart3, "PLAYS:%d", VID_PRE_SMOKE);
-            voice_append_fixed1(&huart3, smoke);
-            uart_printf(&huart3, ",%d\r\n", VID_PPM);
-            VOICE_DEBUG_PRINTF("[QUERY] smoke=%.1f ppm => voice\r\n", (double)smoke);
+            voice_append_number(&huart3, smoke_adc);
+            uart_printf(&huart3, "\r\n");
+            voice_hold_background(VOICE_QUERY_REPLY_GAP_MS);
+            VOICE_DEBUG_PRINTF("[QUERY] smoke_adc=%u => voice\r\n", (unsigned int)smoke_adc);
             lcd_send();
         }
         /* --- QUERY:LIGHT --- */
@@ -379,6 +448,7 @@ void voice_parse(void)
             uart_printf(&huart3, "PLAYS:%d", VID_PRE_LUX);
             voice_append_fixed1(&huart3, lux);
             uart_printf(&huart3, ",%d\r\n", VID_LUX);
+            voice_hold_background(VOICE_QUERY_REPLY_GAP_MS);
             VOICE_DEBUG_PRINTF("[QUERY] lux=%.1f => voice\r\n", (double)lux);
             lcd_send();
         }
@@ -386,8 +456,8 @@ void voice_parse(void)
         else if (strcmp(act, "ALL") == 0) {
             float tv = DHT11_get_temp();
             float hv = DHT11_get_humi();
-            float dv = PM25_get_ugm3();
-            float sv = smoke_get_ppm();
+            uint16_t dv = PM25_get_adc();
+            uint16_t sv = smoke_get_adc();
             float lv = bh1750_get_lux();
 
             uart_printf(&huart3, "PLAYS:%d", VID_PRE_TEMP);
@@ -398,14 +468,15 @@ void voice_parse(void)
             uart_printf(&huart3, ",%d,%d", VID_PRE_HUMI, VID_PERCENT);
             voice_append_fixed1(&huart3, hv);
             uart_printf(&huart3, ",%d", VID_PRE_DUST);
-            voice_append_fixed1(&huart3, dv);
-            uart_printf(&huart3, ",%d,%d", VID_UGPM3, VID_PRE_SMOKE);
-            voice_append_fixed1(&huart3, sv);
-            uart_printf(&huart3, ",%d,%d", VID_PPM, VID_PRE_LUX);
+            voice_append_number(&huart3, dv);
+            uart_printf(&huart3, ",%d", VID_PRE_SMOKE);
+            voice_append_number(&huart3, sv);
+            uart_printf(&huart3, ",%d", VID_PRE_LUX);
             voice_append_fixed1(&huart3, lv);
             uart_printf(&huart3, ",%d\r\n", VID_LUX);
-            VOICE_DEBUG_PRINTF("[QUERY] all t=%.1f h=%.1f dust=%.1f smoke=%.1f lux=%.1f%s\r\n",
-                               (double)tv, (double)hv, (double)dv, (double)sv, (double)lv,
+            voice_hold_background(VOICE_QUERY_ALL_REPLY_GAP_MS);
+            VOICE_DEBUG_PRINTF("[QUERY] all t=%.1f h=%.1f dust_adc=%u smoke_adc=%u lux=%.1f%s\r\n",
+                               (double)tv, (double)hv, (unsigned int)dv, (unsigned int)sv, (double)lv,
                                tv > TEMP_HIGH_THRESHOLD ? " [high]" : "");
             lcd_send();
         }
@@ -415,43 +486,57 @@ cleanup:
     (void)line_len;
 }
 
-void voice_alert_smoke_over_limit(float ppm)
+void voice_alert_smoke_over_limit(uint16_t adc)
 {
-    if (ppm < 0.0f) ppm = 0.0f;
     uart_printf(&huart3, "PLAYS:%d,%d", VID_ALARM_SMOKE, VID_PRE_SMOKE);
-    voice_append_fixed1(&huart3, ppm);
-    uart_printf(&huart3, ",%d\r\n", VID_PPM);
+    voice_append_number(&huart3, adc);
+    uart_printf(&huart3, "\r\n");
+    voice_hold_background(VOICE_BG_GAP_MS);
 }
 
-void voice_alert_dust_over_limit(float ugm3)
+void voice_alert_dust_over_limit(uint16_t adc)
 {
-    if (ugm3 < 0.0f) ugm3 = 0.0f;
     uart_printf(&huart3, "PLAYS:%d,%d", VID_ALARM_DUST, VID_PRE_DUST);
-    voice_append_fixed1(&huart3, ugm3);
-    uart_printf(&huart3, ",%d\r\n", VID_UGPM3);
+    voice_append_number(&huart3, adc);
+    uart_printf(&huart3, "\r\n");
+    voice_hold_background(VOICE_BG_GAP_MS);
 }
 
-void voice_face_link_event(uint8_t event, uint16_t face_id)
+void voice_play_face_zeng(void)
 {
-    (void)face_id;
-
-    if (event == VOICE_FACE_EVENT_KNOWN) {
-        uart_printf(&huart3, "PLAY:%d\r\n", VID_FACE_KNOWN);
-    } else if (event == VOICE_FACE_EVENT_UNKNOWN) {
-        uart_printf(&huart3, "PLAY:%d\r\n", VID_FACE_UNKNOWN);
-    }
+    face_zeng_pending = 1U;
 }
 
-static void voice_alarm_service(void)
+static void voice_send_face_zeng_now(void)
+{
+    uart_printf(&huart3, "PLAY:%d\r\n", VID_FACE_ZENG);
+    voice_hold_background(VOICE_BG_GAP_MS);
+}
+
+static void voice_face_service(void)
+{
+    if (!face_zeng_pending) return;
+    if (!voice_background_can_send()) return;
+
+    face_zeng_pending = 0U;
+    voice_send_face_zeng_now();
+}
+
+static uint8_t voice_alarm_service(void)
 {
     uint32_t now = HAL_GetTick();
+
+    if (!voice_background_can_send()) {
+        return 0U;
+    }
 
     if (smoke_is_ready() && smoke_is_alarmed()) {
         if (!smoke_alarm_latched ||
             now - smoke_alarm_last_tick >= VOICE_ALARM_REPEAT_MS) {
             smoke_alarm_latched = 1U;
             smoke_alarm_last_tick = now;
-            voice_alert_smoke_over_limit(smoke_get_ppm());
+            voice_alert_smoke_over_limit(smoke_get_adc());
+            return 1U;
         }
     } else {
         smoke_alarm_latched = 0U;
@@ -459,23 +544,26 @@ static void voice_alarm_service(void)
     }
 
     if (PM25_get_adc() != 0U) {
-        float dust = PM25_get_ugm3();
+        uint16_t dust_adc = PM25_get_adc();
         uint8_t dust_alarm = dust_alarm_latched ?
-            (dust > VOICE_PM25_ALARM_CLEAR_UGM3) :
-            (dust >= VOICE_PM25_ALARM_THRESHOLD_UGM3);
+            (dust_adc > VOICE_PM25_ALARM_CLEAR_ADC) :
+            (dust_adc >= VOICE_PM25_ALARM_THRESHOLD_ADC);
 
         if (dust_alarm) {
             if (!dust_alarm_latched ||
                 now - dust_alarm_last_tick >= VOICE_ALARM_REPEAT_MS) {
                 dust_alarm_latched = 1U;
                 dust_alarm_last_tick = now;
-                voice_alert_dust_over_limit(dust);
+                voice_alert_dust_over_limit(dust_adc);
+                return 1U;
             }
         } else {
             dust_alarm_latched = 0U;
             dust_alarm_last_tick = 0U;
         }
     }
+
+    return 0U;
 }
 
 /**
@@ -484,8 +572,13 @@ static void voice_alarm_service(void)
   */
 void voice_run_send(void)
 {
+    uint8_t alarm_sent;
+
     voice_parse();
-    voice_alarm_service();
+    alarm_sent = voice_alarm_service();
+    if (!alarm_sent) {
+        voice_face_service();
+    }
 
 #if VOICE_DEBUG
     static uint32_t debug_last_tick = 0U;

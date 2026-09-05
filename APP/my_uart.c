@@ -12,21 +12,25 @@
 #define UART2_RX_QUEUE_SIZE 2048U
 #define UART3_RX_QUEUE_SIZE 256U
 #define UART4_RX_QUEUE_SIZE 256U
+#define UART5_RX_QUEUE_SIZE 512U
 
 #define UART1_TX_QUEUE_SIZE 2048U
 #define UART2_TX_QUEUE_SIZE 4096U
 #define UART3_TX_QUEUE_SIZE 512U
 #define UART4_TX_QUEUE_SIZE 1024U
+#define UART5_TX_QUEUE_SIZE 512U
 
 #define UART1_RX_WORK_SIZE 128U
 #define UART2_RX_WORK_SIZE 256U
 #define UART3_RX_WORK_SIZE 64U
 #define UART4_RX_WORK_SIZE 64U
+#define UART5_RX_WORK_SIZE 128U
 
 #define UART1_TX_WORK_SIZE 128U
 #define UART2_TX_WORK_SIZE 256U
 #define UART3_TX_WORK_SIZE 64U
 #define UART4_TX_WORK_SIZE 128U
+#define UART5_TX_WORK_SIZE 64U
 
 #define UART_PRINTF_BUF_SIZE 512U
 
@@ -61,21 +65,25 @@ static uint8_t uart1_rx_storage[UART1_RX_QUEUE_SIZE];
 static uint8_t uart2_rx_storage[UART2_RX_QUEUE_SIZE];
 static uint8_t uart3_rx_storage[UART3_RX_QUEUE_SIZE];
 static uint8_t uart4_rx_storage[UART4_RX_QUEUE_SIZE];
+static uint8_t uart5_rx_storage[UART5_RX_QUEUE_SIZE];
 
 static uint8_t uart1_tx_storage[UART1_TX_QUEUE_SIZE];
 static uint8_t uart2_tx_storage[UART2_TX_QUEUE_SIZE];
 static uint8_t uart3_tx_storage[UART3_TX_QUEUE_SIZE];
 static uint8_t uart4_tx_storage[UART4_TX_QUEUE_SIZE];
+static uint8_t uart5_tx_storage[UART5_TX_QUEUE_SIZE];
 
 static uint8_t uart1_rx_work[UART1_RX_WORK_SIZE];
 static uint8_t uart2_rx_work[UART2_RX_WORK_SIZE];
 static uint8_t uart3_rx_work[UART3_RX_WORK_SIZE];
 static uint8_t uart4_rx_work[UART4_RX_WORK_SIZE];
+static uint8_t uart5_rx_work[UART5_RX_WORK_SIZE];
 
 static uint8_t uart1_tx_work[UART1_TX_WORK_SIZE];
 static uint8_t uart2_tx_work[UART2_TX_WORK_SIZE];
 static uint8_t uart3_tx_work[UART3_TX_WORK_SIZE];
 static uint8_t uart4_tx_work[UART4_TX_WORK_SIZE];
+static uint8_t uart5_tx_work[UART5_TX_WORK_SIZE];
 
 static uart_ring_port_t uart_ports[] = {
     {&huart1, {0}, uart1_rx_storage, sizeof(uart1_rx_storage), uart1_rx_work, sizeof(uart1_rx_work),
@@ -86,6 +94,8 @@ static uart_ring_port_t uart_ports[] = {
      {0}, uart3_tx_storage, sizeof(uart3_tx_storage), uart3_tx_work, sizeof(uart3_tx_work), 0U, 0U, 0U},
     {&huart4, {0}, uart4_rx_storage, sizeof(uart4_rx_storage), uart4_rx_work, sizeof(uart4_rx_work),
      {0}, uart4_tx_storage, sizeof(uart4_tx_storage), uart4_tx_work, sizeof(uart4_tx_work), 0U, 0U, 0U},
+    {&huart5, {0}, uart5_rx_storage, sizeof(uart5_rx_storage), uart5_rx_work, sizeof(uart5_rx_work),
+     {0}, uart5_tx_storage, sizeof(uart5_tx_storage), uart5_tx_work, sizeof(uart5_tx_work), 0U, 0U, 0U},
 };
 
 static uint32_t irq_save(void)
@@ -305,6 +315,12 @@ void my_uart_service_tx(void)
                           (unsigned int)my_uart_available(&huart4),
                           (unsigned long)my_uart_get_tx_overflow(&huart4),
                           (unsigned long)my_uart_get_rx_overflow(&huart4));
+        UART_DEBUG_PRINTF("[UART] U5 tx=%u free=%u rx=%u txov=%lu rxov=%lu\r\n",
+                          (unsigned int)my_uart_tx_pending(&huart5),
+                          (unsigned int)my_uart_tx_free(&huart5),
+                          (unsigned int)my_uart_available(&huart5),
+                          (unsigned long)my_uart_get_tx_overflow(&huart5),
+                          (unsigned long)my_uart_get_rx_overflow(&huart5));
     }
 #endif
 }

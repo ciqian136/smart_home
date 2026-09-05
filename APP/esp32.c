@@ -194,18 +194,18 @@ void esp32_run_send(void) {
                      "test_int", 'i', test_int);
     break;
 
-  /* ── 1: 烟雾传感器 MQ2 (ppm) ───────────────── */
+  /* ── 1: 烟雾传感器 MQ2 ADC 原始值 ───────────── */
   case SEND_CASE_MQ2:
     if (smoke_is_ready()) {
       build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                       "MQ2", 'f', (double)smoke_get_ppm());
+                       "MQ2", 'i', smoke_get_adc());
     }
     break;
 
-  /* ── 2: PM2.5 (µg/m³) ──────────────────────── */
+  /* ── 2: PM2.5 ADC 原始值 ───────────────────── */
   case SEND_CASE_PM25:
     build_onenet_cmd(cmd_buf, TOPIC_POST, "123", 1,
-                     "PM25", 'f', (double)PM25_get_ugm3());
+                     "PM25", 'i', PM25_get_adc());
     break;
 
   /* ── 3: 湿度 (%) ───────────────────────────── */

@@ -27,6 +27,7 @@
 #include "PM25.h"
 #include "BH1750.h"
 #include "voice.h"
+#include "face.h"
 #include "lcd.h"
 #include "DHT11.h"
 #include "fan.h"

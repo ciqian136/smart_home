@@ -1,6 +1,6 @@
 /*
  * 风扇控制模块
- * TIM4 PWM 模式2，通道3 → PD14
+ * TIM4 PWM 模式2，通道4 → PD15
  * TIM4 ARR=89（与 WS2812 共享），PWM 模式2 极性反转
  * API 范围：0=停转，1000=满速
  * 内部映射：val(0~1000) → CCR(89~0)
@@ -9,7 +9,7 @@
 #include "fan.h"
 #include "my_uart.h"
 
-#define FAN_CHANNEL    TIM_CHANNEL_3
+#define FAN_CHANNEL    TIM_CHANNEL_4
 #define FAN_TIM        htim4
 #define FAN_MAX        1000
 #define FAN_TIM_ARR    89          /* TIM4 ARR，与 WS2812 共享 */

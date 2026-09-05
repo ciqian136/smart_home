@@ -1013,6 +1013,16 @@
               <FilePath>..\APP\esp32.h</FilePath>
             </File>
             <File>
+              <FileName>face.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\face.c</FilePath>
+            </File>
+            <File>
+              <FileName>face.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\APP\face.h</FilePath>
+            </File>
+            <File>
               <FileName>headfile.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\APP\headfile.h</FilePath>

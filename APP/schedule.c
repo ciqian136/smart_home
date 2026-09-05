@@ -8,6 +8,7 @@
 #include "my_uart.h"
 #include "smoke.h"
 #include "voice.h"
+#include "face.h"
 
 typedef struct {
     void (*task_func)(void);
@@ -34,16 +35,17 @@ void test_proc(void)
 /* 调度任务表 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},
-    //{esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
-    //{esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
-    //{smoke_proc, 300, 0},
-    //{PM25_proc, 300, 0},
-    //{bh1750_proc,300,0},
+    {face_proc, 20, 0},      /* OpenART 人脸结果解析，识别成功后触发语音模块 */
+    {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
+    {esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
+    {smoke_proc, 300, 0},
+    {PM25_proc, 300, 0},
+    {bh1750_proc,300,0},
 	{voice_run_send,10,0},
-    //{DHT11_proc,20,0},
-    //{lcd_recv,10,0},
-    //{lcd_send,1000,0},
-    //{esp32_check_online, 500, 0}, /* 每 500ms 检测在线状态（内部含 30s ping/10s WiFi）*/
+    {DHT11_proc,20,0},
+    {lcd_recv,10,0},
+    {lcd_send,1000,0},
+    {esp32_check_online, 500, 0}, /* 每 500ms 检测在线状态（内部含 30s ping/10s WiFi）*/
 };
 
 void schedule_init(void)
@@ -58,14 +60,15 @@ void schedule_init(void)
 	my_adc_init();
 	SCHEDULE_DEBUG_PRINTF("[stm32]start");
 	/*各模块初始化*/
-	//ws2812_set_all(0, 0, 0);  /* 初始关闭 */
-	//ws2812_2_set_all(0, 0, 0);  /* 灯带2 初始关闭 */
-	//smoke_init();
-    //DHT11_init();
-    //PM25_init();
-    //fan_init();
-	//bh1750_init();
+	ws2812_set_all(0, 0, 0);  /* 初始关闭 */
+	ws2812_2_set_all(0, 0, 0);  /* 灯带2 初始关闭 */
+	smoke_init();
+    DHT11_init();
+    PM25_init();
+    fan_init();
+    bh1750_init();
     //esp32_init();
+    face_init();
 
 }
 

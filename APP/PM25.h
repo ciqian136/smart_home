@@ -10,10 +10,6 @@ void PM25_deinit(void);
 void PM25_proc(void);
 /** @brief 获取PM2.5传感器最近一次ADC值 */
 uint16_t PM25_get_adc(void);
-/** @brief 获取PM2.5浓度（µg/m³），基于 Sharp GP2Y1014AU0F 特性曲线转换 */
-float PM25_get_ugm3(void);
-
 
 #endif
-
 
