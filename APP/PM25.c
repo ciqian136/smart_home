@@ -103,3 +103,5 @@ void PM25_proc(void)
 
 
 uint16_t PM25_get_adc(void) { return g_adc; }
+
+uint8_t PM25_is_ready(void) { return g_ready; }

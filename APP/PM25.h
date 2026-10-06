@@ -10,6 +10,6 @@ void PM25_deinit(void);
 void PM25_proc(void);
 /** @brief 获取PM2.5传感器最近一次ADC值 */
 uint16_t PM25_get_adc(void);
+uint8_t PM25_is_ready(void);
 
 #endif
-

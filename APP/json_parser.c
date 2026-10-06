@@ -18,7 +18,12 @@ static const char *json_find_value(const char *json, const char *key) {
   sprintf(search, "\"%s\":{\"value\":", key);
   const char *p = strstr(json, search);
   if (p != NULL) {
-    return p + strlen(search);
+    p += strlen(search);
+    /* 值前面同样可能带空格："key":{"value": 1}。不跳过去的话
+     * parse_bool_value/parse_int_value 都会从空格开始解析成 0。 */
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+      p++;
+    return p;
   }
 
   /* 备用简化格式（不带外层花括号）："key":value */
@@ -31,6 +36,24 @@ static const char *json_find_value(const char *json, const char *key) {
   /* 跳过值前面的空白字符 */
   while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
     p++;
+
+  /* 容忍带空格的包装写法："key": {"value": X。
+   * 上面那条精确匹配（"key":{"value":）没命中，落到这里时 p 指向 '{'。
+   * 不往前走到真正的值的话，parse_bool_value 会把 '{' 当成值解析成 0 ——
+   * 又是一处"云端让开灯、设备反而关灯"。 */
+  if (*p == '{') {
+    const char *value_key = strstr(p, "\"value\"");
+    if (value_key != NULL && (value_key - p) < 16) {
+      p = value_key + 7; /* 跳过 "value"（含引号共 7 字节） */
+      while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+        p++;
+      if (*p == ':') {
+        p++;
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r')
+          p++;
+      }
+    }
+  }
   return p;
 }
 
@@ -90,18 +113,29 @@ static const char *parse_float_value(const char *str, float *val) {
 }
 
 /**
- * @brief  解析布尔值（true / false）
+ * @brief  解析布尔值（true / false，同时容忍 0 / 1）
  * @param str  指向布尔值字符串的起始位置
  * @param val  输出布尔值（1=true, 0=false）
  * @return 解析完成后字符串的指针位置
+ *
+ * OneNET 的布尔属性历史上是按 0/1 下发的。早期只认 true/false 时，
+ * "key":1 会被解析成 0 —— "云端让开灯、设备反而关灯"。这里一并接受 0/1。
  */
 static const char *parse_bool_value(const char *str, int *val) {
+  if (*str == '"') str++; /* 容忍 "true" / "1" 这种把布尔写成字符串的下发 */
+
   if (strncmp(str, "true", 4) == 0) {
     *val = 1;
     return str + 4;
   } else if (strncmp(str, "false", 5) == 0) {
     *val = 0;
     return str + 5;
+  } else if (*str == '1') {
+    *val = 1;
+    return str + 1;
+  } else if (*str == '0') {
+    *val = 0;
+    return str + 1;
   }
   *val = 0;
   return str;
@@ -294,8 +328,15 @@ void extract_topic(const char *subrecv, char *topic, uint8_t size) {
 
 /**
  * @brief  从 +MQTTSUBRECV 消息中提取 JSON 负载
- *         MQTTSUB 格式：+MQTTSUBRECV:0,topic_len,topic,json
- *         第3个逗号之后即为 JSON 内容
+ *
+ * ESP-AT 的实际格式是：
+ *   +MQTTSUBRECV:<LinkID>,<topic>,<data_len>,<data>
+ * 也就是**第 3 个逗号之后就是负载**；<topic> 是否带引号依固件版本而定，
+ * 但不影响这个位置。（本函数只看逗号位置，负载结尾按 "}\r\n" 判断。）
+ *
+ * 注意：小智那条链路（APP/esp32_xiaozhi.c 的 handle_subrecv）不用本函数 ——
+ * 它按 data_len 精确取负载，才能正确处理负载里出现逗号/花括号的情况。
+ *
  * @param subrecv  +MQTTSUBRECV 原始消息字符串
  * @param json_buf 输出缓冲区（存放提取的 JSON 字符串）
  * @param size     缓冲区大小

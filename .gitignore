@@ -32,3 +32,6 @@ _decomp/
 _decomp2/
 _hmitype_src2/
 _wifi_patch/
+
+# Local MQTT credentials
+APP/mqtt_config.h

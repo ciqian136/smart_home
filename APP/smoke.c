@@ -7,7 +7,8 @@
 
 #define DO_GPIO GPIOC               /* 数字报警输出引脚端口 */
 #define DO_GPIO_PIN GPIO_PIN_2       /* 数字报警输出引脚号 */
-#define ALARM_THRESHOLD 300          /* 软件报警阈值 */
+/* 软件报警阈值在 smoke.h（SMOKE_ALARM_ADC_THRESHOLD）里，语音播报的回差阈值
+ * 也在那边；两处需要一起看。 */
 #define PREHEAT_TIME 20              /* 传感器预热时间（秒）*/
 #define SMOKE_ADC_CHANNEL ADC_CHANNEL_1
 
@@ -73,7 +74,7 @@ void smoke_proc(void) {
 
   /* 报警判断：数字IO低电平触发 或 ADC值超过阈值 */
   g_alarm = (HAL_GPIO_ReadPin(DO_GPIO, DO_GPIO_PIN) == GPIO_PIN_RESET) ? 1U : 0U;
-  if (g_adc > ALARM_THRESHOLD)
+  if (g_adc >= SMOKE_ALARM_ADC_THRESHOLD)
     g_alarm = 1U;
 
 #if SMOKE_DEBUG

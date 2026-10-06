@@ -35,13 +35,14 @@ void test_proc(void)
 /* 调度任务表 */
 static task_t schedule_task_t[] = {
     //{test_proc, 1000, 0},
-    {face_proc, 20, 0},      /* OpenART 人脸结果解析，识别成功后触发语音模块 */
+    //{face_proc, 20, 0},      /* OpenART 人脸结果解析，识别成功后触发语音模块 */
     {esp32_init_nonblock, 20, 0},  /* 非阻塞初始化状态机，20ms 驱动一次 */
-    {esp32_run_send, 100, 0},     /* 100ms 调用但每 10 次发 1 次（1s/条），10 cases = 10s */
+    {esp32_run_send, 100, 0},     /* 状态上报任务内部按配置周期发布 home/state */
+    {status_led_poll, 20, 0},     /* PB5 上传状态灯：不接串口也能看出在不在传，灯语见 status_led.h */
     {smoke_proc, 300, 0},
     {PM25_proc, 300, 0},
     {bh1750_proc,300,0},
-	{voice_run_send,10,0},
+		//{voice_run_send,10,0},
     {DHT11_proc,20,0},
     {lcd_recv,10,0},
     {lcd_send,1000,0},
@@ -58,6 +59,7 @@ void schedule_init(void)
 	/*基本原件初始化*/
     my_uart_init();
 	my_adc_init();
+	status_led_init();   /* PB5 状态灯先熄灭，避免上电瞬间常亮 */
 	SCHEDULE_DEBUG_PRINTF("[stm32]start");
 	/*各模块初始化*/
 	ws2812_set_all(0, 0, 0);  /* 初始关闭 */
@@ -67,19 +69,15 @@ void schedule_init(void)
     PM25_init();
     fan_init();
     bh1750_init();
-    //esp32_init();
-    face_init();
+    //esp32_init();//阻塞初始化
+    //face_init();
 
 }
 
 void schedule_run(void)
 {
     my_uart_service_tx();
-
-    if (esp32_rx_pending) {
-        esp32_rx_pending = 0;
-        esp32_run_recv();
-    }
+    esp32_run_recv();
 
     /* AT 指令超时检测：无条件每轮执行，防止 ESP32 死机导致 busy 永久卡死 */
     esp32_check_cmd_timeout();

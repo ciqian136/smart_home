@@ -1,4 +1,4 @@
-#include "DHT11.h"
+#include "dht11.h"
 #include "my_uart.h"
 #include <stdint.h>
 
@@ -219,4 +219,9 @@ float DHT11_get_temp(void)
 float DHT11_get_humi(void)
 {
     return g_humi;
+}
+
+uint8_t DHT11_is_ready(void)
+{
+    return g_ready;
 }

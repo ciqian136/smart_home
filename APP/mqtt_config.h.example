@@ -1,0 +1,22 @@
+#ifndef SMART_HOME_MQTT_CONFIG_H
+#define SMART_HOME_MQTT_CONFIG_H
+
+#define SMART_HOME_MQTT_SERVER       "<mqtt-host>"
+#define SMART_HOME_MQTT_PORT         1883
+#define SMART_HOME_MQTT_CLIENT_ID    "smart_home_stm32"
+#define SMART_HOME_MQTT_USERNAME     "<mqtt-username>"
+#define SMART_HOME_MQTT_PASSWORD     "<mqtt-password>"
+#define SMART_HOME_MQTT_STATE_TOPIC  "home/state"
+#define SMART_HOME_MQTT_CMD_TOPIC    "home/cmd"
+
+#define SMART_HOME_MQTT_DEVICE_ID    "smart_home_01"
+#define SMART_HOME_MQTT_DEVICE_NAME  "living_room"
+
+#define SMART_HOME_MQTT_NTP_SERVER   "ntp1.aliyun.com"
+#define SMART_HOME_MQTT_TIMEZONE     8
+#define SMART_HOME_MQTT_PUBLISH_INTERVAL_MS 3000U
+
+#define SMART_HOME_WIFI_SSID         "<wifi-ssid>"
+#define SMART_HOME_WIFI_PASSWORD     "<wifi-password>"
+
+#endif

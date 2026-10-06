@@ -27,6 +27,7 @@ typedef enum {
 } bh1750_state_t;
 
 static float g_lux = 0.0f;                 /* 最近一次光照值 */
+static uint8_t g_ready = 0U;               /* 是否至少成功读取过一次 */
 static bh1750_state_t g_state = BH1750_STATE_READY;
 static uint32_t g_next_read_tick = 0U;     /* 重新进入测量模式后的最早读取时间 */
 
@@ -85,6 +86,7 @@ void bh1750_init(void)
 {
     /* 初始化变量 */
     g_lux = 0.00f;
+    g_ready = 0U;
     g_state = BH1750_STATE_READY;
     g_next_read_tick = 0U;
 
@@ -102,6 +104,7 @@ void bh1750_init(void)
 void bh1750_deinit(void)
 {
     g_lux = 0.00f;
+    g_ready = 0U;
     g_state = BH1750_STATE_READY;
     g_next_read_tick = 0U;
 
@@ -131,6 +134,7 @@ void bh1750_proc(void)
     }
 
     g_lux = val;
+    g_ready = 1U;
 
 #if BH1750_DEBUG
     uint32_t now = HAL_GetTick();
@@ -150,4 +154,9 @@ void bh1750_proc(void)
 float bh1750_get_lux(void)
 {
     return g_lux;
+}
+
+uint8_t bh1750_is_ready(void)
+{
+    return g_ready;
 }

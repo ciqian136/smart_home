@@ -15,6 +15,6 @@ uint8_t DHT11_ReadData(float *temp, float *humi);
 void DHT11_proc(void);
 float DHT11_get_temp(void);
 float DHT11_get_humi(void);
+uint8_t DHT11_is_ready(void);
 #endif
-
 

@@ -4,7 +4,7 @@
 #include "ws2812.h"
 #include "ws2812_2.h"
 #include "fan.h"
-#include "DHT11.h"
+#include "dht11.h"
 #include "PM25.h"
 #include "BH1750.h"
 #include "smoke.h"
@@ -21,14 +21,42 @@
 #define VOICE_CAT_LED     "LED"
 #define VOICE_CAT_QUERY   "QUERY"
 #define VOICE_RX_LINE_SIZE 125U
-#define VOICE_ALARM_REPEAT_MS 10000U
 #define VOICE_BG_AFTER_CMD_DELAY_MS 1000U
 #define VOICE_BG_GAP_MS 2500U
 #define VOICE_QUERY_REPLY_GAP_MS 3000U
 #define VOICE_QUERY_ALL_REPLY_GAP_MS 8000U
 #define VOICE_ASR_BUSY_GUARD_MS 7000U
-#define VOICE_PM25_ALARM_THRESHOLD_ADC 420U
-#define VOICE_PM25_ALARM_CLEAR_ADC 355U
+
+/* ========== 环境告警阈值（ADC 原始值，0~4095）==========
+ *
+ * 判定规则是"边沿触发 + 回差"，**不是**按固定周期重复播报：
+ *
+ *   读数越限            -> 播报一次，进入"已播报"状态
+ *   读数回到 CLEAR 以下 -> 认为环境恢复，重新武装，等下一次越限再播报
+ *   THRESHOLD/CLEAR 之间 -> 回差带，读数在阈值附近抖动时不会反复播报
+ *
+ * 也就是说：环境一直差，只念一次；必须真的恢复过，再变差才会再念。
+ * （旧实现是每 VOICE_ALARM_REPEAT_MS 重复一遍，环境差的时候会一直念。）
+ *
+ * 现场定标：把下面的 VOICE_ALARM_DEBUG 改成 1，用串口助手看 USART1 上每秒一条的
+ * [ALARM] 日志，然后
+ *   THRESHOLD = 干净环境读数 + 一截余量
+ *   CLEAR     = THRESHOLD 往下 15%~20%
+ * 定标完把 VOICE_ALARM_DEBUG 改回 0。
+ *
+ * 烟雾的 THRESHOLD 在 smoke.h（SMOKE_ALARM_ADC_THRESHOLD），
+ * 传感器自己的报警判断和这里用的是同一个数；这里只定义语音侧的 CLEAR。
+ */
+#define VOICE_PM25_ALARM_ADC 800U   /* 粉尘：超过此值触发播报 */
+#define VOICE_PM25_CLEAR_ADC 650U   /* 粉尘：降到此值以下才算恢复 */
+
+/* 调试时改为 1，正常使用保持 0 */
+#define VOICE_ALARM_DEBUG 0
+#if VOICE_ALARM_DEBUG
+#define VOICE_ALARM_DEBUG_PRINTF(...) uart_printf(&huart1, __VA_ARGS__)
+#else
+#define VOICE_ALARM_DEBUG_PRINTF(...) ((void)0)
+#endif
 
 /* 调试时改为 1，正常使用保持 0 */
 #define VOICE_DEBUG 0
@@ -80,9 +108,7 @@ static const uint8_t digit_vid[10] = {
 };
 
 static uint8_t smoke_alarm_latched = 0U;
-static uint32_t smoke_alarm_last_tick = 0U;
 static uint8_t dust_alarm_latched = 0U;
-static uint32_t dust_alarm_last_tick = 0U;
 static uint8_t face_zeng_pending = 0U;
 static uint32_t voice_last_command_tick = 0U;
 static uint8_t voice_asr_busy = 0U;
@@ -522,44 +548,62 @@ static void voice_face_service(void)
     voice_send_face_zeng_now();
 }
 
+/**
+ * @brief  环境告警的边沿触发 + 回差判定
+ * @param  latched  该通道的"本轮已播报"标志
+ * @param  trigger  当前是否越限（1=越限）
+ * @param  clear    当前是否已恢复到回差下限以下（1=已恢复）
+ * @return 1=刚刚越限，调用方播报一次；0=不播报
+ *
+ * 只在"未播报 + 越限"这一条上升沿返回 1；越限期间一直返回 0，
+ * 必须等到 clear 为真（环境真的恢复）才重新武装。
+ */
+static uint8_t voice_alarm_edge(uint8_t *latched, uint8_t trigger, uint8_t clear)
+{
+    if (*latched) {
+        if (clear) {
+            *latched = 0U;
+        }
+        return 0U;
+    }
+
+    if (trigger) {
+        *latched = 1U;
+        return 1U;
+    }
+
+    return 0U;
+}
+
 static uint8_t voice_alarm_service(void)
 {
-    uint32_t now = HAL_GetTick();
-
     if (!voice_background_can_send()) {
         return 0U;
     }
 
-    if (smoke_is_ready() && smoke_is_alarmed()) {
-        if (!smoke_alarm_latched ||
-            now - smoke_alarm_last_tick >= VOICE_ALARM_REPEAT_MS) {
-            smoke_alarm_latched = 1U;
-            smoke_alarm_last_tick = now;
-            voice_alert_smoke_over_limit(smoke_get_adc());
+    /* 烟雾：触发沿用传感器自己的判断（DO 拉低 或 ADC 超过 SMOKE_ALARM_ADC_THRESHOLD），
+     * 清空要求 ADC 已经降到回差下限以下 —— 否则读数在阈值附近来回抖会反复播报。 */
+    if (smoke_is_ready()) {
+        uint16_t smoke_adc = smoke_get_adc();
+        uint8_t smoke_over = smoke_is_alarmed();
+        uint8_t smoke_clear =
+            (uint8_t)((smoke_over == 0U) && (smoke_adc <= SMOKE_ALARM_ADC_CLEAR));
+
+        if (voice_alarm_edge(&smoke_alarm_latched, smoke_over, smoke_clear)) {
+            voice_alert_smoke_over_limit(smoke_adc);
             return 1U;
         }
-    } else {
-        smoke_alarm_latched = 0U;
-        smoke_alarm_last_tick = 0U;
     }
 
-    if (PM25_get_adc() != 0U) {
+    /* 粉尘：同一个边沿触发模型 */
+    if (PM25_is_ready()) {
         uint16_t dust_adc = PM25_get_adc();
-        uint8_t dust_alarm = dust_alarm_latched ?
-            (dust_adc > VOICE_PM25_ALARM_CLEAR_ADC) :
-            (dust_adc >= VOICE_PM25_ALARM_THRESHOLD_ADC);
+        uint8_t dust_over = (uint8_t)(dust_adc >= VOICE_PM25_ALARM_ADC);
+        uint8_t dust_clear = (uint8_t)(dust_adc <= VOICE_PM25_CLEAR_ADC);
 
-        if (dust_alarm) {
-            if (!dust_alarm_latched ||
-                now - dust_alarm_last_tick >= VOICE_ALARM_REPEAT_MS) {
-                dust_alarm_latched = 1U;
-                dust_alarm_last_tick = now;
-                voice_alert_dust_over_limit(dust_adc);
-                return 1U;
-            }
-        } else {
-            dust_alarm_latched = 0U;
-            dust_alarm_last_tick = 0U;
+        if (voice_alarm_edge(&dust_alarm_latched, dust_over, dust_clear)) {
+            voice_alert_dust_over_limit(dust_adc);
+            return 1U;
         }
     }
 
@@ -579,6 +623,31 @@ void voice_run_send(void)
     if (!alarm_sent) {
         voice_face_service();
     }
+
+#if VOICE_ALARM_DEBUG
+    /* 给告警阈值定标用：每秒打印一次读数、阈值和"已播报"锁存状态。
+     * 干净环境下看 smoke_adc / pm25_adc 的稳定值，再定 THRESHOLD。 */
+    {
+        static uint32_t alarm_debug_tick = 0U;
+        uint32_t now_a = HAL_GetTick();
+
+        if (now_a - alarm_debug_tick >= VOICE_DEBUG_INTERVAL_MS) {
+            alarm_debug_tick = now_a;
+            VOICE_ALARM_DEBUG_PRINTF(
+                "[ALARM] smoke adc=%u thr=%u clear=%u over=%u latched=%u | "
+                "pm25 adc=%u thr=%u clear=%u latched=%u\r\n",
+                (unsigned int)smoke_get_adc(),
+                (unsigned int)SMOKE_ALARM_ADC_THRESHOLD,
+                (unsigned int)SMOKE_ALARM_ADC_CLEAR,
+                (unsigned int)smoke_is_alarmed(),
+                (unsigned int)smoke_alarm_latched,
+                (unsigned int)PM25_get_adc(),
+                (unsigned int)VOICE_PM25_ALARM_ADC,
+                (unsigned int)VOICE_PM25_CLEAR_ADC,
+                (unsigned int)dust_alarm_latched);
+        }
+    }
+#endif
 
 #if VOICE_DEBUG
     static uint32_t debug_last_tick = 0U;

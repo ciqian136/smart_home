@@ -22,5 +22,6 @@ void bh1750_proc(void);
 void bh1750_deinit(void);
 /** @brief 获取最近一次光照值（lux）*/
 float bh1750_get_lux(void);
+uint8_t bh1750_is_ready(void);
 
 #endif
