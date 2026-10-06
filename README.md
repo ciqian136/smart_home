@@ -1,9 +1,5 @@
 # STM32 Smart Home Project
 
-> **文档位置提示**：本文件是早期基准版本，文中"OneNET 云端通信"已不是当前默认后端。
-> 当前的完整说明（含小智远程语音控制的对接契约）在仓库根的 **`project_docs/`**：
-> `总体.md`、`通信.md`、`小智对接.md`。
-
 这是一个基于 STM32F103 的智能家居综合控制项目，当前仓库为最终测试完成版本。项目集成环境传感器、灯带、风扇、USART HMI 屏幕、ASRPRO 语音模块、ESP32 OneNET 联网模块和 OpenART 人脸识别模块。
 
 ## 当前状态
@@ -25,7 +21,11 @@
 - 本地控制：两路 WS2812 灯带、风扇 PWM、板载 LED。
 - HMI 显示与控制：USART HMI 屏显示传感器数据，并支持 RGB 和风扇控制。
 - 语音控制：ASRPRO 识别语音命令，通过 UART3 控制灯光、风扇、LED 和环境查询播报。
-- 云端通信：ESP32 AT 指令连接 OneNET，分时上传属性并处理云端下发控制。
+- 云端通信：ESP32 AT 指令连接自建 MQTT broker（`eb1hd28697538.vicp.fun:37061`），
+  周期性上报 `home/state`，并订阅 `home/cmd` 接收小智下发的控制指令。
+- 远程语音控制：小智 ESP32-S3 固件（`xiaozhi-esp32-main`）通过同一 broker 订阅 `home/state`、
+  向 `home/cmd` 发布指令，用户可直接对小智说话控制本项目的灯带/风扇/LED 与查询环境数据。
+  契约见 `小智对接.md`。
 - 人脸识别：OpenART 识别 `zeng` 后通过 UART5 通知 STM32，再触发语音播报。
 
 ## 目录说明
@@ -75,7 +75,8 @@ cmake --build --preset Debug
 2. 单独将 `asrpro_code.cpp` 按天问 Block / ASRPRO 流程烧录到语音模块。
 3. 将 `openart.py` 放入 OpenART 视觉模块 SD 卡对应位置，并确认模型路径存在。
 4. 使用 USART HMI 工具打开归档中的 `lcd/test.HMI`，下载到屏幕。
-5. 上电后等待 ESP32 非阻塞初始化完成，OneNET 属性会按分时方式上传。
+5. 上电后等待 ESP32 非阻塞初始化完成，`home/state` 会按 3s 周期上报，`home/cmd` 订阅同时生效。
+6. 小智侧：`xiaozhi-esp32-main` 按 `custom/esp32s3-co5300-460` 板型编译烧录，同一 WiFi 下即可语音控制。
 
 ## 调试开关
 
@@ -119,8 +120,9 @@ UART 接收和发送均通过 `APP/my_uart.c` 的环形队列封装，发送使�
 
 ## 相关文档
 
+- `小智对接.md`：与 `xiaozhi-esp32-main` 的完整对接契约、实现说明和联调步骤。
 - `docs/硬件.md`：当前硬件连接、外设分配和注意事项。
-- `docs/通信.md`：USART / UART 通信格式、示例帧和 OneNET 属性说明。
+- `docs/通信.md`：USART / UART 通信格式、示例帧和 MQTT 属性说明。
 - `docs/函数.md`：各应用模块对外暴露函数及作用说明。
 - `docs/其他代码.md`：ASRPRO 和 OpenART 辅助代码解析。
 - `docs/问题.md`：已知问题、限制和后续排查建议。
